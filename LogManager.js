@@ -893,6 +893,8 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (error.code === 'ThrottlingException') return;
     if (error.code === 'DataAlreadyAcceptedException') return;
     // @todo Submit feature request. See cwTransportShortCircuit
+    // InvalidParameterException is thrown when the formatter provided to winston-cloudwatch returns
+    // false
     if (error.code === 'InvalidParameterException') return;
     this.error(error, null, this.options.cloudWatch.errorCategory);
   }
@@ -907,6 +909,8 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   flushCloudWatchTransport(transport, timeout) {
     // @todo Fix this when WinstonCloudWatch makes flush timeout an option
     // https://github.com/lazywithclass/winston-cloudwatch/issues/129
+    // This ends up taking way too long if, say, the aws-sdk is not properly configured. Submit
+    // issue to winston-cloudwatch.
     transport.flushTimeout = Date.now() + timeout;
     return new Promise((resolve) => {
       transport.kthxbye((error) => {
@@ -1161,7 +1165,6 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (typeof level === 'object') {
         Object.assign(awsOptions, level);
         level = awsOptions.level || 'off';
-        delete awsOptions.level;
       }
 
       if (level === 'default') {
@@ -1170,47 +1173,59 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         level = 'warn';
       }
 
-      if (level !== 'off' && awsOptions && awsOptions.logGroup) {
-        this.initCloudWatch();
-        if (!awsOptions.region) awsOptions.region = process.env.CLOUDWATCH_LOG_REGION;
-
-        const logGroupName = `${awsOptions.logGroup
-          // Ends with one slash
-          .replace(/[/]+$/, '')
-          .replace(/[/][/]+$/g, '')}/`;
-
-        if (this.options.say.openCloudWatch) {
-          // eslint-disable-next-line no-console
-          console.log(`[WinstonPlus: ${category}] Opening CloudWatch stream \
-'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
+      if (level !== 'off') {
+        let { logGroup: logGroupName } = awsOptions;
+        if (!awsOptions.region) {
+          awsOptions.region = process.env.AWS_CLOUDWATCH_LOGS_REGION;
+          if (!awsOptions.region) {
+            awsOptions.region = process.env.AWS_CLOUDWATCH_REGION;
+            if (!awsOptions.region) awsOptions.region = process.env.AWS_DEFAULT_REGION;
+          }
         }
 
-        const { uploadRate } = awsOptions;
+        if (!awsOptions.region) {
+          console.warn(`[WinstonPlus] CloudWatch region was not specified for category '${category}'`);
+        } else if (!logGroupName) {
+          console.warn(`[WinstonPlus] CloudWatch log group was not specified for category '${category}'`);
+        } else {
+          this.initCloudWatch();
 
-        // @todo add more options supported by winston-cloudwatch
-        awsOptions = { region: awsOptions.region };
+          // log group ends with a slash
+          logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
 
-        const checkTags = (info) => {
-          // @todo Submit feature request. See cwTransportShortCircuit
-          if (!this.checkTags('cloudWatch', info)) return '';
-          return JSON.stringify(info);
-        };
+          if (this.options.say.openCloudWatch) {
+            // eslint-disable-next-line no-console
+            console.log(`[WinstonPlus: ${category}] Opening CloudWatch stream \
+'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
+          }
 
-        const transport = new WinstonCloudWatch({
-          messageFormatter: checkTags,
-          logStreamName: this.cloudWatch.streamName,
-          createLogGroup: true,
-          createLogStream: true,
-          logGroupName,
-          awsOptions,
-          level,
-          errorHandler: (error) => this.cloudWatchError(error),
-          uploadRate,
-          handleExceptions: this.starting,
-        });
+          const { uploadRate } = awsOptions;
 
-        this.cloudWatch.transports.push(transport);
-        transports.push(transport);
+          // @todo add more options supported by winston-cloudwatch
+          awsOptions = { region: awsOptions.region };
+
+          const checkTags = (info) => {
+            // @todo Submit feature request. See cwTransportShortCircuit
+            if (!this.checkTags('cloudWatch', info)) return '';
+            return JSON.stringify(info);
+          };
+
+          const transport = new WinstonCloudWatch({
+            messageFormatter: checkTags,
+            logStreamName: this.cloudWatch.streamName,
+            createLogGroup: true,
+            createLogStream: true,
+            logGroupName,
+            awsOptions,
+            level,
+            errorHandler: (error) => this.cloudWatchError(error),
+            uploadRate,
+            handleExceptions: this.starting,
+          });
+
+          this.cloudWatch.transports.push(transport);
+          transports.push(transport);
+        }
       }
 
       // Console

@@ -288,7 +288,11 @@ time (including the millisecond) when LogManager was instantiated followed by th
 while sending log entries to CloudWatch are written to the console and to files named cloudwatch-error\*.log if a
 file directory is specified.
 
-If an AWS region is not specified, the environment variable CLOUDWATCH_LOG_REGION is used.
+If an AWS region is not specified, the environment variables are used in the following order:
+
+1. AWS_CLOUDWATCH_LOGS_REGION
+2. AWS_CLOUDWATCH_REGION
+3. AWS_DEFAULT_REGION
 
 # Begin/End/Error Execution Wrapper Functions
 

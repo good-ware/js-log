@@ -9,11 +9,17 @@
     "test": "node tests/test.js"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/dev-guy/winstonplus"
+    "type": "git",
+    "url": "https://github.com/dev-guy/winstonplus"
   },
   "homepage": "https://github.com/dev-guy/winstonplus/blob/master/README.md",
-  "keywords": ["winston", "nodejs", "logging", "cloudwatch"],
+  "keywords": [
+    "winston",
+    "nodejs",
+    "logging",
+    "cloudwatch-logs",
+    "cloudwatch"
+  ],
   "license": "2BSD",
   "dependencies": {
     "aws-sdk": "^2.725.0",
