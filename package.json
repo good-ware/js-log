@@ -1,0 +1,35 @@
+{
+  "name": "winstonplus",
+  "version": "1.0.0",
+  "description": "Opinionated Winston3-based logger for NodeJS",
+  "scripts": {
+    "prettier": "prettier . --write",
+    "lint": "eslint . --fix",
+    "test": "node tests/test.js"
+  },
+  "license": "0BSD",
+  "dependencies": {
+    "aws-sdk": "^2.725.0",
+    "hostid": "^1.0.23",
+    "humanize-duration": "^3.23.1",
+    "joi": "^17.1.1",
+    "json-prune": "^1.1.0",
+    "mkdirp-sync": "0.0.3",
+    "uuid": "^8.3.0",
+    "winston": "^3.3.3",
+    "winston-cloudwatch": "^2.3.2",
+    "winston-console-format": "^1.0.5",
+    "winston-daily-rotate-file": "^4.5.0"
+  },
+  "devDependencies": {
+    "deepmerge": "^4.2.2",
+    "dotenv": "^8.2.0",
+    "eslint": "^7.6.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.22.0",
+    "prettier": "^2.0.5",
+    "request-promise": "^4.2.6",
+    "why-is-node-running": "^2.2.0"
+  }
+}
