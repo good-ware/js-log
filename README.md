@@ -1,6 +1,6 @@
 # Winston3-based console, file, and AWS CloudWatch logger with awesome sauce.
 
-[npm] (https://www.npmjs.com/package/winstonplus)
+[winstonplus on npm](https://www.npmjs.com/package/winstonplus)
 
 Documentation TBD
 
