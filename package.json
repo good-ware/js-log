@@ -1,13 +1,20 @@
 {
   "name": "winstonplus",
   "version": "1.0.0",
+  "author": "dev-guy",
   "description": "Opinionated Winston3-based logger for NodeJS",
   "scripts": {
     "prettier": "prettier . --write",
     "lint": "eslint . --fix",
     "test": "node tests/test.js"
   },
-  "license": "0BSD",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/dev-guy/winstonplus"
+  },
+  "homepage": "https://github.com/dev-guy/winstonplus/blob/master/README.md",
+  "keywords": ["winston", "nodejs", "logging", "cloudwatch"],
+  "license": "2BSD",
   "dependencies": {
     "aws-sdk": "^2.725.0",
     "hostid": "^1.0.23",
