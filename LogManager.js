@@ -1184,8 +1184,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         }
 
         if (!awsOptions.region) {
+          // eslint-disable-next-line no-console
           console.warn(`[WinstonPlus] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
+          // eslint-disable-next-line no-console
           console.warn(`[WinstonPlus] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
