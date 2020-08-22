@@ -11,9 +11,9 @@
   "main": "ServiceLogger.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dev-guy/winstonplus"
+    "url": "https://github.com/dev-guy/service-logger"
   },
-  "homepage": "https://github.com/dev-guy/winstonplus/blob/master/README.md",
+  "homepage": "https://github.com/dev-guy/service-logger/blob/master/README.md",
   "keywords": [
     "winston",
     "nodejs",
