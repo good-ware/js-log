@@ -1,13 +1,14 @@
 {
-  "name": "winstonplus",
-  "version": "1.0.1",
+  "name": "service-logger",
+  "version": "1.0.2",
   "author": "dev-guy",
-  "description": "Opinionated Winston3-based logger for NodeJS",
+  "description": "Winston3-based logger for NodeJS-based services",
   "scripts": {
     "prettier": "prettier . --write",
     "lint": "eslint . --fix",
     "test": "node tests/test.js"
   },
+  "main": "Logger.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/dev-guy/winstonplus"
