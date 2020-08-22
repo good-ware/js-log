@@ -1,6 +1,6 @@
 {
   "name": "winstonplus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "dev-guy",
   "description": "Opinionated Winston3-based logger for NodeJS",
   "scripts": {
