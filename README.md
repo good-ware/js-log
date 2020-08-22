@@ -1,8 +1,12 @@
-Winston3-based console, file, and AWS CloudWatch logger with awesome sauce.
+# Winston3-based console, file, and AWS CloudWatch logger with awesome sauce.
 
-## LogManager
+[npm] (https://www.npmjs.com/package/winstonplus)
 
-Usage
+Documentation TBD
+
+# LogManager
+
+## Usage
 
 It is possible for one nodeJS process to create multiple LogManager objects at the same time. This is useful if, say,
 independent libraries use LogManager with different logging levels and other settings. The only caveat is Winston's
@@ -286,7 +290,7 @@ file directory is specified.
 
 If an AWS region is not specified, the environment variable CLOUDWATCH_LOG_REGION is used.
 
-# Utility Functions
+# Begin/End/Error Execution Wrapper Functions
 
 Utility functions for logging 'begin' and 'end' for common operations (database, http, etc.). Begin
 log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is set added
