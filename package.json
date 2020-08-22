@@ -1,5 +1,5 @@
 {
-  "name": "service-logger",
+  "name": "winston-service-logger",
   "version": "1.0.2",
   "author": "dev-guy",
   "description": "Winston3-based logger for NodeJS-based services",
@@ -11,9 +11,9 @@
   "main": "ServiceLogger.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dev-guy/service-logger"
+    "url": "https://github.com/dev-guy/winston-service-logger"
   },
-  "homepage": "https://github.com/dev-guy/service-logger/blob/master/README.md",
+  "homepage": "https://github.com/dev-guy/winston-service-logger/blob/master/README.md",
   "keywords": [
     "winston",
     "nodejs",
