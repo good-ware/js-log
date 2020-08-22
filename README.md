@@ -137,7 +137,7 @@ The following example enables the tag 'sql' for only two categories: one and two
 level to 'more' and sends log entries only to the file and console transports. Category 'two' sends log entries to
 all transports.
 
-``` js
+```js
   categories: {
     default: {
       tags: {
@@ -228,7 +228,7 @@ A transport sends log entries to one of the following destinations:
 Use the 'categories' options setting to configure transports. It is not necessary to specify every category that is
 actually used. The 'default' category specifies the base configuration for all categories. For example:
 
-``` js
+```js
 categories: {
   default: { console: 'on', cloudWatch: 'info',
              file: 'default' },
@@ -250,7 +250,7 @@ The behavior of console transports is altered via the 'console' options setting.
 
 When 'colors' is true, log entries sent to the console are colorized. To override the provided value, set the
 
-``` shell
+```shell
 CONSOLE_COLORS
 ```
 
@@ -258,7 +258,7 @@ environment variable such that blank, 0, and 'false' are false and all other val
 
 When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'extra' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the
 
-``` shell
+```shell
 CONSOLE_DATA
 ```
 

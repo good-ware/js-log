@@ -8,7 +8,7 @@
     "lint": "eslint . --fix",
     "test": "node tests/test.js"
   },
-  "main": "Logger.js",
+  "main": "ServiceLogger.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/dev-guy/winstonplus"

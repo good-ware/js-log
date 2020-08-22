@@ -530,8 +530,8 @@ async function go(colors) {
     // These values must be tweaked whenever more entries are logged
     if (unitTest.entries.length !== 122) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 21-hasCloudWatch) throw new Error(len);
-    if (unitTest.dataCount !== 63-hasCloudWatch*2) throw new Error(unitTest.dataCount);
+    if (len !== 21 - hasCloudWatch) throw new Error(len);
+    if (unitTest.dataCount !== 63 - hasCloudWatch * 2) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
