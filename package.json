@@ -1,10 +1,11 @@
 {
   "name": "@goodware/log-service",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "Winston3-based logging utility for Node",
   "scripts": {
-    "prettier": "prettier . --write",
     "lint": "eslint . --fix",
+    "prettier": "prettier . --write",
+    "publish": "npm publish --access=public",
     "test": "node tests/test.js"
   },
   "main": "LogService.js",
