@@ -560,7 +560,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`[WinstonPlus] ${validation.error.message}`);
+      if (validation.error) throw new Error(`[LogService] ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -572,14 +572,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.stopped) throw new Error('[WinstonPlus] Not stopped');
+    if (!this.stopped) throw new Error('[LogService] Not stopped');
     this.starting = true;
 
     const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('[WinstonPlus] Unit test mode enabled');
+      console.warn('[LogService] Unit test mode enabled');
 
       this.unitTest = {
         entries: [],
@@ -594,7 +594,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`[WinstonPlus] ${options.service} v${options.version} \
+      console.log(`[LogService] ${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
@@ -666,7 +666,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('[WinstonPlus] Unable to create logs directory');
+    console.warn('[LogService] Unable to create logs directory');
   }
 
   /**
@@ -685,7 +685,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`[WinstonPlus] Invalid datatype for category: ${type}`));
+      console.error(new Error(`[LogService] Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -969,7 +969,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[WinstonPlus] Waiting up to ${duration} to send log entries to CloudWatch`);
+        console.log(`[LogService] Waiting up to ${duration} to send log entries to CloudWatch`);
       }, 2500);
     }
 
@@ -983,7 +983,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (flushMessageTask) clearTimeout(flushMessageTask);
 
     // eslint-disable-next-line no-console
-    if (flushMessageSent) console.log('[WinstonPlus] CloudWatch log entries sent');
+    if (flushMessageSent) console.log('[LogService] CloudWatch log entries sent');
   }
 
   /**
@@ -993,10 +993,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('[WinstonPlus] Stopping');
+    if (this.options.say.stopping) console.log('[LogService] Stopping');
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: [WinstonPlus] Stopping
+      // Test uncaught exception - expect Error: [LogService] Stopping
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1090,7 +1090,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     this.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('[WinstonPlus] Stopped');
+    if (this.options.say.stopped) console.log('[LogService] Stopped');
   }
 
   /**
@@ -1221,10 +1221,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`[WinstonPlus] CloudWatch region was not specified for category '${category}'`);
+          console.warn(`[LogService] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`[WinstonPlus] CloudWatch log group was not specified for category '${category}'`);
+          console.warn(`[LogService] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
@@ -1233,7 +1233,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`[WinstonPlus: ${category}] Opening CloudWatch stream \
+            console.log(`[LogService: ${category}] Opening CloudWatch stream \
 '${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
           }
 
@@ -1405,7 +1405,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   isLevelEnabled(tags, category) {
     if (this.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('[WinstonPlus] Stopped'));
+      console.warn(new Error('[LogService] Stopped'));
       return false;
     }
 
@@ -1952,7 +1952,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // while stopping
     if (this.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[WinstonPlus] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`[LogService] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
     }
 
@@ -2034,7 +2034,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (this.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
-        new Error(`[WinstonPlus] Stopped. Unable to log:
+        new Error(`[LogService] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
