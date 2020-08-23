@@ -11,7 +11,7 @@
   "main": "LogManager.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/good-ware/js-log-service"
+    "url": "https://github.com/good-ware/js-logger"
   },
   "keywords": [
     "winston",
