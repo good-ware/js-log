@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
 // const why = require('why-is-node-running');
-const LogManager = require('../LogManager');
+const Loggers = require('../Loggers');
 
 // For debugging info, run with:
 // WINSTON_CLOUDWATCH_DEBUG=true node logger.js
@@ -45,12 +45,12 @@ async function go(colors) {
     tags: { coordinator: { level: 'info' }, tag2: { level: 'error' } },
   };
 
-  logger = new LogManager(config.logging);
+  logger = new Loggers(config.logging);
   const { unitTest } = logger;
 
   // ====== Manual test to make sure files are flushed
   // There is no easy automated way to check this
-  // LogManager.info('doctor');
+  // Loggers.info('doctor');
   // logger.unitTest.flush = true;
   // await logger.stop();
 
@@ -68,7 +68,7 @@ async function go(colors) {
   // This is logged as debug
   // @todo test this
   {
-    logger.child('error').log(LogManager.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
+    logger.child('error').log(Loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'debug') throw new Error();
   }
@@ -89,11 +89,11 @@ async function go(colors) {
     if (entry.error !== '5') throw new Error();
   }
 
-  const tags = LogManager.tags('message');
+  const tags = Loggers.tags('message');
   if (!tags.message) throw new Error();
 
   // Test disabling a tag
-  if (!logger.isLevelEnabled(LogManager.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
+  if (!logger.isLevelEnabled(Loggers.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
 
   // Test isLevelEnabled
   if (!logger.isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
@@ -335,8 +335,8 @@ async function go(colors) {
   }
 
   {
-    const contextLogManager = logger.child('cxt', { cxtExtra: 5 }, 'logger');
-    contextLogManager.debug('logging with context logger');
+    const contextLoggers = logger.child('cxt', { cxtExtra: 5 }, 'logger');
+    contextLoggers.debug('logging with context logger');
     if (unitTest.entries[unitTest.entries.length - 1].data.cxtExtra !== 5) throw new Error();
   }
 
@@ -354,7 +354,7 @@ async function go(colors) {
   // Test isLevelEnabled
   if (!logger.child(null, null, 'foo').isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
 
-  // Test get/getLogManager and a category that is not in config (flyweight)
+  // Test get/getLoggers and a category that is not in config (flyweight)
   logger.child(null, null, 'foo').debug('debug');
   logger.debug('debug message', null, 'foo');
 

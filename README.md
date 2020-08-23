@@ -4,22 +4,22 @@
 
 Documentation TBD
 
-# LogManager
+# Loggers
 
 ## Usage
 
-It is possible for one nodeJS process to create multiple LogManager objects at the same time. This is useful if, say,
-independent libraries use LogManager with different logging levels and other settings. The only caveat is Winston's
-own flaw that results in the inability of two LogManager objects to associate different colors with the same level.
+It is possible for one nodeJS process to create multiple Loggers objects at the same time. This is useful if, say,
+independent libraries use Loggers with different logging levels and other settings. The only caveat is Winston's
+own flaw that results in the inability of two Loggers objects to associate different colors with the same level.
 
-A Winston logger object for a particular category is acquired via new LogManager(...).loggers.get() or child().
+A Winston logger object for a particular category is acquired via new Loggers(...).loggers.get() or child().
 Requesting a logger is optional since this class has logging methods (log(), error(), etc.), that accept an optional
 category name and use the default category if one is not provided.
 
 Loggers do not use Winston's splat formatter. However, much more can be logged, such as objects, arrays, and errors
 including stack traces.
 
-While a LogManager instance is active, uncaught exceptions and Promise rejections are logged using a category that
+While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using a category that
 is specified via the 'uncaughtCategory' options setting which defaults to 'uncaught.' The process is not terminated
 after logging uncaught exceptions.
 
@@ -70,7 +70,7 @@ Therefore, 0 represents the highest severity.
 Levels and their colors can be specified via the second argument provided to the constructor using the same object that
 is provided when creating a Winston logger.
 
-By default, LogManager uses Winston's default levels (aka
+By default, Loggers uses Winston's default levels (aka
 [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of two levels:
 
 1. 'more' is between 'info' and 'verbose' and has the color cyan
@@ -276,9 +276,9 @@ log files defaults to 14 days and can be specified via the 'file' options settin
 #### cloudWatch
 
 CloudWatch transports are configured with a log group name and an optional AWS region. Log entries are sent to
-CloudWatch as JSON strings. One LogManager instance uses the same stream name for all cloudWatch transports. The
+CloudWatch as JSON strings. One Loggers instance uses the same stream name for all cloudWatch transports. The
 log group, on the other hand, can be specified on a per-category basis. The log stream name contains the date and
-time (including the millisecond) when LogManager was instantiated followed by the host id. Any errors that occur
+time (including the millisecond) when Loggers was instantiated followed by the host id. Any errors that occur
 while sending log entries to CloudWatch are written to the console and to files named cloudwatch-error\*.log if a
 file directory is specified.
 

@@ -38,58 +38,60 @@ const scalars = {
 
 /**
  * @description Internal class for identifying log entries that are created by
- * LogManager::logEntry
+ * Loggers::logEntry
  */
 class LogEntry {}
 
 /**
- * @description Winston3-based console, file, and AWS CloudWatch logger. This
- * class is a logger for the default category (typically named 'general') and is
- * a factory for other loggers.
- *
- * Private Properties
- *  {Boolean} starting
- *  {Boolean} stopping
- *  {Boolean} stopped
- *  {String} created
- *  {String} hostId
- *  {String} logsDirectory
- *  {String[]} metaKeys
- *  {Function} unhandledPromiseListener
- *  {Function[]} stopWaiters
- *  {String[]} levels {String} with 'default'
- *  {Object} winstonServiceLogManagers {String} category -> Winston logger
- *  {Object} userMeta {String} metaFieldName -> undefined
- *  {Object} unitTest
- *  {Object} cloudWatch Properties:
- *   {String} streamName
- *   {Object[]} transports
- *  {Object} loggers {String} category -> {LogManager|ContextLogger}
- *  {Object} categoryTags {String} category -> {{String} tag -> {Object}}
- *  {Object} logLevel {String} level name or 'default' -> {logLevel: {String}}
- *  {Object} levelSeverity {String} level plus 'on', 'off', and 'default'
- * -> {Number} {Object} winstonLevels Passed to Winston when creating a logger
- *
- * Notes to Maintainers
- *  1. Check whether toString() should be converted to valueToScalar()
- *  2. tags, message, and extra provided to public methods should never be
- * modified
- *
- * @todo
- * 1. When console data is requested but colors are disabled, output data
- * without colors using a new formatter.
- * 2. Message to output to plain console?
- * 3. Document transactionId and operationId
- * 4. Document level-named methods take a tag name as a string if the first
- * argument has no space
- * 5. Document defaultTagAllowLevel
- * 6. Document custom levels and colors
- * 7. Test redaction
- * 8. Document redaction
- * 9. Move ContextLogger to another module - see
- *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
+ * @description Manages Winston3 loggers. Each logger can log to the console, files, and AWS
+ *  CloudWatch logs. Provides access to loggers via category names. All loggers can create child
+ *  loggers stored context. This class is also a logger that delgates to the logger associated
+ *  with the the default category; for example, 'general.'
  */
-class LogManager {
+class Loggers {
+  /**
+   * Private Properties
+   *  {Boolean} starting
+   *  {Boolean} stopping
+   *  {Boolean} stopped
+   *  {String} created
+   *  {String} hostId
+   *  {String} logsDirectory
+   *  {String[]} metaKeys
+   *  {Function} unhandledPromiseListener
+   *  {Function[]} stopWaiters
+   *  {String[]} levels {String} with 'default'
+   *  {Object} winstonServiceLoggerss {String} category -> Winston logger
+   *  {Object} userMeta {String} metaFieldName -> undefined
+   *  {Object} unitTest
+   *  {Object} cloudWatch Properties:
+   *   {String} streamName
+   *   {Object[]} transports
+   *  {Object} loggers {String} category -> {Loggers|ChildLogger}
+   *  {Object} categoryTags {String} category -> {{String} tag -> {Object}}
+   *  {Object} logLevel {String} level name or 'default' -> {logLevel: {String}}
+   *  {Object} levelSeverity {String} level plus 'on', 'off', and 'default'
+   *   -> {Number} {Object} winstonLevels Passed to Winston when creating a logger
+   *
+   * Notes to Maintainers
+   *  1. Check whether toString() should be converted to valueToScalar()
+   *  2. tags, message, and extra provided to public methods should never be
+   * modified
+   *
+   * @todo
+   * 1. When console data is requested but colors are disabled, output data without colors using a
+   *    new formatter.
+   * 2. Add a new data prop to output to the non-data console
+   * 3. Document transactionId and operationId
+   * 4. Document level-named methods take a tag name as a string if the first
+   *    argument has no space
+   * 5. Document defaultTagAllowLevel
+   * 6. Document custom levels and colors
+   * 7. Test redaction
+   * 8. Document redaction
+   * 9. Move ChildLogger to another module - see
+   *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
+   */
   /**
    * @constructor
    * @param {Object} options
@@ -97,7 +99,7 @@ class LogManager {
    *     which are objects whose keys are level
    *  names
    */
-  constructor(options, levels = LogManager.levels) {
+  constructor(options, levels = Loggers.levels) {
     this.stopped = true;
 
     // This must be set before validating options
@@ -164,7 +166,7 @@ class LogManager {
       on: 100000,
     });
 
-    this.created = LogManager.now();
+    this.created = Loggers.now();
     this.hostId = hostId();
 
     this.loggers = {};
@@ -209,14 +211,14 @@ class LogManager {
   }
 
   /**
-   * @return {LogManager} this
+   * @return {Loggers} this
    */
-  manager() {
+  loggers() {
     return this;
   }
 
   /**
-   * @return {LogManager} this
+   * @return {Loggers} this
    */
   parent() {
     return this;
@@ -243,12 +245,10 @@ class LogManager {
     const now = new Date();
     const tzo = now.getTimezoneOffset();
 
-    return `${now.getFullYear()}-${LogManager.pad(now.getMonth() + 1)}-${LogManager.pad(
-      now.getDate()
-    )}T${LogManager.pad(now.getHours())}:${LogManager.pad(now.getMinutes())}:${LogManager.pad(
-      now.getSeconds()
-    )}.${LogManager.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + LogManager.pad(Math.abs(tzo) / 60)}:${LogManager.pad(tzo % 60)}`
+    return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
+      now.getHours()
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
     }`;
   }
 
@@ -335,8 +335,8 @@ class LogManager {
   static extra(extra, moreExtra) {
     if (!extra && !moreExtra) return false;
 
-    extra = LogManager.extraToObject(extra);
-    moreExtra = LogManager.extraToObject(moreExtra);
+    extra = Loggers.extraToObject(extra);
+    moreExtra = Loggers.extraToObject(moreExtra);
 
     if (extra && !moreExtra) return extra;
     if (moreExtra && !extra) return moreExtra;
@@ -368,7 +368,7 @@ class LogManager {
    */
   addLevelMethods(target) {
     this.levels.forEach((level) => {
-      target[level] = (...args) => LogManager.levelLog(target, this.logLevel[level], ...args);
+      target[level] = (...args) => Loggers.levelLog(target, this.logLevel[level], ...args);
     });
   }
 
@@ -554,13 +554,13 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
       // Testing
       unitTest: Joi.boolean(),
-    }).label('LogManager options');
+    }).label('Loggers options');
     // ==== Joi model for options (end)
 
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`[LogManager] ${validation.error.message}`);
+      if (validation.error) throw new Error(`[Loggers] ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -572,14 +572,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.stopped) throw new Error('[LogManager] Not stopped');
+    if (!this.stopped) throw new Error('[Loggers] Not stopped');
     this.starting = true;
 
     const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('[LogManager] Unit test mode enabled');
+      console.warn('[Loggers] Unit test mode enabled');
 
       this.unitTest = {
         entries: [],
@@ -594,7 +594,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`[LogManager] ${options.service} v${options.version} \
+      console.log(`[Loggers] ${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
@@ -605,11 +605,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // process.on('uncaughtException') is dangerous and doesn't work for
     // exceptions thrown in a function called by the event loop (e.g.,
     // setTimeout(...throw...).
-    const uncaughtLogManager = this.logger(options.uncaughtCategory);
+    const uncaughtLoggers = this.logger(options.uncaughtCategory);
     // Create a Winston logger now to catch uncaught exceptions
-    if (uncaughtLogManager.isLevelEnabled('error')) {
+    if (uncaughtLoggers.isLevelEnabled('error')) {
       this.unhandledPromiseListener = (error) => {
-        uncaughtLogManager.error('Unhandled Promise rejection', { error });
+        uncaughtLoggers.error('Unhandled Promise rejection', { error });
       };
       process.on('unhandledRejection', this.unhandledPromiseListener);
     }
@@ -620,7 +620,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Internal function called by methods that are named after
    * levels. Allows tags to be provided.
-   * @param {LogManager|ContextLogger} obj
+   * @param {Loggers|ChildLogger} obj
    * @param {Object} levelObj From this.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrExtra
@@ -634,7 +634,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       (tagsOrMessage instanceof Array || (typeof tagsOrMessage === 'string' && tagsOrMessage.indexOf(' ') === -1))
     ) {
       // tagsOrMessage has tags
-      return obj.log(LogManager.tags(levelObj, tagsOrMessage), messageOrExtra, extraOrCategory, category);
+      return obj.log(Loggers.tags(levelObj, tagsOrMessage), messageOrExtra, extraOrCategory, category);
     }
 
     // tagsOrMessage has a message
@@ -666,7 +666,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('[LogManager] Unable to create logs directory');
+    console.warn('[Loggers] Unable to create logs directory');
   }
 
   /**
@@ -685,7 +685,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`[LogManager] Invalid datatype for category: ${type}`));
+      console.error(new Error(`[Loggers] Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -849,7 +849,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       return this.checkTags('console', info);
     })();
 
-    const printf = format.printf(LogManager.printf);
+    const printf = format.printf(Loggers.printf);
 
     return new winston.transports.Console({
       handleExceptions,
@@ -881,7 +881,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * console and possibly file
    * @return {Object} logger
    */
-  createCloudWatchErrorLogManager() {
+  createCloudWatchErrorLoggers() {
     const { errorCategory } = this.options.cloudWatch;
     const transports = [];
 
@@ -906,7 +906,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
     return winston.createLogger({
-      defaultMeta: LogManager.defaultMeta(errorCategory),
+      defaultMeta: Loggers.defaultMeta(errorCategory),
       exitOnError: false,
       format: this.formatter(),
       levels: this.levelSeverity,
@@ -969,7 +969,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[LogManager] Waiting up to ${duration} to send log entries to CloudWatch`);
+        console.log(`[Loggers] Waiting up to ${duration} to send log entries to CloudWatch`);
       }, 2500);
     }
 
@@ -984,7 +984,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log('[LogManager] CloudWatch log entries sent');
+      console.log('[Loggers] CloudWatch log entries sent');
     }
   }
 
@@ -995,10 +995,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('[LogManager] Stopping');
+    if (this.options.say.stopping) console.log('[Loggers] Stopping');
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: [LogManager] Stopping
+      // Test uncaught exception - expect Error: [Loggers] Stopping
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1051,21 +1051,21 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     this.winstonLoggers = {};
 
-    const errorLogManager = this.winstonLoggers[cloudWatchErrorCategory];
+    const errorLoggers = this.winstonLoggers[cloudWatchErrorCategory];
     this.loggers = {};
 
-    if (errorLogManager && errorLogManager.writable) {
+    if (errorLoggers && errorLoggers.writable) {
       // eslint-disable-next-line no-constant-condition
       if (true) {
-        errorLogManager.close();
+        errorLoggers.close();
       } else {
         // @todo finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
-          errorLogManager
+          errorLoggers
             .on('error', reject)
             .on('close', resolve)
-            .on('finish', () => setImmediate(() => errorLogManager.close()))
+            .on('finish', () => setImmediate(() => errorLoggers.close()))
             .end();
           // eslint-disable-next-line no-console
         }).catch(console.warn);
@@ -1092,7 +1092,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     this.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('[LogManager] Stopped');
+    if (this.options.say.stopped) console.log('[Loggers] Stopped');
   }
 
   /**
@@ -1141,13 +1141,13 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {String} category
    * @return {Object} Winston logger
    */
-  createWinstonLogManager(category) {
+  createWinstonLoggers(category) {
     if (this.stopped) throw new Error('Stopped');
 
     let logger;
 
     if (category === this.options.cloudWatch.errorCategory) {
-      logger = this.createCloudWatchErrorLogManager();
+      logger = this.createCloudWatchErrorLoggers();
     } else {
       if (this.stopping) throw new Error('Stopping');
 
@@ -1223,10 +1223,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`[LogManager] CloudWatch region was not specified for category '${category}'`);
+          console.warn(`[Loggers] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`[LogManager] CloudWatch log group was not specified for category '${category}'`);
+          console.warn(`[Loggers] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
@@ -1235,7 +1235,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`[LogManager: ${category}] Opening CloudWatch stream \
+            console.log(`[Loggers: ${category}] Opening CloudWatch stream \
 '${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
           }
 
@@ -1314,7 +1314,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       logger = winston.createLogger({
-        defaultMeta: LogManager.defaultMeta(category),
+        defaultMeta: Loggers.defaultMeta(category),
         exitOnError: false,
         format: this.formatter(),
         levels: this.winstonLevels,
@@ -1336,7 +1336,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     category = this.checkCategory(category);
     let logger = this.winstonLoggers[category];
-    if (!logger) logger = this.createWinstonLogManager(category);
+    if (!logger) logger = this.createWinstonLoggers(category);
 
     return logger;
   }
@@ -1354,7 +1354,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Returns a logger associated with a category
    * @param {String} [category]
-   * @return {LogManager|ContextLogger}
+   * @return {Loggers|ChildLogger}
    */
   logger(category) {
     category = this.checkCategory(category);
@@ -1366,7 +1366,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       logger = this;
     } else {
       // eslint-disable-next-line no-use-before-define
-      logger = new ContextLogger(this, undefined, undefined, category);
+      logger = new ChildLogger(this, undefined, undefined, category);
     }
     this.loggers[category] = logger;
     return logger;
@@ -1377,13 +1377,13 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {*} [tags]
    * @param {*} [extra]
    * @param {String} [category]
-   * @return {ContextLogger}
+   * @return {ChildLogger}
    */
   child(tags, extra, category) {
     const logger = this.logger(category);
     if (!tags && !extra) return logger;
     // eslint-disable-next-line no-use-before-define
-    return new ContextLogger(logger, tags, extra);
+    return new ChildLogger(logger, tags, extra);
   }
 
   /**
@@ -1407,11 +1407,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   isLevelEnabled(tags, category) {
     if (this.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('[LogManager] Stopped'));
+      console.warn(new Error('[Loggers] Stopped'));
       return false;
     }
 
-    tags = LogManager.tags(tags);
+    tags = Loggers.tags(tags);
 
     let level;
 
@@ -1573,7 +1573,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
             return true;
           });
 
-          return !logTransports || LogManager.hasKeys(logTransports);
+          return !logTransports || Loggers.hasKeys(logTransports);
         })
       ) {
         return false;
@@ -1686,7 +1686,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     Object.assign(entry, {
       message: '',
       level,
-      timestamp: LogManager.now(),
+      timestamp: Loggers.now(),
       ms: false, // Set via a formatter; intentionally not removed
       tags: false,
       error: false, // Set and removed by send()
@@ -1710,7 +1710,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     const state = {};
     const { tags } = info;
 
-    extra = LogManager.extraToObject(extra);
+    extra = Loggers.extraToObject(extra);
 
     // Combine message and extra
     // for (const item of depth?[extra, message]:[message, extra]) {
@@ -1760,7 +1760,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         if (key === 'message') delete data[key];
       });
 
-      if (LogManager.hasKeys(data)) entry.data = data;
+      if (Loggers.hasKeys(data)) entry.data = data;
     }
 
     // Remove meta keys that have undefined values
@@ -1954,7 +1954,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // while stopping
     if (this.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[LogManager] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`[Loggers] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
     }
 
@@ -1982,7 +1982,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (!message) {
         message = tags;
       } else {
-        extra = LogManager.extra(extra, tags);
+        extra = Loggers.extra(extra, tags);
       }
       tags = this.logLevel.error;
     } else if (
@@ -1994,9 +1994,9 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // The first argument is a single argument to use as all the other
       // arguments?
       if (tags.message) message = tags.message;
-      extra = LogManager.extra(extra, tags.extra);
+      extra = Loggers.extra(extra, tags.extra);
       if (tags.category) category = tags.category;
-      tags = LogManager.tags(tags.level, tags.tags);
+      tags = Loggers.tags(tags.level, tags.tags);
     } else {
       return false;
     }
@@ -2014,10 +2014,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    *  If tags is an Error object, error is used for tags and message is set as
    * follows:
    *   1. If message is falsey, message = tags
-   *   2. Otherwise, extra = LogManager.extra(extra, {error: tags})
+   *   2. Otherwise, extra = Loggers.extra(extra, {error: tags})
    *  If tags is an object and has truthy values for tags, level, message, or
    * extra, the keys in tags are used as follows if they are truthy:
-   *   1. tags = LogManager.tags(tags.level, tags.tags)
+   *   1. tags = Loggers.tags(tags.level, tags.tags)
    *   2. message = tags.message
    *   3. extra = tags.extra
    *   4. category = tags.category
@@ -2036,7 +2036,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (this.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
-        new Error(`[LogManager] Stopped. Unable to log:
+        new Error(`[Loggers] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
@@ -2059,7 +2059,7 @@ ${util.inspect({
  * addition of 'more' which is between info and verbose and 'db' which is
  * between verbose and http. Colors can additionally be provided via options.
  */
-LogManager.levels = {
+Loggers.levels = {
   levels: {
     error: 10,
     warn: 20,
@@ -2078,44 +2078,45 @@ LogManager.levels = {
 };
 
 /**
- * @description tags, extra, and category comprise a logging context. This
- * object manages a logging context. The methods in this class accept a logging
- * context which, if provided, is combined with the object's logging context.
- *  For example, if tags = ['apple'] is provided to the constructor, then
- * log('banana') will use the tags 'apple' and 'banana.'
- *
- * Due to circular dependency, this class can not be moved to another module.
+ * @description tags, extra, and category comprise a logging context. This object manages a logging
+ *  context. The methods in this class accept a logging context which, if provided, is combined with
+ *  the object's logging context. For example, if tags = ['apple'] is provided to the constructor,
+ *  then log('banana') will use the tags 'apple' and 'banana.'
  *
  * Public Properties
  *  {Object} tags
  *  {Object} extra
  *  {String} category
- *
- * Private Properties
- *  {Object} managerObj
- *  {Object} parentObj
  */
-class ContextLogger {
+class ChildLogger {
+  /**
+   * Notes
+   *   Due to circular dependencies, this class can not be moved to another module.
+   *
+   * Private Properties
+   *  {Object} loggersObj
+   *  {Object} parentObj
+   */
   /**
    * @constructor
-   * @param {LogManager|ContextLogger} logger
+   * @param {Loggers|ChildLogger} logger
    * @param {*} [tags]
    * @param {*} [extra]
    * @param {String} [category]
    */
   constructor(logger, tags, extra, category) {
-    if (logger instanceof ContextLogger) {
-      tags = LogManager.tags(logger.tags, tags);
-      extra = LogManager.extra(logger.extra, extra);
+    if (logger instanceof ChildLogger) {
+      tags = Loggers.tags(logger.tags, tags);
+      extra = Loggers.extra(logger.extra, extra);
       if (!category) category = logger.category;
-      this.managerObj = logger.managerObj;
+      this.loggersObj = logger.loggersObj;
       this.parentObj = logger;
     } else {
-      if (!(logger instanceof LogManager)) {
-        throw new Error('logger must be an instance of LogManager or ContextLogger');
+      if (!(logger instanceof Loggers)) {
+        throw new Error('logger must be an instance of Loggers or ChildLogger');
       }
       // eslint-disable-next-line no-multi-assign
-      this.managerObj = this.parentObj = logger;
+      this.loggersObj = this.parentObj = logger;
     }
 
     Object.assign(this, {
@@ -2125,18 +2126,18 @@ class ContextLogger {
     });
 
     // Dynamic methods
-    this.managerObj.addLevelMethods(this);
+    this.loggersObj.addLevelMethods(this);
   }
 
   /**
-   * @return {LogManager}
+   * @return {Loggers}
    */
-  manager() {
-    return this.managerObj;
+  loggers() {
+    return this.loggersObj;
   }
 
   /**
-   * @return {LogManager|ContextLogger}
+   * @return {Loggers|ChildLogger}
    */
   parent() {
     return this.parentObj;
@@ -2144,27 +2145,27 @@ class ContextLogger {
 
   /**
    * @param {String} [category]
-   * @return {LogManager|ContextLogger}
+   * @return {Loggers|ChildLogger}
    */
   logger(category) {
-    return this.managerObj.logger(category || this.category);
+    return this.loggersObj.logger(category || this.category);
   }
 
   /**
    * @param {*} [tags]
    * @param {*} [extra]
    * @param {String} [category]
-   * @return {ContextLogger}
+   * @return {ChildLogger}
    */
   child(tags, extra, category) {
-    return new ContextLogger(this, tags, extra, category || this.category);
+    return new ChildLogger(this, tags, extra, category || this.category);
   }
 
   /**
    * @return {Boolean}
    */
   isReady() {
-    return this.managerObj.writable();
+    return this.loggersObj.writable();
   }
 
   /**
@@ -2173,10 +2174,7 @@ class ContextLogger {
    * @return {Boolean}
    */
   isLevelEnabled(tags, category) {
-    return this.managerObj.isLevelEnabled(
-      this.tags ? LogManager.tags(this.tags, tags) : tags,
-      category || this.category
-    );
+    return this.loggersObj.isLevelEnabled(this.tags ? Loggers.tags(this.tags, tags) : tags, category || this.category);
   }
 
   /**
@@ -2187,24 +2185,24 @@ class ContextLogger {
    * @return {Object}
    */
   log(tags, message, extra, category) {
-    const args = this.managerObj.transformLogArguments(tags, message, extra, category);
+    const args = this.loggersObj.transformLogArguments(tags, message, extra, category);
     if (args) {
       ({ tags, message, extra, category } = args);
     }
 
-    if (this.tags) tags = LogManager.tags(this.tags, tags);
+    if (this.tags) tags = Loggers.tags(this.tags, tags);
     if (!category) category = this.category;
 
-    const info = this.managerObj.isLevelEnabled(tags, category);
+    const info = this.loggersObj.isLevelEnabled(tags, category);
     if (info) {
-      // The objective of the above code is to avoid calling LogManager.extra
+      // The objective of the above code is to avoid calling Loggers.extra
       // if the level is too low
-      if (this.extra) extra = LogManager.extra(this.extra, extra);
-      this.managerObj.send(info, message, extra);
+      if (this.extra) extra = Loggers.extra(this.extra, extra);
+      this.loggersObj.send(info, message, extra);
     }
 
     return this;
   }
 }
 
-module.exports = LogManager;
+module.exports = Loggers;
