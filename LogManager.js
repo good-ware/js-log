@@ -2147,7 +2147,7 @@ class ContextLogger {
    * @return {LogManager|ContextLogger}
    */
   logger(category) {
-    return this.managerObj.get(category || this.category);
+    return this.managerObj.logger(category || this.category);
   }
 
   /**
