@@ -18,7 +18,7 @@
     "logging",
     "cloudwatch-logs"
   ],
-  "license": "2BSD",
+  "license": "BSD-2-Clause",
   "dependencies": {
     "aws-sdk": "^2.725.0",
     "hostid": "^1.0.23",
