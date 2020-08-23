@@ -16,13 +16,11 @@ class RequestLogger {
    * @return {Promise} Value returned by request()
    */
   static request(logger, options, shouldLogError) {
-    let {url} = options;
-    if (options.qs && Object.keys(options.qs).length)
-      url = `${url}?${JSON.stringify(options.qs)}`;
+    let { url } = options;
+    if (options.qs && Object.keys(options.qs).length) url = `${url}?${JSON.stringify(options.qs)}`;
 
     // Strip the protocol
-    const snippet = `${options.method} ${
-        url.replace(/^[^:]+:\/\//, '').substr(0, Defaults.maxMessageLength)}`;
+    const snippet = `${options.method} ${url.replace(/^[^:]+:\/\//, '').substr(0, Defaults.maxMessageLength)}`;
 
     const begin = {
       options,
@@ -32,8 +30,13 @@ class RequestLogger {
     // @todo errorMessage should be a function that logs the status code in
     // StatusCodeError
     return TaskLogger.execute(
-        logger.child('http'), () => requestPromise(options), begin,
-        `End: ${snippet}`, snippet, shouldLogError);
+      logger.child('http'),
+      () => requestPromise(options),
+      begin,
+      `End: ${snippet}`,
+      snippet,
+      shouldLogError
+    );
   }
 }
 

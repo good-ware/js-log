@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
 // const why = require('why-is-node-running');
-const ServiceLogger = require('../ServiceLogger');
+const LogService = require('../LogService');
 
 // For debugging info, run with:
 // WINSTON_CLOUDWATCH_DEBUG=true node logger.js
@@ -36,19 +36,21 @@ async function go(colors) {
   };
 
   config.logging.categories.barber = { tags: { barber: { console: 'off' } } };
-  config.logging.categories.doctor = { tags: { doctor: { allowLevel: 'off', console: 'off', other: 'on' } } };
+  config.logging.categories.doctor = {
+    tags: { doctor: { allowLevel: 'off', console: 'off', other: 'on' } },
+  };
   config.logging.categories.nurse = { tags: { nurse: { console: 'off' } } };
   config.logging.categories.coordinator = {
     console: 'info',
     tags: { coordinator: { level: 'info' }, tag2: { level: 'error' } },
   };
 
-  logger = new ServiceLogger(config.logging);
+  logger = new LogService(config.logging);
   const { unitTest } = logger;
 
   // ====== Manual test to make sure files are flushed
   // There is no easy automated way to check this
-  // ServiceLogger.info('doctor');
+  // LogService.info('doctor');
   // logger.unitTest.flush = true;
   // await logger.stop();
 
@@ -66,7 +68,7 @@ async function go(colors) {
   // This is logged as debug
   // @todo test this
   {
-    logger.child('error').log(ServiceLogger.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
+    logger.child('error').log(LogService.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'debug') throw new Error();
   }
@@ -87,11 +89,11 @@ async function go(colors) {
     if (entry.error !== '5') throw new Error();
   }
 
-  const tags = ServiceLogger.tags('message');
+  const tags = LogService.tags('message');
   if (!tags.message) throw new Error();
 
   // Test disabling a tag
-  if (!logger.isLevelEnabled(ServiceLogger.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
+  if (!logger.isLevelEnabled(LogService.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
 
   // Test isLevelEnabled
   if (!logger.isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
@@ -99,7 +101,7 @@ async function go(colors) {
 
   // test 'on'
   let onRan;
-  logger.winstonServiceLogger().on('close', () => {
+  logger.winstonLogger().on('close', () => {
     console.log('** closed **');
     onRan = true;
   });
@@ -159,7 +161,8 @@ async function go(colors) {
   /*
   {
     const entry = logger.logEntry('info', {}, 'extraMessage');
-    if (entry.message !== 'extraMessage') throw new Error(`Should be 'extraMessage', is ${entry.message}`);
+    if (entry.message !== 'extraMessage') throw new Error(`Should be
+  'extraMessage', is ${entry.message}`);
   }
   */
 
@@ -332,8 +335,8 @@ async function go(colors) {
   }
 
   {
-    const contextServiceLogger = logger.child('cxt', { cxtExtra: 5 }, 'logger');
-    contextServiceLogger.debug('logging with context logger');
+    const contextLogService = logger.child('cxt', { cxtExtra: 5 }, 'logger');
+    contextLogService.debug('logging with context logger');
     if (unitTest.entries[unitTest.entries.length - 1].data.cxtExtra !== 5) throw new Error();
   }
 
@@ -351,7 +354,7 @@ async function go(colors) {
   // Test isLevelEnabled
   if (!logger.child(null, null, 'foo').isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
 
-  // Test get/getServiceLogger and a category that is not in config (flyweight)
+  // Test get/getLogService and a category that is not in config (flyweight)
   logger.child(null, null, 'foo').debug('debug');
   logger.debug('debug message', null, 'foo');
 
@@ -391,7 +394,8 @@ async function go(colors) {
   logger.log('info', { message: 'With details', prop: 2 });
   logger.log('info', { message: 'With extra', prop: 2 }, { extra: 1 });
 
-  // extra as an array goes into 'message' and overlaps with the provided message
+  // extra as an array goes into 'message' and overlaps with the provided
+  // message
   {
     const oldLen = unitTest.entries.length;
     logger.log('info', { message: 'With extra array' }, ['extra', 'is', 'array']);

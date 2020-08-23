@@ -8,14 +8,14 @@ const humanizeDuration = require('humanize-duration');
 const Joi = require('joi');
 const prune = require('json-prune');
 const util = require('util');
-const {v1: uuidv1} = require('uuid');
+const { v1: uuidv1 } = require('uuid');
 // Winston includes
 const winston = require('winston');
-require('winston-daily-rotate-file');  // This looks weird but it's correct
-const {consoleFormat: WinstonConsoleFormat} = require('winston-console-format');
+require('winston-daily-rotate-file'); // This looks weird but it's correct
+const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
-const {format} = winston;
+const { format } = winston;
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
@@ -38,7 +38,7 @@ const scalars = {
 
 /**
  * @description Internal class for identifying log entries that are created by
- * ServiceLogger::logEntry
+ * LogService::logEntry
  */
 class LogEntry {}
 
@@ -58,13 +58,13 @@ class LogEntry {}
  *  {Function} unhandledPromiseListener
  *  {Function[]} stopWaiters
  *  {String[]} levels {String} with 'default'
- *  {Object} winstonServiceServiceLoggers {String} category -> Winston logger
+ *  {Object} winstonServiceLogServices {String} category -> Winston logger
  *  {Object} userMeta {String} metaFieldName -> undefined
  *  {Object} unitTest
  *  {Object} cloudWatch Properties:
  *   {String} streamName
  *   {Object[]} transports
- *  {Object} loggers {String} category -> {ServiceLogger|ContextLogger}
+ *  {Object} loggers {String} category -> {LogService|ContextLogger}
  *  {Object} categoryTags {String} category -> {{String} tag -> {Object}}
  *  {Object} logLevel {String} level name or 'default' -> {logLevel: {String}}
  *  {Object} levelSeverity {String} level plus 'on', 'off', and 'default'
@@ -89,7 +89,7 @@ class LogEntry {}
  * 9. Move ContextLogger to another module - see
  *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
  */
-class ServiceLogger {
+class LogService {
   /**
    * @constructor
    * @param {Object} options
@@ -97,7 +97,7 @@ class ServiceLogger {
    *     which are objects whose keys are level
    *  names
    */
-  constructor(options, levels = ServiceLogger.levels) {
+  constructor(options, levels = LogService.levels) {
     this.stopped = true;
 
     // This must be set before validating options
@@ -142,10 +142,10 @@ class ServiceLogger {
 
     // Level color
     {
-      let {colors} = levels;
-      const {levelColors} = options;
+      let { colors } = levels;
+      const { levelColors } = options;
       if (levelColors) {
-        colors = {...colors};
+        colors = { ...colors };
         Object.entries(levelColors).forEach(([level, color]) => {
           colors[level] = color;
         });
@@ -157,14 +157,14 @@ class ServiceLogger {
     this.winstonLevels = levels.levels;
 
     // Level severity
-    this.levelSeverity = {...levels.levels};
+    this.levelSeverity = { ...levels.levels };
     Object.assign(this.levelSeverity, {
       off: -1,
       default: this.levelSeverity[options.defaultLevel],
       on: 100000,
     });
 
-    this.created = ServiceLogger.now();
+    this.created = LogService.now();
     this.hostId = hostId();
 
     this.loggers = {};
@@ -176,7 +176,7 @@ class ServiceLogger {
       options.metaKeys.forEach((key) => {
         if (key) meta[key] = true;
       });
-      Object.assign(meta, {message: false, stack: false});
+      Object.assign(meta, { message: false, stack: false });
       this.metaKeys = Object.keys(meta);
       this.userMeta = {};
       Object.keys(meta).forEach((key) => {
@@ -193,13 +193,13 @@ class ServiceLogger {
     // logLevel is used by level-named methods
     this.logLevel = {};
     this.levels.forEach((logLevel) => {
-      this.logLevel[logLevel] = {logLevel};
+      this.logLevel[logLevel] = { logLevel };
     });
 
     // Process category tag switches
     this.categoryTags = {};
     if (!this.processCategoryTags('default')) {
-      this.categoryTags.default = {on: true};
+      this.categoryTags.default = { on: true };
     }
 
     // Dynamic methods
@@ -209,14 +209,14 @@ class ServiceLogger {
   }
 
   /**
-   * @return {ServiceLogger} this
+   * @return {LogService} this
    */
   serviceLogger() {
     return this;
   }
 
   /**
-   * @return {ServiceLogger} this
+   * @return {LogService} this
    */
   parent() {
     return this;
@@ -243,15 +243,13 @@ class ServiceLogger {
     const now = new Date();
     const tzo = now.getTimezoneOffset();
 
-    return `${now.getFullYear()}-${ServiceLogger.pad(now.getMonth() + 1)}-${
-        ServiceLogger.pad(
-            now.getDate())}T${ServiceLogger.pad(now.getHours())}:${
-        ServiceLogger.pad(
-            now.getMinutes())}:${ServiceLogger.pad(now.getSeconds())}.${
-        ServiceLogger.pad(now.getMilliseconds(), 3)}${
-    !tzo ? 'Z' :
-           `${(tzo > 0 ? '-' : '+') + ServiceLogger.pad(Math.abs(tzo) / 60)}:${
-               ServiceLogger.pad(tzo % 60)}`}`;
+    return `${now.getFullYear()}-${LogService.pad(now.getMonth() + 1)}-${LogService.pad(
+      now.getDate()
+    )}T${LogService.pad(now.getHours())}:${LogService.pad(now.getMinutes())}:${LogService.pad(
+      now.getSeconds()
+    )}.${LogService.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + LogService.pad(Math.abs(tzo) / 60)}:${LogService.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -275,7 +273,7 @@ class ServiceLogger {
         } else if (!moreTags) {
           return tags;
         } else {
-          newTags = {...tags};
+          newTags = { ...tags };
         }
       } else {
         newTags = {};
@@ -316,10 +314,10 @@ class ServiceLogger {
   static extraToObject(extra) {
     if (!extra) return extra;
     if (typeof extra === 'object') {
-      if (extra instanceof Error) return {error: extra};
+      if (extra instanceof Error) return { error: extra };
       if (!(extra instanceof Array)) return extra;
     }
-    return {message: extra};
+    return { message: extra };
   }
 
   /**
@@ -337,13 +335,13 @@ class ServiceLogger {
   static extra(extra, moreExtra) {
     if (!extra && !moreExtra) return false;
 
-    extra = ServiceLogger.extraToObject(extra);
-    moreExtra = ServiceLogger.extraToObject(moreExtra);
+    extra = LogService.extraToObject(extra);
+    moreExtra = LogService.extraToObject(moreExtra);
 
     if (extra && !moreExtra) return extra;
     if (moreExtra && !extra) return moreExtra;
 
-    const extras = {...extra};
+    const extras = { ...extra };
     Object.assign(extras, moreExtra);
     return extras;
   }
@@ -370,8 +368,7 @@ class ServiceLogger {
    */
   addLevelMethods(target) {
     this.levels.forEach((level) => {
-      target[level] = (...args) =>
-          ServiceLogger.levelLog(target, this.logLevel[level], ...args);
+      target[level] = (...args) => LogService.levelLog(target, this.logLevel[level], ...args);
     });
   }
 
@@ -385,33 +382,34 @@ class ServiceLogger {
 
     // ==== Joi model for options (begin)
     const levelEnum = Joi.string().valid(...this.levels);
-    const defaultLevelEnum =
-        Joi.alternatives(levelEnum, Joi.string().valid('default'));
-    const offDefaultLevelEnum =
-        Joi.alternatives(defaultLevelEnum, Joi.string().valid('off'));
-    const onOffDefaultLevelEnum =
-        Joi.alternatives(offDefaultLevelEnum, Joi.string().valid('on'));
+    const defaultLevelEnum = Joi.alternatives(levelEnum, Joi.string().valid('default'));
+    const offDefaultLevelEnum = Joi.alternatives(defaultLevelEnum, Joi.string().valid('off'));
+    const onOffDefaultLevelEnum = Joi.alternatives(offDefaultLevelEnum, Joi.string().valid('on'));
 
     // Region and logGroup are required by winston-cloudwatch but they can be
     // provided under categories
     const cloudWatchLogObject = Joi.object({
       region: Joi.string(),
       logGroup: Joi.string(),
-      uploadRate: Joi.number().integer().min(1).default(2000).description(
-          'Controls the frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'),
+      uploadRate: Joi.number()
+        .integer()
+        .min(1)
+        .default(2000)
+        .description(
+          'Controls the frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'
+        ),
     });
 
-    const cloudWatchObject =
-        cloudWatchLogObject
-            .keys({
-              errorCategory: Joi.string().default('cloudwatch-error'),
-              // eslint-disable-next-line quotes
-              flushTimeout:
-                  Joi.number().integer().min(1).default(90000).description(
-                      `The maximum number of milliseconds to wait when sending the current batch of log entries to \
-CloudWatch`),
-            })
-            .default({});
+    const cloudWatchObject = cloudWatchLogObject
+      .keys({
+        errorCategory: Joi.string().default('cloudwatch-error'),
+        // eslint-disable-next-line quotes
+        flushTimeout: Joi.number().integer().min(1).default(90000).description(
+          `The maximum number of milliseconds to wait when sending the current batch of log entries to \
+CloudWatch`
+        ),
+      })
+      .default({});
 
     const cloudWatchCategoryObject = cloudWatchLogObject.keys({
       level: onOffDefaultLevelEnum,
@@ -420,155 +418,149 @@ CloudWatch`),
     /**
      * @description Options provided to the constructor
      */
-    const optionsObject =
-        Joi.object({
-             // Process-related meta
-             stage: Joi.string().allow('').default(''),
-             service: Joi.string().allow('').default(''),
-             version: Joi.string().allow('').default(''),
+    const optionsObject = Joi.object({
+      // Process-related meta
+      stage: Joi.string().allow('').default(''),
+      service: Joi.string().allow('').default(''),
+      version: Joi.string().allow('').default(''),
 
-             // Defaults
-             defaultCategory: Joi.string().default('general'),
-             defaultLevel: levelEnum.default('debug').description(
-                 'Level to use when a level is not found in tags'),
-             defaultTagAllowLevel: offDefaultLevelEnum.default('warn'),
-             uncaughtCategory: Joi.string().default('uncaught'),
+      // Defaults
+      defaultCategory: Joi.string().default('general'),
+      defaultLevel: levelEnum.default('debug').description('Level to use when a level is not found in tags'),
+      defaultTagAllowLevel: offDefaultLevelEnum.default('warn'),
+      uncaughtCategory: Joi.string().default('uncaught'),
 
-             // Colors
-             levelColors:
-                 Joi.object().pattern(levelEnum, Joi.string().required()),
+      // Colors
+      levelColors: Joi.object().pattern(levelEnum, Joi.string().required()),
 
-             // Meta
-             metaKeys: Joi.array()
-                           .items(Joi.string())
-                           .default([
-                             'transactionId',
-                             'correlationId',
-                             'operationId',
-                             'requestId',
-                             'tenantId',
-                             'statusCode',
-                             'code',
-                             'commitSha',
-                           ])
-                           .description(
-                               'Keys to copy to meta. Values must be scalars.'),
+      // Meta
+      metaKeys: Joi.array()
+        .items(Joi.string())
+        .default([
+          'transactionId',
+          'correlationId',
+          'operationId',
+          'requestId',
+          'tenantId',
+          'statusCode',
+          'code',
+          'commitSha',
+        ])
+        .description('Keys to copy to meta. Values must be scalars.'),
 
-             // Redaction
-             redact: Joi.object()
-                         .pattern(
-                             Joi.string(),
-                             Joi.object({
-                                  allowLevel: offDefaultLevelEnum,
-                                  tags: Joi.array().items(Joi.string()),
-                                })
-                                 .default({}))
-                         .default({}),
+      // Redaction
+      redact: Joi.object()
+        .pattern(
+          Joi.string(),
+          Joi.object({
+            allowLevel: offDefaultLevelEnum,
+            tags: Joi.array().items(Joi.string()),
+          }).default({})
+        )
+        .default({}),
 
-             // Errors
-             errorKeys: Joi.array().items(Joi.string()).default([
-               'error', 'originalError', 'cause'
-             ]),
-             maxErrors: Joi.number().integer().min(1).default(25).description(
-                 'Errors reference other errors. This is the maximum number of errors to log.'),
-             maxArrayLength: Joi.number().integer().min(1).default(10).description(
-                 'Maximum number of elements to process when converting an array to a string'),
-             maxDepth: Joi.number().integer().min(1).default(10).description(
-                 'Maximum depth to traverse when converting an object to a string'),
-             // eslint-disable-next-line quotes
-             maxErrorDepth: Joi.number().integer().min(1).default(5).description(
-                 `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
-traverse.`),
+      // Errors
+      errorKeys: Joi.array().items(Joi.string()).default(['error', 'originalError', 'cause']),
+      maxErrors: Joi.number()
+        .integer()
+        .min(1)
+        .default(25)
+        .description('Errors reference other errors. This is the maximum number of errors to log.'),
+      maxArrayLength: Joi.number()
+        .integer()
+        .min(1)
+        .default(10)
+        .description('Maximum number of elements to process when converting an array to a string'),
+      maxDepth: Joi.number()
+        .integer()
+        .min(1)
+        .default(10)
+        .description('Maximum depth to traverse when converting an object to a string'),
+      // eslint-disable-next-line quotes
+      maxErrorDepth: Joi.number().integer().min(1).default(5).description(
+        `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
+traverse.`
+      ),
 
-             // Turn console status messages on and off
-             say: Joi.object({
-                       banner: Joi.boolean().default(true),
-                       flushing: Joi.boolean().default(true),
-                       flushed: Joi.boolean().default(true),
-                       stopping: Joi.boolean().default(true),
-                       stopped: Joi.boolean().default(true),
-                       openCloudWatch: Joi.boolean().default(true),
-                     })
-                      .default({
-                        banner: true,
-                        stopping: true,
-                        stopped: true,
-                        flushing: true,
-                        flushed: true,
-                        openCloudWatch: true,
-                      }),
+      // Turn console status messages on and off
+      say: Joi.object({
+        banner: Joi.boolean().default(true),
+        flushing: Joi.boolean().default(true),
+        flushed: Joi.boolean().default(true),
+        stopping: Joi.boolean().default(true),
+        stopped: Joi.boolean().default(true),
+        openCloudWatch: Joi.boolean().default(true),
+      }).default({
+        banner: true,
+        stopping: true,
+        stopped: true,
+        flushing: true,
+        flushed: true,
+        openCloudWatch: true,
+      }),
 
-             // Transport configuration
-             cloudWatch: cloudWatchObject,
+      // Transport configuration
+      cloudWatch: cloudWatchObject,
 
-             // Console settings
-             console:
-                 Joi.object({
-                      colors:
-                          Joi.boolean()
-                              .description(
-                                  'If true, outputs text with ANSI colors to the console')
-                              .default(true),
-                      data: Joi.boolean().description(
-                          'If true, sends data, error objects, stack traces, etc. to the console'),
-                    })
-                     .default({}),
+      // Console settings
+      console: Joi.object({
+        colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
+        data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
+      }).default({}),
 
-             // File settings
-             file:
-                 Joi.object({
-                      directories:
-                          Joi.array()
-                              .items(Joi.string())
-                              .default(['logs', '/tmp/logs'])
-                              .description(
-                                  'Use empty array for read-only filesystems'),
-                      maxSize: Joi.string().default('20m'),
-                      maxAge: Joi.string().default('14d'),
-                    })
-                     .default({
-                       directories: ['logs', '/tmp/logs'],
-                       maxSize: '20m',
-                       maxAge: '14d',
-                     }),
+      // File settings
+      file: Joi.object({
+        directories: Joi.array()
+          .items(Joi.string())
+          .default(['logs', '/tmp/logs'])
+          .description('Use empty array for read-only filesystems'),
+        maxSize: Joi.string().default('20m'),
+        maxAge: Joi.string().default('14d'),
+      }).default({
+        directories: ['logs', '/tmp/logs'],
+        maxSize: '20m',
+        maxAge: '14d',
+      }),
 
-             // Category configuration
-             categories:
-                 Joi.object()
-                     .pattern(Joi.string(), Joi.object({
-                       tags: Joi.object().pattern(
-                           Joi.string(),
-                           Joi.alternatives(onOffDefaultLevelEnum, Joi.object({
-                             // eslint-disable-next-line quotes
-                             allowLevel: offDefaultLevelEnum.description(`\
+      // Category configuration
+      categories: Joi.object()
+        .pattern(
+          Joi.string(),
+          Joi.object({
+            tags: Joi.object().pattern(
+              Joi.string(),
+              Joi.alternatives(
+                onOffDefaultLevelEnum,
+                Joi.object({
+                  // eslint-disable-next-line quotes
+                  allowLevel: offDefaultLevelEnum.description(`\
 Enable the tag for log entries with severity levels equal to or greater than the provided value`),
-                             level: defaultLevelEnum,
-                             other: onOffDefaultLevelEnum.description(
-                                 'Value to use for transports not listed'),
-                             file: onOffDefaultLevelEnum,
-                             console: onOffDefaultLevelEnum,
-                             errorFile: onOffDefaultLevelEnum,
-                             cloudWatch: onOffDefaultLevelEnum,
-                           }))),
-                       file: onOffDefaultLevelEnum,
-                       console: onOffDefaultLevelEnum,
-                       errorFile: onOffDefaultLevelEnum,
-                       cloudWatch: Joi.alternatives(
-                           cloudWatchCategoryObject, onOffDefaultLevelEnum),
-                     }))
-                     .default({}),
+                  level: defaultLevelEnum,
+                  other: onOffDefaultLevelEnum.description('Value to use for transports not listed'),
+                  file: onOffDefaultLevelEnum,
+                  console: onOffDefaultLevelEnum,
+                  errorFile: onOffDefaultLevelEnum,
+                  cloudWatch: onOffDefaultLevelEnum,
+                })
+              )
+            ),
+            file: onOffDefaultLevelEnum,
+            console: onOffDefaultLevelEnum,
+            errorFile: onOffDefaultLevelEnum,
+            cloudWatch: Joi.alternatives(cloudWatchCategoryObject, onOffDefaultLevelEnum),
+          })
+        )
+        .default({}),
 
-             // Testing
-             unitTest: Joi.boolean(),
-           })
-            .label('ServiceLogger options');
+      // Testing
+      unitTest: Joi.boolean(),
+    }).label('LogService options');
     // ==== Joi model for options (end)
 
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error)
-        throw new Error(`[WinstonPlus] ${validation.error.message}`);
+      if (validation.error) throw new Error(`[WinstonPlus] ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -583,7 +575,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     if (!this.stopped) throw new Error('[WinstonPlus] Not stopped');
     this.starting = true;
 
-    const {options} = this;
+    const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
@@ -596,7 +588,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
       };
 
       transportNames.forEach((transport) => {
-        this.unitTest[transport] = {entries: []};
+        this.unitTest[transport] = { entries: [] };
       });
     }
 
@@ -613,11 +605,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // process.on('uncaughtException') is dangerous and doesn't work for
     // exceptions thrown in a function called by the event loop (e.g.,
     // setTimeout(...throw...).
-    const uncaughtServiceLogger = this.logger(options.uncaughtCategory);
+    const uncaughtLogService = this.logger(options.uncaughtCategory);
     // Create a Winston logger now to catch uncaught exceptions
-    if (uncaughtServiceLogger.isLevelEnabled('error')) {
+    if (uncaughtLogService.isLevelEnabled('error')) {
       this.unhandledPromiseListener = (error) => {
-        uncaughtServiceLogger.error('Unhandled Promise rejection', {error});
+        uncaughtLogService.error('Unhandled Promise rejection', { error });
       };
       process.on('unhandledRejection', this.unhandledPromiseListener);
     }
@@ -628,7 +620,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Internal function called by methods that are named after
    * levels. Allows tags to be provided.
-   * @param {ServiceLogger|ContextLogger} obj
+   * @param {LogService|ContextLogger} obj
    * @param {Object} levelObj From this.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrExtra
@@ -636,16 +628,13 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {*} category
    * @return {Object} Returns obj
    */
-  static levelLog(
-      obj, levelObj, tagsOrMessage, messageOrExtra, extraOrCategory, category) {
-    if (messageOrExtra !== undefined &&
-        (tagsOrMessage instanceof Array ||
-         (typeof tagsOrMessage === 'string' &&
-          tagsOrMessage.indexOf(' ') === -1))) {
+  static levelLog(obj, levelObj, tagsOrMessage, messageOrExtra, extraOrCategory, category) {
+    if (
+      messageOrExtra !== undefined &&
+      (tagsOrMessage instanceof Array || (typeof tagsOrMessage === 'string' && tagsOrMessage.indexOf(' ') === -1))
+    ) {
       // tagsOrMessage has tags
-      return obj.log(
-          ServiceLogger.tags(levelObj, tagsOrMessage), messageOrExtra,
-          extraOrCategory, category);
+      return obj.log(LogService.tags(levelObj, tagsOrMessage), messageOrExtra, extraOrCategory, category);
     }
 
     // tagsOrMessage has a message
@@ -658,18 +647,21 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   createLogsDirectory() {
     if (this.logsDirectory !== undefined) return;
 
-    this.logsDirectory = '';  // This method is only called once
+    this.logsDirectory = ''; // This method is only called once
 
-    const {directories} = this.options.file;
-    if (directories.length && !directories.every((dir) => {
-          try {
-            mkdirp(dir);
-            this.logsDirectory = dir;
-            return false;
-          } catch (error) {
-            return true;  // Next iteration
-          }
-        }))
+    const { directories } = this.options.file;
+    if (
+      directories.length &&
+      !directories.every((dir) => {
+        try {
+          mkdirp(dir);
+          this.logsDirectory = dir;
+          return false;
+        } catch (error) {
+          return true; // Next iteration
+        }
+      })
+    )
       return;
 
     // Unable to create directories - output warning to console
@@ -691,11 +683,9 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       const type = typeof category;
       if (type === 'string') return category;
       // Throw exception when unit testing
-      if (this.options.unitTest)
-        throw new Error(`Invalid datatype for category: ${type}`);
+      if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(
-          new Error(`[WinstonPlus] Invalid datatype for category: ${type}`));
+      console.error(new Error(`[WinstonPlus] Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -714,7 +704,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     //       sql: {
     //         file: 'on'
     let tags = this.options.categories[category];
-    if (tags) ({tags} = tags);
+    if (tags) ({ tags } = tags);
     if (!tags) return false;
 
     Object.entries(tags).forEach(([tag, tagInfo]) => {
@@ -722,7 +712,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (!categoryTags) categoryTags = this.categoryTags[category] = {};
 
       if (typeof tagInfo === 'string') {
-        categoryTags[tag] = {on: tagInfo};
+        categoryTags[tag] = { on: tagInfo };
       } else {
         categoryTags[tag] = tagInfo;
       }
@@ -738,8 +728,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @return {Object} Either returns logEntry unaltered or a falsey value
    */
   checkTags(transportName, info) {
-    if (info.logTransports && !info.logTransports.includes(transportName))
-      return false;
+    if (info.logTransports && !info.logTransports.includes(transportName)) return false;
     if (this.unitTest) this.unitTest[transportName].entries.push(info);
     return info;
   }
@@ -753,8 +742,8 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // Do not add more fields here. category is needed by the custom formatter
     // for logging uncaught exceptions.
     return {
-      category,  // The category of the Winston logger, not the category
-                 // provided to log() etc.
+      category, // The category of the Winston logger, not the category
+      // provided to log() etc.
     };
   }
 
@@ -763,8 +752,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @return {Object} A Winston formatter
    */
   formatter() {
-    return format.combine(
-        winston.format((info) => this.format(info))(), format.ms());
+    return format.combine(winston.format((info) => this.format(info))(), format.ms());
   }
 
   /**
@@ -787,9 +775,9 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // ========================================================
     // This is the uncaught exception handler. Reroute to log()
     // ========================================================
-    const {category} = info;  // From defaultMeta
+    const { category } = info; // From defaultMeta
     delete info.category;
-    let {level} = info;
+    let { level } = info;
     if (!level || typeof level !== 'string') {
       level = 'error';
     } else {
@@ -797,7 +785,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     }
     if (info.stack) {
       // Remove stack from logEntry.message
-      const {message} = info;
+      const { message } = info;
       let index = message.indexOf('\n');
       if (index >= 0) {
         const index2 = message.indexOf('\r');
@@ -829,7 +817,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @return {Object} A new console transport
    */
   createConsoleTransport(level, handleExceptions) {
-    const {colors} = this.options.console;
+    const { colors } = this.options.console;
 
     if (this.options.console.data) {
       // Fancy console
@@ -844,16 +832,14 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         },
       });
 
-      const checkTags =
-          winston.format((info) => this.checkTags('console', info))();
+      const checkTags = winston.format((info) => this.checkTags('console', info))();
 
       return new winston.transports.Console({
         handleExceptions,
         level,
-        format: colors ?
-            format.combine(
-                checkTags, format.colorize({all: true}), consoleFormat) :
-            format.combine(checkTags, consoleFormat),
+        format: colors
+          ? format.combine(checkTags, format.colorize({ all: true }), consoleFormat)
+          : format.combine(checkTags, consoleFormat),
       });
     }
 
@@ -863,14 +849,14 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       return this.checkTags('console', info);
     })();
 
-    const printf = format.printf(ServiceLogger.printf);
+    const printf = format.printf(LogService.printf);
 
     return new winston.transports.Console({
       handleExceptions,
       level,
-      format: colors ?
-          format.combine(checkTags, format.colorize({all: true}), printf) :
-          format.combine(checkTags, printf),
+      format: colors
+        ? format.combine(checkTags, format.colorize({ all: true }), printf)
+        : format.combine(checkTags, printf),
     });
   }
 
@@ -895,8 +881,8 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * console and possibly file
    * @return {Object} logger
    */
-  createCloudWatchErrorServiceLogger() {
-    const {errorCategory} = this.options.cloudWatch;
+  createCloudWatchErrorLogService() {
+    const { errorCategory } = this.options.cloudWatch;
     const transports = [];
 
     // Console
@@ -904,21 +890,23 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     this.createLogsDirectory();
     if (this.logsDirectory) {
-      transports.push(new winston.transports.DailyRotateFile({
-        filename: `${this.logsDirectory}/${errorCategory}-%DATE%`,
-        extension: '.log',
-        datePattern: 'YYYY-MM-DD-HH',
-        zippedArchive: true,
-        maxSize: this.options.file.maxSize,
-        maxFiles: this.options.file.maxAge,
-        format: format.json(),
-        level: 'error',
-        handleExceptions: false,
-      }));
+      transports.push(
+        new winston.transports.DailyRotateFile({
+          filename: `${this.logsDirectory}/${errorCategory}-%DATE%`,
+          extension: '.log',
+          datePattern: 'YYYY-MM-DD-HH',
+          zippedArchive: true,
+          maxSize: this.options.file.maxSize,
+          maxFiles: this.options.file.maxAge,
+          format: format.json(),
+          level: 'error',
+          handleExceptions: false,
+        })
+      );
     }
 
     return winston.createLogger({
-      defaultMeta: ServiceLogger.defaultMeta(errorCategory),
+      defaultMeta: LogService.defaultMeta(errorCategory),
       exitOnError: false,
       format: this.formatter(),
       levels: this.levelSeverity,
@@ -970,7 +958,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   async flushCloudWatch() {
     if (!this.cloudWatch) return;
 
-    const {flushTimeout} = this.options.cloudWatch;
+    const { flushTimeout } = this.options.cloudWatch;
 
     let flushMessageTask;
     let flushMessageSent;
@@ -981,13 +969,13 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[WinstonPlus] Waiting up to ${
-            duration} to send log entries to CloudWatch`);
+        console.log(`[WinstonPlus] Waiting up to ${duration} to send log entries to CloudWatch`);
       }, 2500);
     }
 
-    await Promise.all(this.cloudWatch.transports.map(
-        (transport) => this.flushCloudWatchTransport(transport, flushTimeout)));
+    await Promise.all(
+      this.cloudWatch.transports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
+    );
 
     // For testing the message
     // await new Promise( (resolve) => setTimeout(resolve, 10000));
@@ -995,8 +983,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (flushMessageTask) clearTimeout(flushMessageTask);
 
     // eslint-disable-next-line no-console
-    if (flushMessageSent)
-      console.log('[WinstonPlus] CloudWatch log entries sent');
+    if (flushMessageSent) console.log('[WinstonPlus] CloudWatch log entries sent');
   }
 
   /**
@@ -1017,29 +1004,33 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
       // This unhandled Promise rejection is handled after this method finishes
       // by the default handler
-      Promise.reject(
-          new Error('Expected error: Rejected promise while stopping'));
+      Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
 
     await this.flushCloudWatch();
 
-    const {errorCategory: cloudWatchErrorCategory} = this.options.cloudWatch;
+    const { errorCategory: cloudWatchErrorCategory } = this.options.cloudWatch;
 
     // Close
     await Promise.all(
-        Object.entries(this.winstonLoggers).map(([category, logger]) => {
-          if (!logger.writable || category === cloudWatchErrorCategory) {
-            return Promise.resolve();
-          }
-          return new Promise((resolve, reject) => {
-                   logger.on('error', reject)
-                       .on('close', resolve)
-                       .on('finish', () => setImmediate(() => logger.close()))
-                       .end();
-                   // eslint-disable-next-line no-console
-                 })
-              .catch(console.warn);
-        }));
+      Object.entries(this.winstonLoggers).map(([category, logger]) => {
+        if (!logger.writable || category === cloudWatchErrorCategory) {
+          return Promise.resolve();
+        }
+        return (
+          new Promise((resolve, reject) => {
+            logger
+              .on('error', reject)
+              .on('close', resolve)
+              .on('finish', () => setImmediate(() => logger.close()))
+              .end();
+            // eslint-disable-next-line no-console
+          })
+            // eslint-disable-next-line no-console
+            .catch(console.warn)
+        );
+      })
+    );
 
     // Close the CloudWatch error logger last
     if (this.cloudWatch) {
@@ -1051,32 +1042,29 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
-        this.cloudWatchError(
-            new Error('Testing CloudWatch error while stopping'));
-        if (count === this.unitTest.entries.length)
-          throw new Error('CloudWatch error handler failed');
+        this.cloudWatchError(new Error('Testing CloudWatch error while stopping'));
+        if (count === this.unitTest.entries.length) throw new Error('CloudWatch error handler failed');
       }
     }
 
     this.winstonLoggers = {};
 
-    const errorServiceLogger =
-        this.winstonLoggers[cloudWatchErrorCategory];
+    const errorLogService = this.winstonLoggers[cloudWatchErrorCategory];
     this.loggers = {};
 
-    if (errorServiceLogger && errorServiceLogger.writable) {
+    if (errorLogService && errorLogService.writable) {
       // eslint-disable-next-line no-constant-condition
       if (true) {
-        errorServiceLogger.close();
+        errorLogService.close();
       } else {
         // @todo finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
-          errorServiceLogger.on('error', reject)
-              .on('close', resolve)
-              .on('finish',
-                  () => setImmediate(() => errorServiceLogger.close()))
-              .end();
+          errorLogService
+            .on('error', reject)
+            .on('close', resolve)
+            .on('finish', () => setImmediate(() => errorLogService.close()))
+            .end();
           // eslint-disable-next-line no-console
         }).catch(console.warn);
       }
@@ -1133,8 +1121,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // eslint-disable-next-line no-new
       new Promise(() => {
         this.stop().then(() => {
-          if (!this.unitTest.hasStopWaiters)
-            throw new Error('Waiting while stopping failed');
+          if (!this.unitTest.hasStopWaiters) throw new Error('Waiting while stopping failed');
         });
       });
     }
@@ -1152,23 +1139,23 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {String} category
    * @return {Object} Winston logger
    */
-  createWinstonServiceLogger(category) {
+  createWinstonLogService(category) {
     if (this.stopped) throw new Error('Stopped');
 
     let logger;
 
     if (category === this.options.cloudWatch.errorCategory) {
-      logger = this.createCloudWatchErrorServiceLogger();
+      logger = this.createCloudWatchErrorLogService();
     } else {
       if (this.stopping) throw new Error('Stopping');
 
-      const {categories} = this.options;
+      const { categories } = this.options;
       let settings = categories[category];
 
       {
         const defaults = categories.default;
         if (settings) {
-          settings = {...defaults, ...settings};
+          settings = { ...defaults, ...settings };
         } else {
           settings = defaults;
         }
@@ -1190,8 +1177,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (level !== 'off') {
         this.createLogsDirectory();
         if (this.logsDirectory) {
-          const checkTags =
-              winston.format((info) => this.checkTags('file', info))();
+          const checkTags = winston.format((info) => this.checkTags('file', info))();
           const transport = new winston.transports.DailyRotateFile({
             filename: `${this.logsDirectory}/${category}-%DATE%`,
             extension: '.log',
@@ -1209,7 +1195,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       // CloudWatch
-      let awsOptions = {...this.options.cloudWatch};
+      let awsOptions = { ...this.options.cloudWatch };
       level = settings.cloudWatch || 'off';
 
       if (typeof level === 'object') {
@@ -1224,44 +1210,37 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       if (level !== 'off') {
-        let {logGroup: logGroupName} = awsOptions;
+        let { logGroup: logGroupName } = awsOptions;
         if (!awsOptions.region) {
           awsOptions.region = process.env.AWS_CLOUDWATCH_LOGS_REGION;
           if (!awsOptions.region) {
             awsOptions.region = process.env.AWS_CLOUDWATCH_REGION;
-            if (!awsOptions.region)
-              awsOptions.region = process.env.AWS_DEFAULT_REGION;
+            if (!awsOptions.region) awsOptions.region = process.env.AWS_DEFAULT_REGION;
           }
         }
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(
-              `[WinstonPlus] CloudWatch region was not specified for category '${
-                  category}'`);
+          console.warn(`[WinstonPlus] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(
-              `[WinstonPlus] CloudWatch log group was not specified for category '${
-                  category}'`);
+          console.warn(`[WinstonPlus] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
           // log group ends with a slash
-          logGroupName =
-              `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
+          logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
             console.log(`[WinstonPlus: ${category}] Opening CloudWatch stream \
-'${awsOptions.region}:${logGroupName}:${
-                this.cloudWatch.streamName}' at level '${level}'`);
+'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
           }
 
-          const {uploadRate} = awsOptions;
+          const { uploadRate } = awsOptions;
 
           // @todo add more options supported by winston-cloudwatch
-          awsOptions = {region: awsOptions.region};
+          awsOptions = { region: awsOptions.region };
 
           const checkTags = (info) => {
             // @todo Submit feature request. See cwTransportShortCircuit
@@ -1302,8 +1281,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
       // When this.starting is true, the 'unhandled' console is being created
       // which will log exceptions
-      if (level !== 'off')
-        transports.push(this.createConsoleTransport(level, this.starting));
+      if (level !== 'off') transports.push(this.createConsoleTransport(level, this.starting));
 
       // Error file
       level = settings.errorFile || 'off';
@@ -1316,8 +1294,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (level !== 'off') {
         this.createLogsDirectory();
         if (this.logsDirectory) {
-          const checkTags =
-              winston.format((info) => this.checkTags('errorFile', info))();
+          const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
           const transport = new winston.transports.DailyRotateFile({
             filename: `${this.logsDirectory}/${category}-error-%DATE%`,
             extension: '.log',
@@ -1335,7 +1312,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       logger = winston.createLogger({
-        defaultMeta: ServiceLogger.defaultMeta(category),
+        defaultMeta: LogService.defaultMeta(category),
         exitOnError: false,
         format: this.formatter(),
         levels: this.winstonLevels,
@@ -1357,7 +1334,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     category = this.checkCategory(category);
     let logger = this.winstonLoggers[category];
-    if (!logger) logger = this.createWinstonServiceLogger(category);
+    if (!logger) logger = this.createWinstonLogService(category);
 
     return logger;
   }
@@ -1375,7 +1352,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Returns a logger associated with a category
    * @param {String} [category]
-   * @return {ServiceLogger|ContextLogger}
+   * @return {LogService|ContextLogger}
    */
   logger(category) {
     category = this.checkCategory(category);
@@ -1432,7 +1409,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       return false;
     }
 
-    tags = ServiceLogger.tags(tags);
+    tags = LogService.tags(tags);
 
     let level;
 
@@ -1485,126 +1462,118 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       const defaultTags = this.categoryTags.default;
       let nextLevel = level;
 
-      if (!Object.keys(tags).every((tag) => {
-            // Return true to continue
-            if (this.levelSeverity[tag] !== undefined)
-              return true;  // It's a level tag
+      if (
+        !Object.keys(tags).every((tag) => {
+          // Return true to continue
+          if (this.levelSeverity[tag] !== undefined) return true; // It's a level tag
 
-            let categoryTransports;
-            if (categoryTags) categoryTransports = categoryTags[tag];
+          let categoryTransports;
+          if (categoryTags) categoryTransports = categoryTags[tag];
 
-            let checkDefault = true;
+          let checkDefault = true;
 
-            // Check allowLevel
-            if (categoryTransports) {
-              const {allowLevel} = categoryTransports;
-              if (allowLevel) {
-                if (this.levelSeverity[level] <= this.levelSeverity[allowLevel])
-                  return true;
-                checkDefault = false;
-              }
+          // Check allowLevel
+          if (categoryTransports) {
+            const { allowLevel } = categoryTransports;
+            if (allowLevel) {
+              if (this.levelSeverity[level] <= this.levelSeverity[allowLevel]) return true;
+              checkDefault = false;
             }
+          }
 
-            const defaultTransports = defaultTags[tag];
+          const defaultTransports = defaultTags[tag];
 
-            if (checkDefault) {
-              if (defaultTransports) {
-                const {allowLevel} = defaultTransports;
-                if (allowLevel) {
-                  // @todo cache this
-                  if (this.levelSeverity[level] <=
-                      this.levelSeverity[allowLevel])
-                    return true;
-                } else if (
-                    this.levelSeverity[level] <=
-                    this.levelSeverity[this.options.defaultTagAllowLevel]) {
-                  // Defaults to warn (severity 1)
-                  // @todo Cache this
-                  return true;
-                }
-              } else if (
-                  this.levelSeverity[level] <=
-                  this.levelSeverity[this.options.defaultTagAllowLevel]) {
+          if (checkDefault) {
+            if (defaultTransports) {
+              const { allowLevel } = defaultTransports;
+              if (allowLevel) {
+                // @todo cache this
+                if (this.levelSeverity[level] <= this.levelSeverity[allowLevel]) return true;
+              } else if (this.levelSeverity[level] <= this.levelSeverity[this.options.defaultTagAllowLevel]) {
                 // Defaults to warn (severity 1)
                 // @todo Cache this
                 return true;
               }
+            } else if (this.levelSeverity[level] <= this.levelSeverity[this.options.defaultTagAllowLevel]) {
+              // Defaults to warn (severity 1)
+              // @todo Cache this
+              return true;
             }
+          }
 
-            // The .on key specifies whether the (category, tag) pair is enabled
-            // and is computed only once
-            if (categoryTransports) {
-              const {on} = categoryTransports;
-              if (this.levelSeverity[level] > this.levelSeverity[on])
-                return false;
-            } else {
-              if (!defaultTransports) return true;
-              const {on} = defaultTransports;
-              if (this.levelSeverity[level] > this.levelSeverity[on])
-                return false;
-            }
+          // The .on key specifies whether the (category, tag) pair is enabled
+          // and is computed only once
+          if (categoryTransports) {
+            const { on } = categoryTransports;
+            if (this.levelSeverity[level] > this.levelSeverity[on]) return false;
+          } else {
+            if (!defaultTransports) return true;
+            const { on } = defaultTransports;
+            if (this.levelSeverity[level] > this.levelSeverity[on]) return false;
+          }
 
-            // Alter level?
-            if (categoryTransports) {
-              let {level: lvl} = categoryTransports;
-              if (lvl) {
-                if (lvl === 'default') lvl = this.options.defaultLevel;
-                if (this.levelSeverity[lvl] < this.levelSeverity[nextLevel]) {
-                  // @todo Exit early if isLevelEnabled(lvl) is false
-                  nextLevel = lvl;
-                }
+          // Alter level?
+          if (categoryTransports) {
+            let { level: lvl } = categoryTransports;
+            if (lvl) {
+              if (lvl === 'default') lvl = this.options.defaultLevel;
+              if (this.levelSeverity[lvl] < this.levelSeverity[nextLevel]) {
+                // @todo Exit early if isLevelEnabled(lvl) is false
+                nextLevel = lvl;
               }
             }
+          }
 
-            // Process per-transport switches. Remove keys from logTransports.
-            transportNames.forEach((transport) => {
-              if (logTransports && !logTransports[transport]) return true;
+          // Process per-transport switches. Remove keys from logTransports.
+          transportNames.forEach((transport) => {
+            if (logTransports && !logTransports[transport]) return true;
 
-              checkDefault = true;
+            checkDefault = true;
 
-              if (categoryTransports) {
-                let on = categoryTransports[transport];
+            if (categoryTransports) {
+              let on = categoryTransports[transport];
+              if (on) {
+                checkDefault = false;
+                if (this.levelSeverity[level] > this.levelSeverity[on]) {
+                  if (!logTransports) logTransports = { ...transportObj };
+                  delete logTransports[transport];
+                }
+              } else {
+                on = categoryTransports.other;
                 if (on) {
                   checkDefault = false;
                   if (this.levelSeverity[level] > this.levelSeverity[on]) {
-                    if (!logTransports) logTransports = {...transportObj};
+                    if (!logTransports) logTransports = { ...transportObj };
                     delete logTransports[transport];
-                  }
-                } else {
-                  on = categoryTransports.other;
-                  if (on) {
-                    checkDefault = false;
-                    if (this.levelSeverity[level] > this.levelSeverity[on]) {
-                      if (!logTransports) logTransports = {...transportObj};
-                      delete logTransports[transport];
-                    }
                   }
                 }
               }
+            }
 
-              if (checkDefault && defaultTransports) {
-                let on = defaultTransports[transport];
+            if (checkDefault && defaultTransports) {
+              let on = defaultTransports[transport];
+              if (on) {
+                if (this.levelSeverity[level] > this.levelSeverity[on]) {
+                  if (!logTransports) logTransports = { ...transportObj };
+                  delete logTransports[transport];
+                }
+              } else {
+                on = defaultTransports.other;
                 if (on) {
                   if (this.levelSeverity[level] > this.levelSeverity[on]) {
-                    if (!logTransports) logTransports = {...transportObj};
+                    if (!logTransports) logTransports = { ...transportObj };
                     delete logTransports[transport];
-                  }
-                } else {
-                  on = defaultTransports.other;
-                  if (on) {
-                    if (this.levelSeverity[level] > this.levelSeverity[on]) {
-                      if (!logTransports) logTransports = {...transportObj};
-                      delete logTransports[transport];
-                    }
                   }
                 }
               }
+            }
 
-              return true;
-            });
+            return true;
+          });
 
-            return !logTransports || ServiceLogger.hasKeys(logTransports);
-          })) {
+          return !logTransports || LogService.hasKeys(logTransports);
+        })
+      ) {
         return false;
       }
 
@@ -1635,8 +1604,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   objectToString(value) {
     if (value instanceof Array) {
-      value = JSON.parse(
-          prune(value, this.options.maxDepth, this.options.maxArrayLength));
+      value = JSON.parse(prune(value, this.options.maxDepth, this.options.maxArrayLength));
       return util.inspect(value);
     }
 
@@ -1647,7 +1615,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     msg = value.message;
 
     if (msg) {
-      msg = msg.toString();  // Avoid recursion
+      msg = msg.toString(); // Avoid recursion
       if (msg === '[object Object]') return false;
       return msg;
     }
@@ -1672,24 +1640,21 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (redact) {
       let shouldRedact = true;
 
-      const {tags: redactTags} = redact;
+      const { tags: redactTags } = redact;
       // Redact only if a tag matches
-      if (redactTags && redactTags.length)
-        shouldRedact = !redactTags.every((tag) => !tags[tag]);
+      if (redactTags && redactTags.length) shouldRedact = !redactTags.every((tag) => !tags[tag]);
 
       if (shouldRedact) {
         // Check the level override
-        const {allowLevel} = redact;
-        if (!allowLevel) return;  // Defaults to always redact
+        const { allowLevel } = redact;
+        if (!allowLevel) return; // Defaults to always redact
         if (this.levelSeverity[allowLevel] > this.levelSeverity[level]) return;
       }
     }
 
     if (!state.currentData) {
       state.currentData = state.data = {};
-    } else if (
-        state.currentData === state.data && key in state.data &&
-        value !== state.data[key]) {
+    } else if (state.currentData === state.data && key in state.data && value !== state.data[key]) {
       // message and extra overlap
       if (!value) return;
       state.currentData = state.extraData = {};
@@ -1712,28 +1677,28 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   logEntry(info, message, extra, depth) {
     const entry = new LogEntry();
-    const {level} = info;
+    const { level } = info;
 
     // undefined values are placeholders for ordering and are deleted at the end
     // of this method
     Object.assign(entry, {
       message: '',
       level,
-      timestamp: ServiceLogger.now(),
-      ms: false,  // Set via a formatter; intentionally not removed
+      timestamp: LogService.now(),
+      ms: false, // Set via a formatter; intentionally not removed
       tags: false,
-      error: false,  // Set and removed by send()
+      error: false, // Set and removed by send()
       ...this.userMeta,
-      category: info.category,  // Overwritten by defaultMeta
-      logGroupId: false,        // Set and removed by send()
-      logDepth: 0,              // Set and removed by send()
+      category: info.category, // Overwritten by defaultMeta
+      logGroupId: false, // Set and removed by send()
+      logDepth: 0, // Set and removed by send()
       stage: this.options.stage,
       hostId: this.hostId,
       service: this.options.service,
       version: this.options.version,
       commitSha: undefined,
-      stack: false,     // Set and removed by send()
-      logStack: false,  // Set and removed by send()
+      stack: false, // Set and removed by send()
+      logStack: false, // Set and removed by send()
       data: undefined,
       logTransports: info.logTransports,
     });
@@ -1741,9 +1706,9 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // Points to data first and extraData if there are the same keys in message
     // and extra
     const state = {};
-    const {tags} = info;
+    const { tags } = info;
 
-    extra = ServiceLogger.extraToObject(extra);
+    extra = LogService.extraToObject(extra);
 
     // Combine message and extra
     // for (const item of depth?[extra, message]:[message, extra]) {
@@ -1752,8 +1717,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
       if (typeof item === 'object') {
         if (item instanceof Array) {
-          this.copyData(
-              level, tags, state, 'message', this.objectToString(item));
+          this.copyData(level, tags, state, 'message', this.objectToString(item));
         } else {
           Object.entries(item).forEach(([key, value]) => {
             if (key !== 'stack' && key !== 'message') {
@@ -1762,9 +1726,8 @@ stage: '${options.stage}' host id: ${this.hostId}`);
             }
           });
 
-          const {stack} = item;
-          if (stack && typeof stack === 'string')
-            this.copyData(level, tags, state, 'stack', stack);
+          const { stack } = item;
+          if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
 
           // If the object has a conversion to string, use it. Otherwise, use
           // its message property if it's a scalar
@@ -1778,7 +1741,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     });
 
     // Promote data to meta
-    const {data} = state;
+    const { data } = state;
     if (data) {
       this.metaKeys.forEach((key) => {
         const value = data[key];
@@ -1795,7 +1758,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         if (key === 'message') delete data[key];
       });
 
-      if (ServiceLogger.hasKeys(data)) entry.data = data;
+      if (LogService.hasKeys(data)) entry.data = data;
     }
 
     // Remove meta keys that have undefined values
@@ -1827,16 +1790,15 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       // Move the level to the front of the tags array
-      const tags2 =
-          Object.keys(tags).filter((tag) => tags[tag] && tag !== level);
+      const tags2 = Object.keys(tags).filter((tag) => tags[tag] && tag !== level);
       entry.tags = [level, ...tags2];
     } else {
       entry.tags = [level];
     }
 
     if (addStack) {
-      const msg = entry.message.replace('Error: ', '');  // Remove Error: Error:
-      const {stack} = new Error(msg);
+      const msg = entry.message.replace('Error: ', ''); // Remove Error: Error:
+      const { stack } = new Error(msg);
       // Use logStack if stack exists
       if (entry.stack) {
         entry.logStack = stack;
@@ -1858,7 +1820,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {String} [logGroupId]
    */
   send(info, message, extra, errors, depth = 0, logGroupId) {
-    const {category, logger, level} = info;
+    const { category, logger, level } = info;
 
     const entry = this.logEntry(info, message, extra, depth);
 
@@ -1875,11 +1837,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
     }
 
-    let {extraData} = entry;
+    let { extraData } = entry;
     if (extraData) {
       delete entry.extraData;
       if (!addExtra) {
-        extraData = undefined;  // Avoid infinite recursion
+        extraData = undefined; // Avoid infinite recursion
       } else {
         // extraData might have errorish keys from extra - remove them from
         // extra so overlap doesn't happen again
@@ -1896,7 +1858,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
     }
 
-    const {data} = entry;
+    const { data } = entry;
     if (data) {
       let innerError;
 
@@ -1914,9 +1876,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
             // Check for circular references
             if (!errors) {
               errors = [value];
-            } else if (
-                errors.length < this.options.maxErrors &&
-                !errors.includes(value)) {
+            } else if (errors.length < this.options.maxErrors && !errors.includes(value)) {
               errors.push(value);
             } else {
               addIt = false;
@@ -1933,7 +1893,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
             if (extra && key in extra) {
               // Otherwise it will reappear in the next call to log()
               if (!extraCopied) {
-                extra = {...extra};
+                extra = { ...extra };
                 extraCopied = true;
               }
               delete extra[key];
@@ -1965,8 +1925,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         entry.error = data.error;
       }
 
-      entry.data = JSON.parse(
-          prune(data, this.options.maxDepth, this.options.maxArrayLength));
+      entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
     // Remove falsey values from entry that were set to false by logEntry()
@@ -1993,20 +1952,16 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // while stopping
     if (this.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(
-          `[WinstonPlus] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`[WinstonPlus] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
     }
 
     logger.log(level, entry);
 
-    if (extraData)
-      this.send(info, extraData, null, errors, depth + 1, logGroupId);
+    if (extraData) this.send(info, extraData, null, errors, depth + 1, logGroupId);
 
     if (extraMessages) {
-      extraMessages.forEach(
-          (extraMessage) => this.send(
-              info, extraMessage, extra, errors, depth + 1, logGroupId));
+      extraMessages.forEach((extraMessage) => this.send(info, extraMessage, extra, errors, depth + 1, logGroupId));
     }
   }
 
@@ -2025,18 +1980,21 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (!message) {
         message = tags;
       } else {
-        extra = ServiceLogger.extra(extra, tags);
+        extra = LogService.extra(extra, tags);
       }
       tags = this.logLevel.error;
     } else if (
-        tags && typeof tags === 'object' && !(tags instanceof Array) &&
-        (tags.tags || tags.level || tags.message || tags.extra)) {
+      tags &&
+      typeof tags === 'object' &&
+      !(tags instanceof Array) &&
+      (tags.tags || tags.level || tags.message || tags.extra)
+    ) {
       // The first argument is a single argument to use as all the other
       // arguments?
       if (tags.message) message = tags.message;
-      extra = ServiceLogger.extra(extra, tags.extra);
+      extra = LogService.extra(extra, tags.extra);
       if (tags.category) category = tags.category;
-      tags = ServiceLogger.tags(tags.level, tags.tags);
+      tags = LogService.tags(tags.level, tags.tags);
     } else {
       return false;
     }
@@ -2054,10 +2012,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    *  If tags is an Error object, error is used for tags and message is set as
    * follows:
    *   1. If message is falsey, message = tags
-   *   2. Otherwise, extra = ServiceLogger.extra(extra, {error: tags})
+   *   2. Otherwise, extra = LogService.extra(extra, {error: tags})
    *  If tags is an object and has truthy values for tags, level, message, or
    * extra, the keys in tags are used as follows if they are truthy:
-   *   1. tags = ServiceLogger.tags(tags.level, tags.tags)
+   *   1. tags = LogService.tags(tags.level, tags.tags)
    *   2. message = tags.message
    *   3. extra = tags.extra
    *   4. category = tags.category
@@ -2070,18 +2028,20 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   log(tags, message, extra, category) {
     const args = this.transformLogArguments(tags, message, extra, category);
     if (args) {
-      ({tags, message, extra, category} = args);
+      ({ tags, message, extra, category } = args);
     }
 
     if (this.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[WinstonPlus] Stopped. Unable to log:
+      console.warn(
+        new Error(`[WinstonPlus] Stopped. Unable to log:
 ${util.inspect({
-        category,
-        tags,
-        message,
-        extra,
-      })}`));
+  category,
+  tags,
+  message,
+  extra,
+})}`)
+      );
     } else {
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, extra);
@@ -2097,7 +2057,7 @@ ${util.inspect({
  * addition of 'more' which is between info and verbose and 'db' which is
  * between verbose and http. Colors can additionally be provided via options.
  */
-ServiceLogger.levels = {
+LogService.levels = {
   levels: {
     error: 10,
     warn: 20,
@@ -2136,22 +2096,21 @@ ServiceLogger.levels = {
 class ContextLogger {
   /**
    * @constructor
-   * @param {ServiceLogger|ContextLogger} logger
+   * @param {LogService|ContextLogger} logger
    * @param {*} [tags]
    * @param {*} [extra]
    * @param {String} [category]
    */
   constructor(logger, tags, extra, category) {
     if (logger instanceof ContextLogger) {
-      tags = ServiceLogger.tags(logger.tags, tags);
-      extra = ServiceLogger.extra(logger.extra, extra);
+      tags = LogService.tags(logger.tags, tags);
+      extra = LogService.extra(logger.extra, extra);
       if (!category) category = logger.category;
       this.managerObj = logger.managerObj;
       this.parentObj = logger;
     } else {
-      if (!(logger instanceof ServiceLogger)) {
-        throw new Error(
-            'logger must be an instance of ServiceLogger or ContextLogger');
+      if (!(logger instanceof LogService)) {
+        throw new Error('logger must be an instance of LogService or ContextLogger');
       }
       // eslint-disable-next-line no-multi-assign
       this.managerObj = this.parentObj = logger;
@@ -2168,14 +2127,14 @@ class ContextLogger {
   }
 
   /**
-   * @return {ServiceLogger}
+   * @return {LogService}
    */
   serviceLogger() {
     return this.managerObj;
   }
 
   /**
-   * @return {ServiceLogger|ContextLogger}
+   * @return {LogService|ContextLogger}
    */
   parent() {
     return this.parentObj;
@@ -2183,7 +2142,7 @@ class ContextLogger {
 
   /**
    * @param {String} [category]
-   * @return {ServiceLogger|ContextLogger}
+   * @return {LogService|ContextLogger}
    */
   logger(category) {
     return this.managerObj.get(category || this.category);
@@ -2213,8 +2172,9 @@ class ContextLogger {
    */
   isLevelEnabled(tags, category) {
     return this.managerObj.isLevelEnabled(
-        this.tags ? ServiceLogger.tags(this.tags, tags) : tags,
-        category || this.category);
+      this.tags ? LogService.tags(this.tags, tags) : tags,
+      category || this.category
+    );
   }
 
   /**
@@ -2225,20 +2185,19 @@ class ContextLogger {
    * @return {Object}
    */
   log(tags, message, extra, category) {
-    const args =
-        this.managerObj.transformLogArguments(tags, message, extra, category);
+    const args = this.managerObj.transformLogArguments(tags, message, extra, category);
     if (args) {
-      ({tags, message, extra, category} = args);
+      ({ tags, message, extra, category } = args);
     }
 
-    if (this.tags) tags = ServiceLogger.tags(this.tags, tags);
+    if (this.tags) tags = LogService.tags(this.tags, tags);
     if (!category) category = this.category;
 
     const info = this.managerObj.isLevelEnabled(tags, category);
     if (info) {
-      // The objective of the above code is to avoid calling ServiceLogger.extra
+      // The objective of the above code is to avoid calling LogService.extra
       // if the level is too low
-      if (this.extra) extra = ServiceLogger.extra(this.extra, extra);
+      if (this.extra) extra = LogService.extra(this.extra, extra);
       this.managerObj.send(info, message, extra);
     }
 
@@ -2246,4 +2205,4 @@ class ContextLogger {
   }
 }
 
-module.exports = ServiceLogger;
+module.exports = LogService;

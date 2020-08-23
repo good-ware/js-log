@@ -1,10 +1,10 @@
 # Winston3-based console, file, and AWS CloudWatch logger with awesome sauce
 
-[npm](https://www.npmjs.com/package/service-logger)
+[npm](https://www.npmjs.com/package/log-service)
 
 Documentation TBD
 
-# ServiceLogger
+# LogService
 
 ## Usage
 

@@ -15,16 +15,16 @@ class MySql {
    * @param {Function} [shouldLogError] Determines whether an Error object should be logged
    * @return {Promise} Resolves to the return value of connection.query(sql, values, ...options)
    */
-  static async query(
-      logger, connection, sql, values = [], options, shouldLogError) {
-    const snippet = ` ${sql}`
-                        .substr(0, 200)
-                        .replace(/\s+/g, ' ')
-                        .substr(0, Defaults.maxMessageLength);
+  static async query(logger, connection, sql, values = [], options, shouldLogError) {
+    const snippet = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     return TaskLogger.execute(
-        logger.child('sql'), () => connection.query({sql, values, ...options}),
-        {sql, values, message: `SQL Begin:${snippet}`}, `SQL End:${snippet}`,
-        `SQL:${snippet}`, shouldLogError);
+      logger.child('sql'),
+      () => connection.query({ sql, values, ...options }),
+      { sql, values, message: `SQL Begin:${snippet}` },
+      `SQL End:${snippet}`,
+      `SQL:${snippet}`,
+      shouldLogError
+    );
   }
 
   /**
@@ -41,16 +41,17 @@ class MySql {
    *  functions for logging
    */
   static begin(logger, connection, sql, values = [], options, shouldLogError) {
-    const snippet = ` ${sql}`
-                        .substr(0, 200)
-                        .replace(/\s+/g, ' ')
-                        .substr(0, Defaults.maxMessageLength);
-    const generator = connection.connection.query({sql, values, ...options});
+    const snippet = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
+    const generator = connection.connection.query({ sql, values, ...options });
     return GeneratorLogger.begin(
-        logger.child('sql'), generator,
-        {sql, values, message: `SQL Begin:${snippet}`},
-        `SQL Generator:${snippet}`, `SQL End:${snippet}`, `SQL:${snippet}`,
-        shouldLogError);
+      logger.child('sql'),
+      generator,
+      { sql, values, message: `SQL Begin:${snippet}` },
+      `SQL Generator:${snippet}`,
+      `SQL End:${snippet}`,
+      `SQL:${snippet}`,
+      shouldLogError
+    );
   }
 }
 

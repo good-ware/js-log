@@ -1,16 +1,16 @@
 {
-  "name": "@goodware/service-logger",
+  "name": "@goodware/log-service",
   "version": "1.0.3",
-  "description": "Winston3-based logging utility for Node services",
+  "description": "Winston3-based logging utility for Node",
   "scripts": {
     "prettier": "prettier . --write",
     "lint": "eslint . --fix",
     "test": "node tests/test.js"
   },
-  "main": "ServiceLogger.js",
+  "main": "LogService.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/good-ware/js-service-logger"
+    "url": "https://github.com/good-ware/js-log-service"
   },
   "keywords": [
     "winston",

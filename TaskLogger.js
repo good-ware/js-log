@@ -1,4 +1,4 @@
-const {v1: uuidv1} = require('uuid');
+const { v1: uuidv1 } = require('uuid');
 
 class TaskLogger {
   /**
@@ -29,9 +29,8 @@ class TaskLogger {
    * The exception is rethrown in either case.
    * @return {Promise} The return value of task
    */
-  static async execute(
-      logger, task, beginMessage, endMessage, errorMessage, shouldLogError) {
-    const extra = {operationId: uuidv1()};
+  static async execute(logger, task, beginMessage, endMessage, errorMessage, shouldLogError) {
+    const extra = { operationId: uuidv1() };
 
     logger.log('begin', beginMessage, extra);
 
@@ -42,18 +41,18 @@ class TaskLogger {
       if (shouldLogError) {
         if (shouldLogError(error)) {
           logger.log(
-              'error', {
-                message: typeof errorMessage === 'function' ?
-                    errorMessage(error) :
-                    errorMessage,
-                error
-              },
-              extra);
+            'error',
+            {
+              message: typeof errorMessage === 'function' ? errorMessage(error) : errorMessage,
+              error,
+            },
+            extra
+          );
         } else {
           logger.log('end', endMessage, extra);
         }
       } else {
-        logger.log('error', {message: errorMessage, error}, extra);
+        logger.log('error', { message: errorMessage, error }, extra);
       }
       throw error;
     }
