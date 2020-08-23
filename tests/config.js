@@ -16,7 +16,7 @@ let config = {
   logging: {
     cloudWatch: {
       // region: 'us-west-2', // set AWS_CLOUDWATCH_LOGS_REGION environment variable
-      logGroup: `/${env}/winstonplus`,
+      logGroup: `/${env}/service-logger`,
     },
   },
 };
