@@ -4,7 +4,7 @@
 
 Documentation TBD
 
-# LogService
+# LogManager
 
 ## Usage
 

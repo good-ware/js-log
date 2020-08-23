@@ -38,7 +38,7 @@ const scalars = {
 
 /**
  * @description Internal class for identifying log entries that are created by
- * LogService::logEntry
+ * LogManager::logEntry
  */
 class LogEntry {}
 
@@ -58,13 +58,13 @@ class LogEntry {}
  *  {Function} unhandledPromiseListener
  *  {Function[]} stopWaiters
  *  {String[]} levels {String} with 'default'
- *  {Object} winstonServiceLogServices {String} category -> Winston logger
+ *  {Object} winstonServiceLogManagers {String} category -> Winston logger
  *  {Object} userMeta {String} metaFieldName -> undefined
  *  {Object} unitTest
  *  {Object} cloudWatch Properties:
  *   {String} streamName
  *   {Object[]} transports
- *  {Object} loggers {String} category -> {LogService|ContextLogger}
+ *  {Object} loggers {String} category -> {LogManager|ContextLogger}
  *  {Object} categoryTags {String} category -> {{String} tag -> {Object}}
  *  {Object} logLevel {String} level name or 'default' -> {logLevel: {String}}
  *  {Object} levelSeverity {String} level plus 'on', 'off', and 'default'
@@ -89,7 +89,7 @@ class LogEntry {}
  * 9. Move ContextLogger to another module - see
  *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
  */
-class LogService {
+class LogManager {
   /**
    * @constructor
    * @param {Object} options
@@ -97,7 +97,7 @@ class LogService {
    *     which are objects whose keys are level
    *  names
    */
-  constructor(options, levels = LogService.levels) {
+  constructor(options, levels = LogManager.levels) {
     this.stopped = true;
 
     // This must be set before validating options
@@ -164,7 +164,7 @@ class LogService {
       on: 100000,
     });
 
-    this.created = LogService.now();
+    this.created = LogManager.now();
     this.hostId = hostId();
 
     this.loggers = {};
@@ -209,14 +209,14 @@ class LogService {
   }
 
   /**
-   * @return {LogService} this
+   * @return {LogManager} this
    */
-  serviceLogger() {
+  manager() {
     return this;
   }
 
   /**
-   * @return {LogService} this
+   * @return {LogManager} this
    */
   parent() {
     return this;
@@ -243,12 +243,12 @@ class LogService {
     const now = new Date();
     const tzo = now.getTimezoneOffset();
 
-    return `${now.getFullYear()}-${LogService.pad(now.getMonth() + 1)}-${LogService.pad(
+    return `${now.getFullYear()}-${LogManager.pad(now.getMonth() + 1)}-${LogManager.pad(
       now.getDate()
-    )}T${LogService.pad(now.getHours())}:${LogService.pad(now.getMinutes())}:${LogService.pad(
+    )}T${LogManager.pad(now.getHours())}:${LogManager.pad(now.getMinutes())}:${LogManager.pad(
       now.getSeconds()
-    )}.${LogService.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + LogService.pad(Math.abs(tzo) / 60)}:${LogService.pad(tzo % 60)}`
+    )}.${LogManager.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + LogManager.pad(Math.abs(tzo) / 60)}:${LogManager.pad(tzo % 60)}`
     }`;
   }
 
@@ -335,8 +335,8 @@ class LogService {
   static extra(extra, moreExtra) {
     if (!extra && !moreExtra) return false;
 
-    extra = LogService.extraToObject(extra);
-    moreExtra = LogService.extraToObject(moreExtra);
+    extra = LogManager.extraToObject(extra);
+    moreExtra = LogManager.extraToObject(moreExtra);
 
     if (extra && !moreExtra) return extra;
     if (moreExtra && !extra) return moreExtra;
@@ -368,7 +368,7 @@ class LogService {
    */
   addLevelMethods(target) {
     this.levels.forEach((level) => {
-      target[level] = (...args) => LogService.levelLog(target, this.logLevel[level], ...args);
+      target[level] = (...args) => LogManager.levelLog(target, this.logLevel[level], ...args);
     });
   }
 
@@ -420,9 +420,9 @@ CloudWatch`
      */
     const optionsObject = Joi.object({
       // Process-related meta
-      stage: Joi.string().allow('').default(''),
-      service: Joi.string().allow('').default(''),
-      version: Joi.string().allow('').default(''),
+      stage: Joi.string(),
+      service: Joi.string(),
+      version: Joi.string(),
 
       // Defaults
       defaultCategory: Joi.string().default('general'),
@@ -554,13 +554,13 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
       // Testing
       unitTest: Joi.boolean(),
-    }).label('LogService options');
+    }).label('LogManager options');
     // ==== Joi model for options (end)
 
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`[LogService] ${validation.error.message}`);
+      if (validation.error) throw new Error(`[LogManager] ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -572,14 +572,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.stopped) throw new Error('[LogService] Not stopped');
+    if (!this.stopped) throw new Error('[LogManager] Not stopped');
     this.starting = true;
 
     const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('[LogService] Unit test mode enabled');
+      console.warn('[LogManager] Unit test mode enabled');
 
       this.unitTest = {
         entries: [],
@@ -594,7 +594,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`[LogService] ${options.service} v${options.version} \
+      console.log(`[LogManager] ${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
@@ -605,11 +605,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // process.on('uncaughtException') is dangerous and doesn't work for
     // exceptions thrown in a function called by the event loop (e.g.,
     // setTimeout(...throw...).
-    const uncaughtLogService = this.logger(options.uncaughtCategory);
+    const uncaughtLogManager = this.logger(options.uncaughtCategory);
     // Create a Winston logger now to catch uncaught exceptions
-    if (uncaughtLogService.isLevelEnabled('error')) {
+    if (uncaughtLogManager.isLevelEnabled('error')) {
       this.unhandledPromiseListener = (error) => {
-        uncaughtLogService.error('Unhandled Promise rejection', { error });
+        uncaughtLogManager.error('Unhandled Promise rejection', { error });
       };
       process.on('unhandledRejection', this.unhandledPromiseListener);
     }
@@ -620,7 +620,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Internal function called by methods that are named after
    * levels. Allows tags to be provided.
-   * @param {LogService|ContextLogger} obj
+   * @param {LogManager|ContextLogger} obj
    * @param {Object} levelObj From this.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrExtra
@@ -634,7 +634,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       (tagsOrMessage instanceof Array || (typeof tagsOrMessage === 'string' && tagsOrMessage.indexOf(' ') === -1))
     ) {
       // tagsOrMessage has tags
-      return obj.log(LogService.tags(levelObj, tagsOrMessage), messageOrExtra, extraOrCategory, category);
+      return obj.log(LogManager.tags(levelObj, tagsOrMessage), messageOrExtra, extraOrCategory, category);
     }
 
     // tagsOrMessage has a message
@@ -666,7 +666,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('[LogService] Unable to create logs directory');
+    console.warn('[LogManager] Unable to create logs directory');
   }
 
   /**
@@ -685,7 +685,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`[LogService] Invalid datatype for category: ${type}`));
+      console.error(new Error(`[LogManager] Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -849,7 +849,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       return this.checkTags('console', info);
     })();
 
-    const printf = format.printf(LogService.printf);
+    const printf = format.printf(LogManager.printf);
 
     return new winston.transports.Console({
       handleExceptions,
@@ -881,7 +881,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * console and possibly file
    * @return {Object} logger
    */
-  createCloudWatchErrorLogService() {
+  createCloudWatchErrorLogManager() {
     const { errorCategory } = this.options.cloudWatch;
     const transports = [];
 
@@ -906,7 +906,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
     return winston.createLogger({
-      defaultMeta: LogService.defaultMeta(errorCategory),
+      defaultMeta: LogManager.defaultMeta(errorCategory),
       exitOnError: false,
       format: this.formatter(),
       levels: this.levelSeverity,
@@ -969,7 +969,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[LogService] Waiting up to ${duration} to send log entries to CloudWatch`);
+        console.log(`[LogManager] Waiting up to ${duration} to send log entries to CloudWatch`);
       }, 2500);
     }
 
@@ -982,8 +982,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     if (flushMessageTask) clearTimeout(flushMessageTask);
 
-    // eslint-disable-next-line no-console
-    if (flushMessageSent) console.log('[LogService] CloudWatch log entries sent');
+    if (flushMessageSent) {
+      // eslint-disable-next-line no-console
+      console.log('[LogManager] CloudWatch log entries sent');
+    }
   }
 
   /**
@@ -993,10 +995,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('[LogService] Stopping');
+    if (this.options.say.stopping) console.log('[LogManager] Stopping');
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: [LogService] Stopping
+      // Test uncaught exception - expect Error: [LogManager] Stopping
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1049,21 +1051,21 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     this.winstonLoggers = {};
 
-    const errorLogService = this.winstonLoggers[cloudWatchErrorCategory];
+    const errorLogManager = this.winstonLoggers[cloudWatchErrorCategory];
     this.loggers = {};
 
-    if (errorLogService && errorLogService.writable) {
+    if (errorLogManager && errorLogManager.writable) {
       // eslint-disable-next-line no-constant-condition
       if (true) {
-        errorLogService.close();
+        errorLogManager.close();
       } else {
         // @todo finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
-          errorLogService
+          errorLogManager
             .on('error', reject)
             .on('close', resolve)
-            .on('finish', () => setImmediate(() => errorLogService.close()))
+            .on('finish', () => setImmediate(() => errorLogManager.close()))
             .end();
           // eslint-disable-next-line no-console
         }).catch(console.warn);
@@ -1090,7 +1092,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     this.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('[LogService] Stopped');
+    if (this.options.say.stopped) console.log('[LogManager] Stopped');
   }
 
   /**
@@ -1139,13 +1141,13 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    * @param {String} category
    * @return {Object} Winston logger
    */
-  createWinstonLogService(category) {
+  createWinstonLogManager(category) {
     if (this.stopped) throw new Error('Stopped');
 
     let logger;
 
     if (category === this.options.cloudWatch.errorCategory) {
-      logger = this.createCloudWatchErrorLogService();
+      logger = this.createCloudWatchErrorLogManager();
     } else {
       if (this.stopping) throw new Error('Stopping');
 
@@ -1221,10 +1223,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`[LogService] CloudWatch region was not specified for category '${category}'`);
+          console.warn(`[LogManager] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`[LogService] CloudWatch log group was not specified for category '${category}'`);
+          console.warn(`[LogManager] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
@@ -1233,7 +1235,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`[LogService: ${category}] Opening CloudWatch stream \
+            console.log(`[LogManager: ${category}] Opening CloudWatch stream \
 '${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
           }
 
@@ -1312,7 +1314,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       }
 
       logger = winston.createLogger({
-        defaultMeta: LogService.defaultMeta(category),
+        defaultMeta: LogManager.defaultMeta(category),
         exitOnError: false,
         format: this.formatter(),
         levels: this.winstonLevels,
@@ -1334,7 +1336,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     category = this.checkCategory(category);
     let logger = this.winstonLoggers[category];
-    if (!logger) logger = this.createWinstonLogService(category);
+    if (!logger) logger = this.createWinstonLogManager(category);
 
     return logger;
   }
@@ -1352,7 +1354,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   /**
    * @description Returns a logger associated with a category
    * @param {String} [category]
-   * @return {LogService|ContextLogger}
+   * @return {LogManager|ContextLogger}
    */
   logger(category) {
     category = this.checkCategory(category);
@@ -1405,11 +1407,11 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   isLevelEnabled(tags, category) {
     if (this.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('[LogService] Stopped'));
+      console.warn(new Error('[LogManager] Stopped'));
       return false;
     }
 
-    tags = LogService.tags(tags);
+    tags = LogManager.tags(tags);
 
     let level;
 
@@ -1571,7 +1573,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
             return true;
           });
 
-          return !logTransports || LogService.hasKeys(logTransports);
+          return !logTransports || LogManager.hasKeys(logTransports);
         })
       ) {
         return false;
@@ -1684,7 +1686,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     Object.assign(entry, {
       message: '',
       level,
-      timestamp: LogService.now(),
+      timestamp: LogManager.now(),
       ms: false, // Set via a formatter; intentionally not removed
       tags: false,
       error: false, // Set and removed by send()
@@ -1708,7 +1710,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     const state = {};
     const { tags } = info;
 
-    extra = LogService.extraToObject(extra);
+    extra = LogManager.extraToObject(extra);
 
     // Combine message and extra
     // for (const item of depth?[extra, message]:[message, extra]) {
@@ -1758,7 +1760,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         if (key === 'message') delete data[key];
       });
 
-      if (LogService.hasKeys(data)) entry.data = data;
+      if (LogManager.hasKeys(data)) entry.data = data;
     }
 
     // Remove meta keys that have undefined values
@@ -1952,7 +1954,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // while stopping
     if (this.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[LogService] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`[LogManager] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
     }
 
@@ -1980,7 +1982,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       if (!message) {
         message = tags;
       } else {
-        extra = LogService.extra(extra, tags);
+        extra = LogManager.extra(extra, tags);
       }
       tags = this.logLevel.error;
     } else if (
@@ -1992,9 +1994,9 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // The first argument is a single argument to use as all the other
       // arguments?
       if (tags.message) message = tags.message;
-      extra = LogService.extra(extra, tags.extra);
+      extra = LogManager.extra(extra, tags.extra);
       if (tags.category) category = tags.category;
-      tags = LogService.tags(tags.level, tags.tags);
+      tags = LogManager.tags(tags.level, tags.tags);
     } else {
       return false;
     }
@@ -2012,10 +2014,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    *  If tags is an Error object, error is used for tags and message is set as
    * follows:
    *   1. If message is falsey, message = tags
-   *   2. Otherwise, extra = LogService.extra(extra, {error: tags})
+   *   2. Otherwise, extra = LogManager.extra(extra, {error: tags})
    *  If tags is an object and has truthy values for tags, level, message, or
    * extra, the keys in tags are used as follows if they are truthy:
-   *   1. tags = LogService.tags(tags.level, tags.tags)
+   *   1. tags = LogManager.tags(tags.level, tags.tags)
    *   2. message = tags.message
    *   3. extra = tags.extra
    *   4. category = tags.category
@@ -2034,7 +2036,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (this.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
-        new Error(`[LogService] Stopped. Unable to log:
+        new Error(`[LogManager] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
@@ -2057,7 +2059,7 @@ ${util.inspect({
  * addition of 'more' which is between info and verbose and 'db' which is
  * between verbose and http. Colors can additionally be provided via options.
  */
-LogService.levels = {
+LogManager.levels = {
   levels: {
     error: 10,
     warn: 20,
@@ -2096,21 +2098,21 @@ LogService.levels = {
 class ContextLogger {
   /**
    * @constructor
-   * @param {LogService|ContextLogger} logger
+   * @param {LogManager|ContextLogger} logger
    * @param {*} [tags]
    * @param {*} [extra]
    * @param {String} [category]
    */
   constructor(logger, tags, extra, category) {
     if (logger instanceof ContextLogger) {
-      tags = LogService.tags(logger.tags, tags);
-      extra = LogService.extra(logger.extra, extra);
+      tags = LogManager.tags(logger.tags, tags);
+      extra = LogManager.extra(logger.extra, extra);
       if (!category) category = logger.category;
       this.managerObj = logger.managerObj;
       this.parentObj = logger;
     } else {
-      if (!(logger instanceof LogService)) {
-        throw new Error('logger must be an instance of LogService or ContextLogger');
+      if (!(logger instanceof LogManager)) {
+        throw new Error('logger must be an instance of LogManager or ContextLogger');
       }
       // eslint-disable-next-line no-multi-assign
       this.managerObj = this.parentObj = logger;
@@ -2127,14 +2129,14 @@ class ContextLogger {
   }
 
   /**
-   * @return {LogService}
+   * @return {LogManager}
    */
-  serviceLogger() {
+  manager() {
     return this.managerObj;
   }
 
   /**
-   * @return {LogService|ContextLogger}
+   * @return {LogManager|ContextLogger}
    */
   parent() {
     return this.parentObj;
@@ -2142,7 +2144,7 @@ class ContextLogger {
 
   /**
    * @param {String} [category]
-   * @return {LogService|ContextLogger}
+   * @return {LogManager|ContextLogger}
    */
   logger(category) {
     return this.managerObj.get(category || this.category);
@@ -2172,7 +2174,7 @@ class ContextLogger {
    */
   isLevelEnabled(tags, category) {
     return this.managerObj.isLevelEnabled(
-      this.tags ? LogService.tags(this.tags, tags) : tags,
+      this.tags ? LogManager.tags(this.tags, tags) : tags,
       category || this.category
     );
   }
@@ -2190,14 +2192,14 @@ class ContextLogger {
       ({ tags, message, extra, category } = args);
     }
 
-    if (this.tags) tags = LogService.tags(this.tags, tags);
+    if (this.tags) tags = LogManager.tags(this.tags, tags);
     if (!category) category = this.category;
 
     const info = this.managerObj.isLevelEnabled(tags, category);
     if (info) {
-      // The objective of the above code is to avoid calling LogService.extra
+      // The objective of the above code is to avoid calling LogManager.extra
       // if the level is too low
-      if (this.extra) extra = LogService.extra(this.extra, extra);
+      if (this.extra) extra = LogManager.extra(this.extra, extra);
       this.managerObj.send(info, message, extra);
     }
 
@@ -2205,4 +2207,4 @@ class ContextLogger {
   }
 }
 
-module.exports = LogService;
+module.exports = LogManager;

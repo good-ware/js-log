@@ -1,6 +1,6 @@
 {
-  "name": "@goodware/log-service",
-  "version": "1.0.1",
+  "name": "@goodware/logger",
+  "version": "1.0.0",
   "description": "Winston3-based logging utility for Node",
   "scripts": {
     "lint": "eslint . --fix",
@@ -8,7 +8,7 @@
     "publish": "npm publish --access=public",
     "test": "node tests/test.js"
   },
-  "main": "LogService.js",
+  "main": "LogManager.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/good-ware/js-log-service"
