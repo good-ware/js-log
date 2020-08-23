@@ -1,5 +1,5 @@
 {
-  "name": "@goodware/logging",
+  "name": "@goodware/log",
   "version": "1.0.0",
   "description": "Winston3-based logging for Node.js",
   "scripts": {
@@ -8,10 +8,10 @@
     "publish": "npm publish --access=public",
     "test": "node tests/test.js"
   },
-  "main": "Manager.js",
+  "main": "Loggers.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/good-ware/js-logging"
+    "url": "https://github.com/good-ware/js-log"
   },
   "keywords": [
     "winston",
