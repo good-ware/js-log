@@ -15,8 +15,8 @@ class GeneratorLogger {
    *  1. {Object} logger
    *  2. {String} operationId
    *  and the following methods:
-   *  1. error(error)
-   *  2. end(meessage) Logs endMessage and message with
+   *  1. error({Error} error)
+   *  2. end({*} message) Logs endMessage and message with:
    *     a) tag: 'end'
    *     b) operationId
    */

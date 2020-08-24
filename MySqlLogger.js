@@ -35,9 +35,9 @@ class MySql {
    * @param {Object} [options] Additional options to send to connection.query
    * @return {Object[]} The first array entry is a stream object. The second entry is the object returned by
    *  GeneratorLogger.begin with the following additional properties:
-   *  1. sql
-   *  2. values
-   *  3. summary: A summarized version of the sql argument
+   *  1. {String} sql
+   *  2. {*[]} values
+   *  3. {String} summary: A summarized version of the sql argument
    *  See GeneratorLogger.begin for more information.
    */
   static stream(logger, connection, sql, values = [], options) {

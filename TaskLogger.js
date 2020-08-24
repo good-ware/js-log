@@ -15,12 +15,12 @@ class TaskLogger {
    *     b) Logs an error with:
    *        i. error
    *        ii. errorMessage
-   *        iii. operationId: the uuid
+   *        iii. operationId
    *     c) Throws the error (thus terminating this workflow)
    *  4. Creates a log entry with:
    *     a) tag: 'end'
    *     b) endMessage
-   *     c) operationId: the uuid
+   *     c) operationId
    *  5. Returns the value from step 2
    * @param {Object} logger
    * @param {Function} task A function to invoke with logger as the first parameter
@@ -30,9 +30,9 @@ class TaskLogger {
    *  the provided errorHandler.
    * @param {Function} [errorHandler] A function that is invoked with the following arguments when the task throws an
    *  exception:
-   *  1) The exception thrown by the task
-   *  2) logger
-   *  3) errorMessage
+   *  1) {Error} The exception thrown by the task
+   *  2) {Object} The logger argument
+   *  3) {*} The errorMessage argument
    *  The function returns either the message to log or a falsey value indicating nothing should be logged. The
    *  exception is rethrown regardless of the return value.
    * @return {Promise} Resolves to the value returned or the exception thrown by the task
