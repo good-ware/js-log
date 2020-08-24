@@ -36,6 +36,8 @@ const scalars = {
   boolean: true,
 };
 
+const errorRegex = /^Error: /;
+
 /**
  * @description Internal class for identifying log entries that are created by
  * Loggers::logEntry
@@ -1799,7 +1801,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
     if (addStack) {
-      const msg = entry.message.replace('Error: ', ''); // Remove Error: Error:
+      const msg = entry.message.replace(errorRegex, ''); // Remove Error: Error:
       const { stack } = new Error(msg);
       // Use logStack if stack exists
       if (entry.stack) {
