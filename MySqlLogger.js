@@ -4,54 +4,53 @@ const GeneratorLogger = require('./GeneratorLogger');
 
 class MySql {
   /**
-   * @description Sends two log entries for a Connection.query() execution:
-   * 'begin' and either 'end' or 'error.' See TaskLogger.execute for a detailed
-   * description. SQL statement and values are logged.
+   * @description Creates two log entries for a Connection.query() execution: 'begin' and either 'end' or 'error.' See
+   *  TaskLogger.execute for more information. The sql and values arguments are logged.
    * @param {Object} logger
    * @param {Connection} connection mysql2 Connection object
    * @param {String} sql SQL statement to execute
    * @param {*[]} [values] SQL statement placeholder arguments
    * @param {Object} [options] Additional options to send to connection.query()
-   * @param {Function} [shouldLogError] Determines whether an Error object should be logged
-   * @return {Promise} Resolves to the return value of connection.query(sql, values, ...options)
+   * @return {Promise} Returns the return value of connection.query(sql, values, ...options)
    */
-  static async query(logger, connection, sql, values = [], options, shouldLogError) {
-    const snippet = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
+  static async query(logger, connection, sql, values = [], options) {
+    const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     return TaskLogger.execute(
       logger.child('sql'),
       () => connection.query({ sql, values, ...options }),
-      { sql, values, message: `SQL Begin:${snippet}` },
-      `SQL End:${snippet}`,
-      `SQL:${snippet}`,
-      shouldLogError
+      { sql, values, message: `SQL Begin:${summary}` },
+      `SQL End:${summary}`,
+      `SQL:${summary}`
     );
   }
 
   /**
-   * @description Sends a 'begin' log entry. The SQL statement and values are logged. Returns the
-   *  mysql (instead of the mysql2) version of connection.query() for event-based data access with
-   *  additional functions for logging added (see GeneratorLogger.begin() for more information).
+   * @description Creates a 'begin' log entry. The SQL statement and values are logged. Returns the value returned by
+   *  the older mysql package (instead of the mysql2 package) connection.query method in order to permit event-based
+   *  data access.
    * @param {Object} logger
-   * @param {Object} connection mysql2 Connection object
-   * @param {String} sql The SQL statement to execute
-   * @param {*[]} [values] SQL statement placeholder arguments
-   * @param {Object} [options] Additional options to send to connection.query()
-   * @param {Function} [shouldLogError]
-   * @return {Object} Returns the object returned by connection.connection.query() with additional
-   *  functions for logging
+   * @param {Object} connection A mysql2 Connection object
+   * @param {String} sql A SQL statement to execute
+   * @param {*[]} [values] Placeholder arguments for the sql statement
+   * @param {Object} [options] Additional options to send to connection.query
+   * @return {Object[]} The first array entry is a stream object. The second entry is the object returned by
+   *  GeneratorLogger.begin with the following additional properties:
+   *  1. sql
+   *  2. values
+   *  3. summary: A summarized version of the sql argument
+   *  See GeneratorLogger.begin for more information.
    */
-  static begin(logger, connection, sql, values = [], options, shouldLogError) {
-    const snippet = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
+  static stream(logger, connection, sql, values = [], options) {
+    const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     const generator = connection.connection.query({ sql, values, ...options });
-    return GeneratorLogger.begin(
+    const logObj = GeneratorLogger.begin(
       logger.child('sql'),
-      generator,
-      { sql, values, message: `SQL Begin:${snippet}` },
-      `SQL Generator:${snippet}`,
-      `SQL End:${snippet}`,
-      `SQL:${snippet}`,
-      shouldLogError
+      { sql, values, message: `SQL Begin:${summary}` },
+      `SQL End:${summary}`,
+      `SQL:${summary}`
     );
+    logObj.assign(sql, values, summary);
+    return [generator, logObj];
   }
 }
 

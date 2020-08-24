@@ -4,27 +4,28 @@ const requestPromise = require('request-promise');
 const Defaults = require('./Defaults');
 const TaskLogger = require('./TaskLogger');
 
+const protocolRegex = /^[^:]+:\/\//;
+
 class RequestLogger {
   /**
-   * @description Sends two log entries for an HTTP request using the
-   * request-promise package: 'begin' and either 'end' or 'error.' See
-   * TaskLogger.execute() for a more detailed description.
+   * @description Creates two log entries for an HTTP request using the request-promise package: 'begin' and either
+   *  'end' or 'error.' See TaskLogger.execute for more information.
    *
    * @param {Object} logger
    * @param {Object} options request options
-   * @param {Function} [shouldLogError]
-   * @return {Promise} Value returned by request()
+   * @param {Function} [errorHandler]
+   * @return {Promise} Returns the value returned by requestPromise
    */
-  static request(logger, options, shouldLogError) {
+  static request(logger, options, errorHandler) {
     let { url } = options;
     if (options.qs && Object.keys(options.qs).length) url = `${url}?${JSON.stringify(options.qs)}`;
 
     // Strip the protocol
-    const snippet = `${options.method} ${url.replace(/^[^:]+:\/\//, '').substr(0, Defaults.maxMessageLength)}`;
+    const summary = `${options.method} ${url.replace(protocolRegex, '').substr(0, Defaults.maxMessageLength)}`;
 
     const begin = {
       options,
-      message: `Begin: ${snippet}`,
+      message: `Begin: ${summary}`,
     };
 
     // @todo errorMessage should be a function that logs the status code in
@@ -33,9 +34,9 @@ class RequestLogger {
       logger.child('http'),
       () => requestPromise(options),
       begin,
-      `End: ${snippet}`,
-      snippet,
-      shouldLogError
+      `End: ${summary}`,
+      summary,
+      errorHandler
     );
   }
 }

@@ -2057,25 +2057,24 @@ ${util.inspect({
 
 /**
  * @description These follow npm levels defined at
- * https://github.com/winstonjs/winston#user-content-logging-levels with the
- * addition of 'more' which is between info and verbose and 'db' which is
- * between verbose and http. Colors can additionally be provided via options.
+ *  https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
+ *  than 'error' and 'more' which is between 'info' and 'verbose.'
  */
 Loggers.levels = {
   levels: {
-    error: 10,
-    warn: 20,
-    info: 30,
-    more: 40,
-    verbose: 50,
-    db: 60,
+    fail: 10,
+    error: 20,
+    warn: 30,
+    info: 40,
+    more: 50,
+    verbose: 60,
     http: 70,
     debug: 80,
     silly: 90,
   },
   colors: {
+    fail: 'red',
     more: 'cyan',
-    db: 'white',
   },
 };
 

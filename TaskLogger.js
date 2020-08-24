@@ -2,61 +2,55 @@ const { v1: uuidv1 } = require('uuid');
 
 class TaskLogger {
   /**
-   * @description Sends two log entries for a function: 'begin' and either 'end'
-   * or 'error.' This is useful for roughly measuring the duration of a
-   * function. The provided function optionally return a Promise.
-   *
-   *  1. Send a log entry containing a 'begin' tag with a new uuid and the
-   * provided message
-   *  2. await task()
-   *  3. If an exception is thrown:
-   *     3a. Log the exception with the uuid
-   *     3b. Rethrow the exception
-   *  4. Send a log entry containing an 'end' tag with the uuid
-   *  5. Return the value returned by step 2
+   * @description Creates two log entries for the execution of a task: 'begin' and either 'end' or 'error.' This can be
+   *  use to roughly measure the duration of a task. It performs the following actions:
+   *  1. Creates a log entry with:
+   *     a) tag: 'begin'
+   *     b) beginMessage
+   *     c) operationId: a newly generated uuid
+   *  2. await task() (Note: the task is not requred to return a Promise)
+   *  3. If an exception is thrown in step 2:
+   *     a) If errorHandler is provided, it is called. If it returns a falsey value, go to c). Otherwise, use the
+   *        return value as errorMessage.
+   *     b) Logs an error with:
+   *        i. error
+   *        ii. errorMessage
+   *        iii. operationId: the uuid
+   *     c) Throws the error (thus terminating this workflow)
+   *  4. Creates a log entry with:
+   *     a) tag: 'end'
+   *     b) endMessage
+   *     c) operationId: the uuid
+   *  5. Returns the value from step 2
    * @param {Object} logger
-   * @param {Function} task Function to call
-   * @param {*} [beginMessage] Message to be logged before calling task
-   * @param {*} [endMessage] Message to be logged after successfully calling or
-   *     awaiting task
-   * @param {Function|*} [errorMessage] Message to be logged when the task
-   *     throws an exception. If a
-   *  function is provided, it is called with an Error object as the first
-   * parameter.
-   * @param {Function} shouldLogError Optional function that accepts the
-   *     exception thrown by task and
-   *  returns a truthy value if the provided error object represents a failure.
-   * The exception is rethrown in either case.
-   * @return {Promise} The return value of task
+   * @param {Function} task A function to invoke with logger as the first parameter
+   * @param {*} beginMessage A message to be logged before invoking the task
+   * @param {*} endMessage A message to log when the task does not throw an exception
+   * @param {*} [errorMessage] A message to log when the task throws an exception. errorMessage can be overridden by
+   *  the provided errorHandler.
+   * @param {Function} [errorHandler] A function that is invoked with the following arguments when the task throws an
+   *  exception:
+   *  1) The exception thrown by the task
+   *  2) logger
+   *  3) errorMessage
+   *  The function returns either the message to log or a falsey value indicating nothing should be logged. The
+   *  exception is rethrown regardless of the return value.
+   * @return {Promise} Resolves to the value returned or the exception thrown by the task
    */
-  static async execute(logger, task, beginMessage, endMessage, errorMessage, shouldLogError) {
-    const extra = { operationId: uuidv1() };
-
-    logger.log('begin', beginMessage, extra);
+  static async execute(logger, task, beginMessage, endMessage, errorMessage, errorHandler) {
+    // eslint-disable-next-line no-param-reassign
+    logger = logger.child(null, { operationId: uuidv1() });
+    logger.log('begin', beginMessage);
 
     let result;
     try {
-      result = await task();
+      result = await task(logger);
     } catch (error) {
-      if (shouldLogError) {
-        if (shouldLogError(error)) {
-          logger.log(
-            'error',
-            {
-              message: typeof errorMessage === 'function' ? errorMessage(error) : errorMessage,
-              error,
-            },
-            extra
-          );
-        } else {
-          logger.log('end', endMessage, extra);
-        }
-      } else {
-        logger.log('error', { message: errorMessage, error }, extra);
-      }
-      throw error;
+      let msg = errorMessage;
+      if (errorHandler) msg = errorHandler(error, logger, errorMessage);
+      if (msg) logger.log('end', msg, { error });
     }
-    logger.log('end', endMessage, extra);
+    logger.log('end', endMessage);
     return result;
   }
 }
