@@ -349,18 +349,14 @@ class Loggers {
   }
 
   /**
-   * @description Determines whether an object has any 'own' properties.
-   *  Faster than Object.keys(object).length:
-   * https://jsperf.com/testing-for-any-keys-in-js
-   * @param {Object} object
+   * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
+   *  See https://jsperf.com/testing-for-any-keys-in-js
+   * @param {Object} object An object to test
    * @return {Boolean} true if object has properties
    */
   static hasKeys(object) {
     // eslint-disable-next-line no-restricted-syntax
-    for (const prop in object) {
-      // eslint-disable-next-line no-prototype-builtins
-      if (object.hasOwnProperty(prop)) return true;
-    }
+    for (const prop in object) return true;
     return false;
   }
 
@@ -562,7 +558,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`[Loggers] ${validation.error.message}`);
+      if (validation.error) throw new Error(`[Logger>] ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -574,14 +570,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.stopped) throw new Error('[Loggers] Not stopped');
+    if (!this.stopped) throw new Error('[Logger>] Not stopped');
     this.starting = true;
 
     const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('[Loggers] Unit test mode enabled');
+      console.warn('[Logger>] Unit test mode enabled');
 
       this.unitTest = {
         entries: [],
@@ -596,7 +592,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`[Loggers] ${options.service} v${options.version} \
+      console.log(`[Logger>] ${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.hostId}`);
     }
 
@@ -668,7 +664,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('[Loggers] Unable to create logs directory');
+    console.warn('[Logger>] Unable to create logs directory');
   }
 
   /**
@@ -687,7 +683,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`[Loggers] Invalid datatype for category: ${type}`));
+      console.error(new Error(`[Logger>] Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -971,7 +967,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[Loggers] Waiting up to ${duration} to send log entries to CloudWatch`);
+        console.log(`[Logger>] Waiting up to ${duration} to send log entries to CloudWatch`);
       }, 2500);
     }
 
@@ -986,7 +982,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log('[Loggers] CloudWatch log entries sent');
+      console.log('[Logger>] CloudWatch log entries sent');
     }
   }
 
@@ -997,10 +993,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('[Loggers] Stopping');
+    if (this.options.say.stopping) console.log('[Logger>] Stopping');
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: [Loggers] Stopping
+      // Test uncaught exception - expect Error: [Logger>] Stopping
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1094,7 +1090,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     this.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('[Loggers] Stopped');
+    if (this.options.say.stopped) console.log('[Logger>] Stopped');
   }
 
   /**
@@ -1225,10 +1221,10 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`[Loggers] CloudWatch region was not specified for category '${category}'`);
+          console.warn(`[Logger>] CloudWatch region was not specified for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`[Loggers] CloudWatch log group was not specified for category '${category}'`);
+          console.warn(`[Logger>] CloudWatch log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
@@ -1237,7 +1233,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`[Loggers: ${category}] Opening CloudWatch stream \
+            console.log(`[Logger>: ${category}] Opening CloudWatch stream \
 '${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
           }
 
@@ -1409,7 +1405,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
   isLevelEnabled(tags, category) {
     if (this.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('[Loggers] Stopped'));
+      console.warn(new Error('[Logger>] Stopped'));
       return false;
     }
 
@@ -1956,7 +1952,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     // while stopping
     if (this.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[Loggers] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`[Logger>] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
     }
 
@@ -2038,7 +2034,7 @@ stage: '${options.stage}' host id: ${this.hostId}`);
     if (this.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
-        new Error(`[Loggers] Stopped. Unable to log:
+        new Error(`[Logger>] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
