@@ -1,32 +1,43 @@
-# Winston3-based console, file, and AWS CloudWatch logger with awesome sauce
+# Winston3-based console, file, and AWS CloudWatch logger
 
-[npm](https://www.npmjs.com/package/log-service)
+[npm](https://www.npmjs.com/package/@goodware/log)
 
 Documentation TBD
 
-# Loggers
+# Loggers Class
 
 ## Usage
 
-It is possible for one nodeJS process to create multiple Loggers objects at the same time. This is useful if, say,
-independent libraries use Loggers with different logging levels and other settings. The only caveat is Winston's
-own flaw that results in the inability of two Loggers objects to associate different colors with the same level.
+Loggers manages logger objects. It also provides an asynchronous stop() method to ensure messages are flushed to disk
+and to CloudWatch before the process terminates.
 
-A Winston logger object for a particular category is acquired via new Loggers(...).loggers.get() or child().
-Requesting a logger is optional since this class has logging methods (log(), error(), etc.), that accept an optional
-category name and use the default category if one is not provided.
+Any number of Loggers instances can exist at the same time. This is useful if, say, independent libraries use this
+package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents
+assigning different colors to the same level.
+
+A logger for a particular category is acquired from a Loggers object via the methods logger() and child(). The objects
+returned by these methods have level-specific methods such as error(). Level names are specified when Loggers is
+instantiated.
+
+Loggers managed by Loggers instances are not Winston loggers. Winston loggers are acquired via the
+winstonLogger(category) method in case the application needs Winston-specific functionality. Loggers instances do not
+modify winston.loggers.
+
+Loggers and logger instances have the methods logger(), child(), winstonLogger(), isLevelEnabled(), log(), and
+default(). Logger instances also have level-specific methods such as info(), in addition to loggers(), and parent().
+
+Methods such as log() that log messages accept four optional parameters: tags, message, context, and category.
+MORE DOCS NEEDED HERE.
 
 Loggers do not use Winston's splat formatter. However, much more can be logged, such as objects, arrays, and errors
 including stack traces.
 
-While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using a category that
-is specified via the 'uncaughtCategory' options setting which defaults to 'uncaught.' The process is not terminated
-after logging uncaught exceptions.
+While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using a category specified via
+the 'uncaughtCategory' options setting which defaults to 'uncaught.' The process is not terminated after logging
+uncaught exceptions.
 
-Calling the asynchronous stop() method is recommended to flush log entries before the process exits.
-
-When a log entry's level is 'error', the current stack trace is added to the to the 'stack' or 'logStack' meta key.
-This behavior is disabled via the 'logStack' meta tag.
+When a log entry's level is 'error', the current stack trace is added to the to the 'stack' or 'logStack' meta key. This
+behavior is disabled via the 'logStack' meta tag.
 
 ## Concepts
 
@@ -38,14 +49,10 @@ An object provided to the constructor. Options are described by optionsObject.
 
 A logger sends log entries to transports.
 
-A logger has the following methods: manager, winstonLogger, ready, parent, child, get, ready, isLevelEnabled, log,
-default, and methods named for each level, such as info. Each logging-related method accepts four optional parameters:
-tags, message, extra, and category.
-
 ### category
 
-The name of a logger. The default category is specified via the 'defaultCategory' options setting and
-defaults to 'general.' Transport filtering (based on tags) is specified on a per-category basis.
+The name of a logger. The default category is specified via the 'defaultCategory' options setting and defaults to
+'general.' Transport filtering (based on tags) is specified on a per-category basis.
 
 ### log entry
 
@@ -85,18 +92,14 @@ The default level is specified via the 'defaultLevel' options setting.
 
 ### level methods
 
-Methods that are named after levels, such as error(). The method log(tags, message, extra, category)
+Methods that are named after levels, such as error(). The method log(tags, message, context, category)
 is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level
-method is an array, the parameter list is (tags, message, extra, category). Otherwise, it's (message, extra,
+method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context,
 category).
 
 ### level filtering
 
 A log entry is sent to a transport only when its severity level is equal to or greater than the transport's level.
-
-### logging context
-
-tags, extra, and category
 
 ### tag
 
@@ -176,10 +179,10 @@ Uniquely identifies the system that is running node
 
 Identifies the environment in which node is running, such as 'dev' or 'prod'
 
-### extra
+### context
 
-An optional string, array, or object to log with message. Two 'extra' objects are combined via the static
-method extra(a, b) in which b's keys override a's keys if they overlap.
+An optional string, array, or object to log with message. Two 'context' objects are combined via the static
+method context(a, b) in which b's keys override a's keys if they overlap.
 
 ### message
 
@@ -189,8 +192,8 @@ setting. Properties are copied to meta if their values are scalar and their name
 
 ### both
 
-message and 'extra' are shallow copied and combined into a new object called 'both.' If message's keys overlap
-with those in 'extra,' 'extra' is logged separately; both log entries will have the same logGroupId meta key value.
+message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap
+with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta key value.
 
 ### error
 
@@ -256,7 +259,7 @@ CONSOLE_COLORS
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'extra' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the
+When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'context' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the
 
 ```shell
 CONSOLE_DATA
