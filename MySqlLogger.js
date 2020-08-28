@@ -16,7 +16,7 @@ class MySql {
   static async query(logger, connection, sql, values = [], options) {
     const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     return TaskLogger.execute(
-      logger.child('sql'),
+      logger.child('mysql'),
       () => connection.query({ sql, values, ...options }),
       { sql, values, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
@@ -44,7 +44,7 @@ class MySql {
     const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     const generator = connection.connection.query({ sql, values, ...options });
     const logObj = GeneratorLogger.begin(
-      logger.child('sql'),
+      logger.child('mysql'),
       { sql, values, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
       `SQL:${summary}`

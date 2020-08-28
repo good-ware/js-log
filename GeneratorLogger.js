@@ -29,7 +29,7 @@ class GeneratorLogger {
       logger,
       operationId,
       end: (message) => logger.log('end', endMessage, message),
-      error: (error) => logger.error(errorMessage, { error }),
+      error: (error) => logger.log('error', errorMessage, { error }),
     };
   }
 }

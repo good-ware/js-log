@@ -521,7 +521,7 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
-  const hasCloudWatch = !!loggers.obj.cloudWatch;
+  const hasCloudWatch = !!loggers.props.cloudWatch;
 
   // Stop the logger
   await new Promise((resolve) => setTimeout(() => loggers.stop().then(resolve), 100));

@@ -96,11 +96,11 @@ class Loggers {
    *  names
    */
   constructor(options, levels = Loggers.levels) {
-    this.obj = {};
-    this.obj.stopped = true;
+    this.props = {};
+    this.props.stopped = true;
 
     // This must be set before validating options
-    this.obj.levels = Object.keys(levels.levels);
+    this.props.levels = Object.keys(levels.levels);
 
     // Copy environment variables to options (begin)
 
@@ -137,7 +137,7 @@ class Loggers {
     envToConsoleKey('data');
 
     // Do not add default until after validating
-    this.obj.levels.push('default');
+    this.props.levels.push('default');
 
     // Level color
     {
@@ -156,18 +156,18 @@ class Loggers {
     this.winstonLevels = levels.levels;
 
     // Level severity
-    this.obj.levelSeverity = { ...levels.levels };
-    Object.assign(this.obj.levelSeverity, {
+    this.props.levelSeverity = { ...levels.levels };
+    Object.assign(this.props.levelSeverity, {
       off: -1,
-      default: this.obj.levelSeverity[options.defaultLevel],
+      default: this.props.levelSeverity[options.defaultLevel],
       on: 100000,
     });
 
-    this.obj.created = Loggers.now();
-    this.obj.hostId = hostId();
+    this.props.created = Loggers.now();
+    this.props.hostId = hostId();
 
-    this.obj.loggers = {};
-    this.obj.winstonLoggers = {};
+    this.props.loggers = {};
+    this.props.winstonLoggers = {};
 
     // Dedup the meta keys
     {
@@ -176,10 +176,10 @@ class Loggers {
         if (key) meta[key] = true;
       });
       Object.assign(meta, { message: false, stack: false });
-      this.obj.metaKeys = Object.keys(meta);
-      this.obj.userMeta = {};
-      this.obj.metaKeys.forEach((key) => {
-        if (meta[key]) this.obj.userMeta[key] = undefined;
+      this.props.metaKeys = Object.keys(meta);
+      this.props.userMeta = {};
+      this.props.metaKeys.forEach((key) => {
+        if (meta[key]) this.props.userMeta[key] = undefined;
       });
     }
 
@@ -190,15 +190,15 @@ class Loggers {
     }
 
     // logLevel is used by level-named methods
-    this.obj.logLevel = {};
-    this.obj.levels.forEach((logLevel) => {
-      this.obj.logLevel[logLevel] = { logLevel };
+    this.props.logLevel = {};
+    this.props.levels.forEach((logLevel) => {
+      this.props.logLevel[logLevel] = { logLevel };
     });
 
     // Process category tag switches
-    this.obj.categoryTags = {};
+    this.props.categoryTags = {};
     if (!this.processCategoryTags('default')) {
-      this.obj.categoryTags.default = { on: true };
+      this.props.categoryTags.default = { on: true };
     }
 
     this.start();
@@ -338,8 +338,8 @@ class Loggers {
    * @param target The object to modify
    */
   addLevelMethods(target) {
-    this.obj.levels.forEach((level) => {
-      target[level] = (...args) => Loggers.levelLog(target, this.obj.logLevel[level], ...args);
+    this.props.levels.forEach((level) => {
+      target[level] = (...args) => Loggers.levelLog(target, this.props.logLevel[level], ...args);
     });
   }
 
@@ -352,7 +352,7 @@ class Loggers {
     if (!options) options = {};
 
     // ==== Joi model for options (begin)
-    const levelEnum = Joi.string().valid(...this.obj.levels);
+    const levelEnum = Joi.string().valid(...this.props.levels);
     const defaultLevelEnum = Joi.alternatives(levelEnum, Joi.string().valid('default'));
     const offDefaultLevelEnum = Joi.alternatives(defaultLevelEnum, Joi.string().valid('off'));
     const onOffDefaultLevelEnum = Joi.alternatives(offDefaultLevelEnum, Joi.string().valid('on'));
@@ -543,8 +543,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.obj.stopped) throw new Error('[Logger>] Not stopped');
-    this.obj.starting = true;
+    if (!this.props.stopped) throw new Error('[Logger>] Not stopped');
+    this.props.starting = true;
 
     const { options } = this;
 
@@ -566,10 +566,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
       console.log(`[Logger>] ${options.service} v${options.version} \
-stage: '${options.stage}' host id: ${this.obj.hostId}`);
+stage: '${options.stage}' host id: ${this.props.hostId}`);
     }
 
-    this.obj.stopped = false;
+    this.props.stopped = false;
 
     // Create one logger for uncaught Promise rejection and exceptions
     // Winston transports have some magic to catch uncaught exceptions.
@@ -579,20 +579,20 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     const uncaughtLoggers = this.logger(options.uncaughtCategory);
     // Create a Winston logger now to catch uncaught exceptions
     if (uncaughtLoggers.isLevelEnabled('error')) {
-      this.obj.unhandledPromiseListener = (error) => {
+      this.props.unhandledPromiseListener = (error) => {
         uncaughtLoggers.error('Unhandled Promise rejection', { error });
       };
-      process.on('unhandledRejection', this.obj.unhandledPromiseListener);
+      process.on('unhandledRejection', this.props.unhandledPromiseListener);
     }
 
-    this.obj.starting = false;
+    this.props.starting = false;
   }
 
   /**
    * @description Internal function called by methods that are named after
    * levels. Allows tags to be provided.
    * @param {Loggers|ChildLogger} obj
-   * @param {Object} levelObj From this.obj.logLevel. Has property logLevel.
+   * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrContext
    * @param {*} contextOrCategory
@@ -616,9 +616,9 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    * @description Creates a directory for log files
    */
   createLogsDirectory() {
-    if (this.obj.logsDirectory !== undefined) return;
+    if (this.props.logsDirectory !== undefined) return;
 
-    this.obj.logsDirectory = ''; // This method is only called once
+    this.props.logsDirectory = ''; // This method is only called once
 
     const { directories } = this.options.file;
     if (
@@ -626,7 +626,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       !directories.every((dir) => {
         try {
           mkdirp(dir);
-          this.obj.logsDirectory = dir;
+          this.props.logsDirectory = dir;
           return false;
         } catch (error) {
           return true; // Next iteration
@@ -678,8 +678,8 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     if (!tags) return false;
 
     Object.entries(tags).forEach(([tag, tagInfo]) => {
-      let categoryTags = this.obj.categoryTags[category];
-      if (!categoryTags) categoryTags = this.obj.categoryTags[category] = {};
+      let categoryTags = this.props.categoryTags[category];
+      if (!categoryTags) categoryTags = this.props.categoryTags[category] = {};
 
       if (typeof tagInfo === 'string') {
         categoryTags[tag] = { on: tagInfo };
@@ -839,9 +839,9 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     this.cloudWatch = {};
     this.cloudWatch.transports = [];
 
-    let stream = this.obj.created.replace('T', ' ');
+    let stream = this.props.created.replace('T', ' ');
     // CloudWatch UI already sorts on time
-    stream = `${stream} ${this.obj.hostId}`;
+    stream = `${stream} ${this.props.hostId}`;
     stream = stream.replace(/:/g, '');
     this.cloudWatch.streamName = stream;
   }
@@ -859,10 +859,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     transports.push(this.createConsoleTransport('error', false));
 
     this.createLogsDirectory();
-    if (this.obj.logsDirectory) {
+    if (this.props.logsDirectory) {
       transports.push(
         new winston.transports.DailyRotateFile({
-          filename: `${this.obj.logsDirectory}/${errorCategory}-%DATE%`,
+          filename: `${this.props.logsDirectory}/${errorCategory}-%DATE%`,
           extension: '.log',
           datePattern: 'YYYY-MM-DD-HH',
           zippedArchive: true,
@@ -879,7 +879,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       defaultMeta: Loggers.defaultMeta(errorCategory),
       exitOnError: false,
       format: this.formatter(),
-      levels: this.obj.levelSeverity,
+      levels: this.props.levelSeverity,
       transports,
     });
   }
@@ -985,7 +985,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
     // Close
     await Promise.all(
-      Object.entries(this.obj.winstonLoggers).map(([category, logger]) => {
+      Object.entries(this.props.winstonLoggers).map(([category, logger]) => {
         if (!logger.writable || category === cloudWatchErrorCategory) {
           return Promise.resolve();
         }
@@ -1019,10 +1019,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       }
     }
 
-    this.obj.winstonLoggers = {};
+    this.props.winstonLoggers = {};
 
-    const errorLoggers = this.obj.winstonLoggers[cloudWatchErrorCategory];
-    this.obj.loggers = {};
+    const errorLoggers = this.props.winstonLoggers[cloudWatchErrorCategory];
+    this.props.loggers = {};
 
     if (errorLoggers && errorLoggers.writable) {
       // eslint-disable-next-line no-constant-condition
@@ -1053,13 +1053,13 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       await new Promise((resolve) => setTimeout(resolve, 1));
     }
 
-    if (this.obj.unhandledPromiseListener) {
-      process.off('unhandledRejection', this.obj.unhandledPromiseListener);
-      delete this.obj.unhandledPromiseListener;
+    if (this.props.unhandledPromiseListener) {
+      process.off('unhandledRejection', this.props.unhandledPromiseListener);
+      delete this.props.unhandledPromiseListener;
     }
 
-    this.obj.stopping = false;
-    this.obj.stopped = true;
+    this.props.stopping = false;
+    this.props.stopped = true;
 
     // eslint-disable-next-line no-console
     if (this.options.say.stopped) console.log('[Logger>] Stopped');
@@ -1071,15 +1071,15 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    * @throws {None}
    */
   async stop() {
-    if (this.obj.stopped) return;
+    if (this.props.stopped) return;
 
-    if (this.obj.stopping) {
+    if (this.props.stopping) {
       // Stop is already running. Wait for it to finish.
       await new Promise((resolve) => {
-        if (this.obj.stopWaiters) {
-          this.obj.stopWaiters.push(resolve);
+        if (this.props.stopWaiters) {
+          this.props.stopWaiters.push(resolve);
         } else {
-          this.obj.stopWaiters = [resolve];
+          this.props.stopWaiters = [resolve];
           if (this.unitTest) this.unitTest.hasStopWaiters = true;
         }
       });
@@ -1087,7 +1087,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       return;
     }
 
-    this.obj.stopping = true;
+    this.props.stopping = true;
 
     if (this.unitTest) {
       // eslint-disable-next-line no-new
@@ -1100,9 +1100,9 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
     await this.close();
 
-    if (this.obj.stopWaiters) {
-      this.obj.stopWaiters.forEach((resolve) => resolve());
-      delete this.obj.stopWaiters;
+    if (this.props.stopWaiters) {
+      this.props.stopWaiters.forEach((resolve) => resolve());
+      delete this.props.stopWaiters;
     }
   }
 
@@ -1112,14 +1112,14 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    * @return {Object} Winston logger
    */
   createWinstonLoggers(category) {
-    if (this.obj.stopped) throw new Error('Stopped');
+    if (this.props.stopped) throw new Error('Stopped');
 
     let logger;
 
     if (category === this.options.cloudWatch.errorCategory) {
       logger = this.createCloudWatchErrorLoggers();
     } else {
-      if (this.obj.stopping) throw new Error('Stopping');
+      if (this.props.stopping) throw new Error('Stopping');
 
       const { categories } = this.options;
       let settings = categories[category];
@@ -1148,10 +1148,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
       if (level !== 'off') {
         this.createLogsDirectory();
-        if (this.obj.logsDirectory) {
+        if (this.props.logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('file', info))();
           const transport = new winston.transports.DailyRotateFile({
-            filename: `${this.obj.logsDirectory}/${category}-%DATE%`,
+            filename: `${this.props.logsDirectory}/${category}-%DATE%`,
             extension: '.log',
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
@@ -1159,7 +1159,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
             maxFiles: this.options.file.maxAge,
             format: format.combine(checkTags, format.json()),
             level,
-            handleExceptions: this.obj.starting,
+            handleExceptions: this.props.starting,
           });
 
           transports.push(transport);
@@ -1230,7 +1230,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
             level,
             errorHandler: (error) => this.cloudWatchError(error),
             uploadRate,
-            handleExceptions: this.obj.starting,
+            handleExceptions: this.props.starting,
           });
 
           this.cloudWatch.transports.push(transport);
@@ -1251,9 +1251,9 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       // active
       if (!transports.length && level === 'off') level = 'error';
 
-      // When this.obj.starting is true, the 'unhandled' console is being created
+      // When this.props.starting is true, the 'unhandled' console is being created
       // which will log exceptions
-      if (level !== 'off') transports.push(this.createConsoleTransport(level, this.obj.starting));
+      if (level !== 'off') transports.push(this.createConsoleTransport(level, this.props.starting));
 
       // Error file
       level = settings.errorFile || 'off';
@@ -1265,10 +1265,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
       if (level !== 'off') {
         this.createLogsDirectory();
-        if (this.obj.logsDirectory) {
+        if (this.props.logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
           const transport = new winston.transports.DailyRotateFile({
-            filename: `${this.obj.logsDirectory}/${category}-error-%DATE%`,
+            filename: `${this.props.logsDirectory}/${category}-error-%DATE%`,
             extension: '.log',
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
@@ -1276,7 +1276,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
             maxFiles: this.options.file.maxAge,
             format: format.combine(checkTags, format.json()),
             level,
-            handleExceptions: this.obj.starting,
+            handleExceptions: this.props.starting,
           });
 
           transports.push(transport);
@@ -1292,7 +1292,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       });
     }
 
-    this.obj.winstonLoggers[category] = logger;
+    this.props.winstonLoggers[category] = logger;
     return logger;
   }
 
@@ -1302,10 +1302,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    * @return {Object} An object with keys category and logger
    */
   winstonLogger(category) {
-    if (this.obj.stopped) throw new Error('Stopped');
+    if (this.props.stopped) throw new Error('Stopped');
 
     category = this.checkCategory(category);
-    let logger = this.obj.winstonLoggers[category];
+    let logger = this.props.winstonLoggers[category];
     if (!logger) logger = this.createWinstonLoggers(category);
 
     return logger;
@@ -1328,13 +1328,13 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    */
   logger(category) {
     category = this.checkCategory(category);
-    let logger = this.obj.loggers[category];
+    let logger = this.props.loggers[category];
     if (logger) return logger;
     // Initialize the category
     this.processCategoryTags(category);
     // eslint-disable-next-line no-use-before-define
     logger = new ChildLogger(this, undefined, undefined, category);
-    this.obj.loggers[category] = logger;
+    this.props.loggers[category] = logger;
     return logger;
   }
 
@@ -1359,7 +1359,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    * stopped true: Messages can be logged
    */
   isReady() {
-    return !this.obj.starting && !this.obj.stopped && !this.obj.stopping;
+    return !this.props.starting && !this.props.stopped && !this.props.stopping;
   }
 
   /**
@@ -1371,7 +1371,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
    *  category. Otherwise, returns false.
    */
   isLevelEnabled(tags, category) {
-    if (this.obj.stopped) {
+    if (this.props.stopped) {
       // eslint-disable-next-line no-console
       console.warn(new Error('[Logger>] Stopped'));
       return false;
@@ -1386,7 +1386,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       // Use logLevel meta tag
       const value = tags.logLevel;
       if (value !== undefined) {
-        if (this.obj.logLevel[value]) {
+        if (this.props.logLevel[value]) {
           level = value === 'default' ? this.options.defaultLevel : value;
           tags[level] = true;
         }
@@ -1400,8 +1400,8 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
         let levelNum = 100000;
 
         tagNames.forEach((tag) => {
-          if (tags[tag] && this.obj.logLevel[tag]) {
-            const num = this.obj.levelSeverity[tag];
+          if (tags[tag] && this.props.logLevel[tag]) {
+            const num = this.props.levelSeverity[tag];
             if (num < levelNum) {
               levelNum = num;
               level = tag === 'default' ? this.options.defaultLevel : tag;
@@ -1417,7 +1417,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
     // Process the category's settings for tag filtering
     {
-      const logger = this.obj.loggers[category];
+      const logger = this.props.loggers[category];
       if (!logger) this.logger(category);
     }
 
@@ -1428,14 +1428,14 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       // @todo Defaults should be specified at the category level
       // @todo Cache results for tags for the category that aren't yet defined
       // in config
-      const categoryTags = this.obj.categoryTags[category];
-      const defaultTags = this.obj.categoryTags.default;
+      const categoryTags = this.props.categoryTags[category];
+      const defaultTags = this.props.categoryTags.default;
       let nextLevel = level;
 
       if (
         !tagNames.every((tag) => {
           // Return true to continue
-          if (this.obj.levelSeverity[tag] !== undefined) return true; // It's a level tag
+          if (this.props.levelSeverity[tag] !== undefined) return true; // It's a level tag
 
           let categoryTransports;
           if (categoryTags) categoryTransports = categoryTags[tag];
@@ -1446,7 +1446,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
           if (categoryTransports) {
             const { allowLevel } = categoryTransports;
             if (allowLevel) {
-              if (this.obj.levelSeverity[level] <= this.obj.levelSeverity[allowLevel]) return true;
+              if (this.props.levelSeverity[level] <= this.props.levelSeverity[allowLevel]) return true;
               checkDefault = false;
             }
           }
@@ -1458,13 +1458,15 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
               const { allowLevel } = defaultTransports;
               if (allowLevel) {
                 // @todo cache this
-                if (this.obj.levelSeverity[level] <= this.obj.levelSeverity[allowLevel]) return true;
-              } else if (this.obj.levelSeverity[level] <= this.obj.levelSeverity[this.options.defaultTagAllowLevel]) {
+                if (this.props.levelSeverity[level] <= this.props.levelSeverity[allowLevel]) return true;
+              } else if (
+                this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]
+              ) {
                 // Defaults to warn (severity 1)
                 // @todo Cache this
                 return true;
               }
-            } else if (this.obj.levelSeverity[level] <= this.obj.levelSeverity[this.options.defaultTagAllowLevel]) {
+            } else if (this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]) {
               // Defaults to warn (severity 1)
               // @todo Cache this
               return true;
@@ -1475,11 +1477,11 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
           // and is computed only once
           if (categoryTransports) {
             const { on } = categoryTransports;
-            if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) return false;
+            if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) return false;
           } else {
             if (!defaultTransports) return true;
             const { on } = defaultTransports;
-            if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) return false;
+            if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) return false;
           }
 
           // Alter level?
@@ -1487,7 +1489,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
             let { level: lvl } = categoryTransports;
             if (lvl) {
               if (lvl === 'default') lvl = this.options.defaultLevel;
-              if (this.obj.levelSeverity[lvl] < this.obj.levelSeverity[nextLevel]) {
+              if (this.props.levelSeverity[lvl] < this.props.levelSeverity[nextLevel]) {
                 // @todo Exit early if isLevelEnabled(lvl) is false
                 nextLevel = lvl;
               }
@@ -1504,7 +1506,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
               let on = categoryTransports[transport];
               if (on) {
                 checkDefault = false;
-                if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) {
+                if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
                   if (!logTransports) logTransports = { ...transportObj };
                   delete logTransports[transport];
                 }
@@ -1512,7 +1514,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
                 on = categoryTransports.other;
                 if (on) {
                   checkDefault = false;
-                  if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) {
+                  if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
                     if (!logTransports) logTransports = { ...transportObj };
                     delete logTransports[transport];
                   }
@@ -1523,14 +1525,14 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
             if (checkDefault && defaultTransports) {
               let on = defaultTransports[transport];
               if (on) {
-                if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) {
+                if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
                   if (!logTransports) logTransports = { ...transportObj };
                   delete logTransports[transport];
                 }
               } else {
                 on = defaultTransports.other;
                 if (on) {
-                  if (this.obj.levelSeverity[level] > this.obj.levelSeverity[on]) {
+                  if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
                     if (!logTransports) logTransports = { ...transportObj };
                     delete logTransports[transport];
                   }
@@ -1554,7 +1556,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       if (nextLevel) level = nextLevel;
     }
 
-    let logger = this.obj.winstonLoggers[category];
+    let logger = this.props.winstonLoggers[category];
     if (!logger) logger = this.winstonLogger(category);
     if (!logger.isLevelEnabled(level)) return false;
 
@@ -1618,7 +1620,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
         // Check the level override
         const { allowLevel } = redact;
         if (!allowLevel) return; // Defaults to always redact
-        if (this.obj.levelSeverity[allowLevel] > this.obj.levelSeverity[level]) return;
+        if (this.props.levelSeverity[allowLevel] > this.props.levelSeverity[level]) return;
       }
     }
 
@@ -1658,12 +1660,12 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       ms: false, // Set via a formatter; intentionally not removed
       tags: false,
       error: false, // Set and removed by send()
-      ...this.obj.userMeta,
+      ...this.props.userMeta,
       category: info.category, // Overwritten by defaultMeta
       logGroupId: false, // Set and removed by send()
       logDepth: 0, // Set and removed by send()
       stage: this.options.stage,
-      hostId: this.obj.hostId,
+      hostId: this.props.hostId,
       service: this.options.service,
       version: this.options.version,
       commitSha: undefined,
@@ -1706,8 +1708,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
           const { stack } = item;
           if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
 
-          // If the object has a conversion to string, use it. Otherwise, use
-          // its message property if it's a scalar
+          // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
           const msg = this.objectToString(item);
           if (msg) this.copyData(level, tags, state, 'message', msg);
         }
@@ -1720,7 +1721,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     // Promote data to meta
     const { data } = state;
     if (data) {
-      this.obj.metaKeys.forEach((key) => {
+      this.props.metaKeys.forEach((key) => {
         const value = data[key];
         if (value !== null && value !== undefined) {
           const type = typeof value;
@@ -1739,10 +1740,11 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     }
 
     // Remove meta keys that have undefined values
-    // eslint-disable-next-line guard-for-in, no-restricted-syntax
-    Object.entries(entry).forEach(([key, value]) => {
+    // eslint-disable-next-line no-restricted-syntax, guard-for-in
+    for (const key in entry) {
+      const value = entry[key];
       if (value === undefined) delete entry[key];
-    });
+    }
 
     if (state.contextData) entry.contextData = state.contextData;
 
@@ -1927,7 +1929,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     }
 
     // Only CloudWatch's error logger can be used while stopping
-    if (this.obj.stopping && category !== this.options.cloudWatch.errorCategory) {
+    if (this.props.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
       console.warn(new Error(`[Logger>] Stopping. Unable to log:\n${util.inspect(entry)}`));
       return;
@@ -1960,7 +1962,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       } else {
         context = Loggers.context(context, tags);
       }
-      tags = this.obj.logLevel.error;
+      tags = this.props.logLevel.error;
     } else if (
       tags &&
       typeof tags === 'object' &&
@@ -1986,13 +1988,20 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
   }
 
   /**
+   * @description Log using the default level
+   * @return {Loggers} this
+   */
+  default(...args) {
+    return Loggers.levelLog(this, this.props.logLevel.default, ...args);
+  }
+
+  /**
    * @description Sends log entries to a Winston logger
-   *  If tags is an Error object, error is used for tags and message is set as
-   * follows:
+   * If tags is an Error object, error is used for tags and message is set as follows:
    *   1. If message is falsey, message = tags
    *   2. Otherwise, context = Loggers.context(context, {error: tags})
-   *  If tags is an object and has truthy values for tags, level, message, or
-   * context, the keys in tags are used as follows if they are truthy:
+   * If tags is an object and has truthy values for tags, level, message, or context, the keys in tags are used as
+   * follows if they are truthy:
    *   1. tags = Loggers.tags(tags.level, tags.tags)
    *   2. message = tags.message
    *   3. context = tags.context
@@ -2009,7 +2018,7 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
       ({ tags, message, context, category } = args);
     }
 
-    if (this.obj.stopped) {
+    if (this.props.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
         new Error(`[Logger>] Stopped. Unable to log:
@@ -2053,10 +2062,9 @@ Loggers.levels = {
 };
 
 /**
- * @description tags, context, and category comprise a logging context. This object manages a logging
- *  context. The methods in this class accept a logging context which, if provided, is combined with
- *  the object's logging context. For example, if tags = ['apple'] is provided to the constructor,
- *  then log('banana') will use the tags 'apple' and 'banana.'
+ * @description This class contains a (tags, context, category) tuple. Its methods accept tags, context, and category,
+ *  which, if provided, are combined with the object's corresponding properties. For example, if the object is created
+ *  with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.'
  *
  * Public Properties
  *  {Object} tags
