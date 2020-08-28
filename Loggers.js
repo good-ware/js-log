@@ -531,7 +531,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`[Logger>] ${validation.error.message}`);
+      if (validation.error) throw new Error(`Loggers> ${validation.error.message}`);
       options = validation.value;
     }
 
@@ -543,14 +543,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.props.stopped) throw new Error('[Logger>] Not stopped');
+    if (!this.props.stopped) throw new Error('Loggers> Not stopped');
     this.props.starting = true;
 
     const { options } = this;
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('[Logger>] Unit test mode enabled');
+      console.warn('Loggers> Unit test mode enabled');
 
       this.unitTest = {
         entries: [],
@@ -565,7 +565,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`[Logger>] ${options.service} v${options.version} \
+      console.log(`Loggers> ${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.props.hostId}`);
     }
 
@@ -637,7 +637,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('[Logger>] Unable to create logs directory');
+    console.warn('Loggers> Unable to create logs directory');
   }
 
   /**
@@ -656,7 +656,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`[Logger>] Invalid datatype for category: ${type}`));
+      console.error(new Error(`Loggers> Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -939,7 +939,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`[Logger>] Waiting up to ${duration} to send log entries to CloudWatch`);
+        console.log(`Loggers> Waiting up to ${duration} to send messages to CloudWatch Logs`);
       }, 2500);
     }
 
@@ -954,7 +954,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log('[Logger>] CloudWatch log entries sent');
+      console.log('Loggers> Messages sent to CloudWatch Logs');
     }
   }
 
@@ -965,10 +965,10 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('[Logger>] Stopping');
+    if (this.options.say.stopping) console.log('Loggers> Stopping');
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: [Logger>] Stopping
+      // Test uncaught exception - expect Error: Loggers> Stopping
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1062,7 +1062,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     this.props.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('[Logger>] Stopped');
+    if (this.options.say.stopped) console.log('Loggers> Stopped');
   }
 
   /**
@@ -1193,10 +1193,10 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`[Logger>] CloudWatch region was not specified for category '${category}'`);
+          console.warn(`Loggers> AWS region was not specified for CloudWatch Logs for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`[Logger>] CloudWatch log group was not specified for category '${category}'`);
+          console.warn(`Loggers> CloudWatch Logs log group was not specified for category '${category}'`);
         } else {
           this.initCloudWatch();
 
@@ -1205,8 +1205,9 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`[Logger>: ${category}] Opening CloudWatch stream \
-'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}'`);
+            console.log(`Loggers> Opening CloudWatch Logs stream \
+'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}' for \
+category ${category}`);
           }
 
           const { uploadRate } = awsOptions;
@@ -1373,7 +1374,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('[Logger>] Stopped'));
+      console.warn(new Error('Loggers> Stopped'));
       return false;
     }
 
@@ -1931,7 +1932,8 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`[Logger>] Stopping. Unable to log:\n${util.inspect(entry)}`));
+      console.warn(new Error(`Loggers> Stopping. Unable to log:
+${util.inspect(entry)}`));
       return;
     }
 
@@ -2021,7 +2023,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
       console.warn(
-        new Error(`[Logger>] Stopped. Unable to log:
+        new Error(`Loggers> Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
