@@ -48,7 +48,7 @@ class TaskLogger {
     } catch (error) {
       let msg = errorMessage;
       if (errorHandler) msg = errorHandler(error, logger, errorMessage);
-      if (msg) logger.log('end', msg, { error });
+      if (msg) logger.log('error', msg, { error });
       throw error;
     }
     logger.log('end', endMessage);

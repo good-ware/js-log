@@ -49,6 +49,7 @@ class LogEntry {}
 class Loggers {
   /**
    * Private Properties
+   *  {Object} options
    *  {Boolean} obj.starting
    *  {Boolean} obj.stopping
    *  {Boolean} obj.stopped
@@ -1331,12 +1332,8 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
     if (logger) return logger;
     // Initialize the category
     this.processCategoryTags(category);
-    if (category === this.options.defaultCategory) {
-      logger = this;
-    } else {
-      // eslint-disable-next-line no-use-before-define
-      logger = new ChildLogger(this, undefined, undefined, category);
-    }
+    // eslint-disable-next-line no-use-before-define
+    logger = new ChildLogger(this, undefined, undefined, category);
     this.obj.loggers[category] = logger;
     return logger;
   }
@@ -1402,8 +1399,8 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
         // Populate level such that, for example, 'error' overrides 'debug' if both are present
         let levelNum = 100000;
 
-        tagNames.entries(([tag, enabled]) => {
-          if (enabled && this.obj.logLevel[tag]) {
+        tagNames.forEach((tag) => {
+          if (tags[tag] && this.obj.logLevel[tag]) {
             const num = this.obj.levelSeverity[tag];
             if (num < levelNum) {
               levelNum = num;
@@ -1743,7 +1740,6 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
     // Remove meta keys that have undefined values
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
-    // terris undo
     Object.entries(entry).forEach(([key, value]) => {
       if (value === undefined) delete entry[key];
     });
@@ -1941,9 +1937,10 @@ stage: '${options.stage}' host id: ${this.obj.hostId}`);
 
     if (contextData) this.send(info, contextData, null, errors, depth + 1, logGroupId);
 
-    if (contextMessages) contextMessages.forEach((contextMessage) => {
+    if (contextMessages)
+      contextMessages.forEach((contextMessage) => {
         this.send(info, contextMessage, context, errors, depth + 1, logGroupId);
-    });
+      });
   }
 
   /**

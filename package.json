@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Winston3-based logging for Node.js",
   "scripts": {
     "lint": "eslint . --fix",
@@ -20,10 +20,10 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "aws-sdk": "^2.725.0",
+    "aws-sdk": "^2.741.0",
     "hostid": "^1.0.23",
     "humanize-duration": "^3.23.1",
-    "joi": "^17.1.1",
+    "joi": "^17.2.1",
     "json-prune": "^1.1.0",
     "mkdirp-sync": "0.0.3",
     "uuid": "^8.3.0",
@@ -39,7 +39,7 @@
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.1",
     "request-promise": "^4.2.6",
     "why-is-node-running": "^2.2.0"
   }
