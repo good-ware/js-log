@@ -1,4 +1,4 @@
-# Winston3-Based Logger
+# Winston3-Based Logging for NodeJS
 
 [npm](https://www.npmjs.com/package/@goodware/log)
 
