@@ -1,8 +1,28 @@
-# Winston3-based console, file, and AWS CloudWatch logger
+# Winston3-Based Logger
 
 [npm](https://www.npmjs.com/package/@goodware/log)
 
-Documentation TBD
+Better documentation is coming soon.
+
+# Features
+
+1. Brings HAPI-style tags to Winston. Tags can participate in filtering. Child loggers support tags.
+2. Object property level redaction, which can be enabled and disabled via tags
+3. Objects can be logged with safety for circular references and large objects
+3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
+4. Promotes object properties to a configurable subset of 'meta' properties
+5. Safe shut-down
+6. Doesn't interfere with any code that uses Winston
+
+# Transports Supported
+
+- Console (plain or ..add link)
+- File (daily ..add link)
+- AWS CloudWatch Logs
+
+# What's Missing
+
+The ability to add additional transports
 
 # Loggers Class
 
