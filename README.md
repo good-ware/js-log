@@ -12,9 +12,11 @@ Better documentation is coming soon.
 3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Safe shut-down
-6. Doesn't interfere with any code that uses Winston
+6. Doesn't interfere with other code that uses Winston
 
 # Transports Supported
+
+The following transports can be utilized. They are all optional.
 
 - Console (plain or ..add link)
 - File (daily ..add link)
