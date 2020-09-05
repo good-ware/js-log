@@ -1933,8 +1933,10 @@ category ${category}`);
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(new Error(`Loggers> Stopping. Unable to log:
-${util.inspect(entry)}`));
+      console.warn(
+        new Error(`Loggers> Stopping. Unable to log:
+${util.inspect(entry)}`)
+      );
       return;
     }
 

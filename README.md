@@ -9,7 +9,7 @@ Better documentation is coming soon.
 1. Brings HAPI-style tags to Winston. Tags can participate in filtering. Child loggers support tags.
 2. Redaction which can be enabled and disabled via tags
 3. Safely logs large objects and arrays - even those with circular references
-3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
+   3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Reliable flushing (shut-down only)
 6. Doesn't interfere with other code that uses Winston
@@ -337,6 +337,6 @@ The following classes are available:
 
 - TaskLogger: For logging calls to aynchronous and asynchronous functions
 - GeneratorLogger: Creates an object that is useful for logging operations that produce data (aka generators), usually
- via events or iterators
+  via events or iterators
 - MySqlLogger: For logging SQL statement execution via mysql2
 - RequestLogger: For logging http requests via request-promise
