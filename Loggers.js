@@ -96,7 +96,7 @@ class Loggers {
    * @param {Object} levels An object with properties levels and colors, both of which are objects whose keys are level
    *  names
    */
-  constructor(options, levels = Loggers.levels) {
+  constructor(options, levels = Loggers.defaultLevels) {
     this.props = {};
     this.props.stopped = true;
 
