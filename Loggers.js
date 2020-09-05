@@ -50,26 +50,27 @@ class Loggers {
   /**
    * Private Properties
    *  {Object} options
-   *  {Boolean} obj.starting
-   *  {Boolean} obj.stopping
-   *  {Boolean} obj.stopped
-   *  {String} obj.created
-   *  {String} obj.hostId
-   *  {String} obj.logsDirectory
-   *  {String[]} obj.metaKeys
-   *  {Function} obj.unhandledPromiseListener
-   *  {Function[]} obj.stopWaiters
-   *  {String[]} obj.levels {String} with 'default'
-   *  {Object} obj.winstonLoggers {String} category -> Winston logger
-   *  {Object} obj.userMeta {String} metaFieldName -> undefined
+   *  {Boolean} props.starting
+   *  {Boolean} props.stopping
+   *  {Boolean} props.stopped
+   *  {String} props.created
+   *  {String} props.hostId
+   *  {String} props.logsDirectory
+   *  {String[]} props.metaKeys
+   *  {Object} props.meta {String} key -> {String} metaKey
+   *  {Function} props.unhandledPromiseListener
+   *  {Function[]} props.stopWaiters
+   *  {String[]} props.levels {String} with 'default'
+   *  {Object} props.winstonLoggers {String} category -> Winston logger
+   *  {Object} props.userMeta {String} metaFieldName -> undefined
    *  {Object} unitTest
-   *  {Object} obj.cloudWatch Properties:
+   *  {Object} props.cloudWatch Properties:
    *   {String} streamName
    *   {Object[]} transports
-   *  {Object} obj.loggers {String} category -> {Loggers|ChildLogger}
-   *  {Object} obj.categoryTags {String} category -> {{String} tag -> {Object}}
-   *  {Object} obj.logLevel {String} level name or 'default' -> {logLevel: {String}}
-   *  {Object} obj.levelSeverity {String} level plus 'on', 'off', and 'default'
+   *  {Object} props.loggers {String} category -> {Loggers|ChildLogger}
+   *  {Object} props.categoryTags {String} category -> {{String} tag -> {Object}}
+   *  {Object} props.logLevel {String} level name or 'default' -> {logLevel: {String}}
+   *  {Object} props.levelSeverity {String} level plus 'on', 'off', and 'default'
    *   -> {Number} {Object} winstonLevels Passed to Winston when creating a logger
    *
    * Notes to Maintainers
@@ -172,15 +173,19 @@ class Loggers {
     // Dedup the meta keys
     {
       const meta = {};
-      options.metaKeys.forEach((key) => {
-        if (key) meta[key] = true;
+      this.options.userMeta = {};
+      Object.entries(options.metaKeys).forEach(([key, value]) => {
+        meta[key] = key;
+        if (value) {
+          key = value;
+          meta[key] = key;
+        }
+        this.options.userMeta[key] = undefined;
       });
-      Object.assign(meta, { message: false, stack: false });
+      meta.message = 'message';
+      meta.stack = 'stack';
       this.props.metaKeys = Object.keys(meta);
-      this.props.userMeta = {};
-      this.props.metaKeys.forEach((key) => {
-        if (meta[key]) this.props.userMeta[key] = undefined;
-      });
+      this.props.meta = meta;
     }
 
     // Add the default category if it's missing
@@ -404,20 +409,11 @@ CloudWatch`
       // Colors
       levelColors: Joi.object().pattern(levelEnum, Joi.string().required()),
 
-      // Meta
-      metaKeys: Joi.array()
-        .items(Joi.string())
-        .default([
-          'transactionId',
-          'correlationId',
-          'operationId',
-          'requestId',
-          'tenantId',
-          'statusCode',
-          'code',
-          'commitSha',
-        ])
-        .description('Keys to copy to meta. Values must be scalars.'),
+      // Meta keys
+      metaKeys: Joi.object()
+        .pattern(Joi.string(), Joi.string())
+        .default(Loggers.defaultMetaKeys)
+        .description(`Which keys to copy from 'both' to meta with the option to rename the keys`),
 
       // Redaction
       redact: Joi.object()
@@ -543,7 +539,11 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.props.stopped) throw new Error('Loggers> Not stopped');
+    if (!this.props.stopped) {
+      // eslint-disable-next-line no-console
+      console.warn(new Error('Loggers> Not stopped'));
+      return;
+    }
     this.props.starting = true;
 
     const { options } = this;
@@ -1300,7 +1300,7 @@ category ${category}`);
   /**
    * @description Returns a Winston logger associated with a category
    * @param {String} [category]
-   * @return {Object} An object with keys category and logger
+   * @return {Object} A Winston logger
    */
   winstonLogger(category) {
     if (this.props.stopped) throw new Error('Stopped');
@@ -1726,6 +1726,7 @@ category ${category}`);
         const value = data[key];
         if (value !== null && value !== undefined) {
           const type = typeof value;
+          key = this.props.meta[key]; // Rename object key to meta key
           if (type === 'string') {
             if (value.length) {
               entry[key] = value;
@@ -2008,7 +2009,7 @@ ${util.inspect(entry)}`));
    *   2. message = tags.message
    *   3. context = tags.context
    *   4. category = tags.category
-   * @param {*} [tags]. See description.
+   * @param {*} [tags] See description
    * @param {*} [message]
    * @param {*} [context]
    * @param {String} [category]
@@ -2041,11 +2042,27 @@ ${util.inspect({
 }
 
 /**
+ * @description Default meta keys. Values are either undefined or a string containing the actual meta key name. For
+ *  example, given the tuple a: 'b', both.a is copied to meta.b. The 'both' object is not altered; its keys are also
+ *  copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the tuple b: 'b'.
+ */
+Loggers.defaultMetaKeys = {
+  transactionId: undefined,
+  correlationId: undefined,
+  operationId: undefined,
+  requestId: undefined,
+  tenantId: undefined,
+  responseCode: 'statusCode',
+  code: undefined,
+  commitSha: undefined,
+};
+
+/**
  * @description These follow npm levels defined at
  *  https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
  *  than 'error' and 'more' which is between 'info' and 'verbose.'
  */
-Loggers.levels = {
+Loggers.defaultLevels = {
   levels: {
     fail: 10,
     error: 20,
@@ -2113,6 +2130,15 @@ class ChildLogger {
 
     // Dynamic methods
     this.loggersObj.addLevelMethods(this);
+  }
+
+  /**
+   * @description Returns a Winston logger associated with a category
+   * @param {String} [category]
+   * @return {Object} A Winston logger
+   */
+  winstonLogger(category) {
+    return this.loggersObj.winstonLogger(category || this.category);
   }
 
   /**

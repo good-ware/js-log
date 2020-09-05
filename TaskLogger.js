@@ -2,8 +2,7 @@ const { v1: uuidv1 } = require('uuid');
 
 class TaskLogger {
   /**
-   * @description Creates two log entries for the execution of a task: 'begin' and either 'end' or 'error.' This can be
-   *  use to roughly measure the duration of a task. It performs the following actions:
+   * @description Creates two log entries for the execution of a task: 'begin' and either 'end' or 'error.'
    *  1. Creates a log entry with:
    *     a) tag: 'begin'
    *     b) beginMessage
@@ -23,7 +22,7 @@ class TaskLogger {
    *     c) operationId
    *  5. Returns the value from step 2
    * @param {Object} logger
-   * @param {Function} task A function to invoke with logger as the first parameter
+   * @param {Function} task A function to invoke. The argument logger is passed as the only parameter.
    * @param {*} beginMessage A message to be logged before invoking the task
    * @param {*} endMessage A message to log when the task does not throw an exception
    * @param {*} [errorMessage] A message to log when the task throws an exception. errorMessage can be overridden by
