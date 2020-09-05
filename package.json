@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Winston3-based logging for Node.js",
   "scripts": {
     "lint": "eslint . --fix",

@@ -170,23 +170,24 @@ class Loggers {
     this.props.loggers = {};
     this.props.winstonLoggers = {};
 
-    // Dedup the meta keys
-    {
-      const meta = {};
-      this.options.userMeta = {};
-      Object.entries(options.metaKeys).forEach(([key, value]) => {
-        meta[key] = key;
-        if (value) {
-          key = value;
-          meta[key] = key;
-        }
-        this.options.userMeta[key] = undefined;
-      });
-      meta.message = 'message';
-      meta.stack = 'stack';
-      this.props.metaKeys = Object.keys(meta);
-      this.props.meta = meta;
-    }
+    // Process meta keys (begin)
+    this.props.meta = {};
+    this.props.userMeta = {};
+
+    Object.entries(options.metaKeys).forEach(([key, value]) => {
+      this.props.meta[key] = key;
+      if (value) {
+        key = value;
+        this.props.meta[key] = key;
+      }
+      this.props.userMeta[key] = undefined;
+    });
+
+    this.props.meta.message = 'message';
+    this.props.meta.stack = 'stack';
+
+    this.props.metaKeys = Object.keys(this.props.meta);
+    // Process meta keys (end)
 
     // Add the default category if it's missing
     {
