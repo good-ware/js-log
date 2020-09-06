@@ -4,24 +4,30 @@
 
 Better documentation is coming soon.
 
+# Requirements
+
+ECMAScript 2017
+
 # Features
 
-1. Brings HAPI-style tags to Winston. Tags can participate in filtering. Child loggers support tags.
-2. Redaction which can be enabled and disabled via tags
+1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered via tags in addition to logging levels.
+2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Reliable flushing (shut-down only)
 6. Doesn't interfere with other code that uses Winston
+7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
+   to avoid creating expensive messages that won't be logged.
 
 # Transports Supported
 
 The following transports can be utilized. They are all optional.
 
-- [Console](https://www.npmjs.com/package/winston-console-format)
-  - Plain console is also available, which is usually more appropriate for production deployment
-- [File](https://www.npmjs.com/package/winston-daily-rotate-file)
-- [AWS CloudWatch Logs](https://www.npmjs.com/package/winston-console-format)
+- Console via [winston-console-format](https://www.npmjs.com/package/winston-console-format) and 'plain' console output
+  which is more appropriate for production deployment
+- File via [winston-daily-rotate-file](https://www.npmjs.com/package/winston-daily-rotate-file)
+- AWS CloudWatch Logs via [winston-cloudwatch](https://www.npmjs.com/package/winston-console-format)
 
 # What's Missing
 
@@ -29,8 +35,8 @@ The ability to add additional transports
 
 # Usage
 
-The Loggers class is a container that manages logger instances that, in Winston fashion, have unique names that are
-called categories.
+The Loggers class is a container that manages logger instances that have unique category names. Each logger has its
+own settings, such as logging levels and transports.
 
 Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this
 package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents

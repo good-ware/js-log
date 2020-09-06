@@ -67,7 +67,7 @@ class Loggers {
    *  {Object} props.cloudWatch Properties:
    *   {String} streamName
    *   {Object[]} transports
-   *  {Object} props.loggers {String} category -> {Loggers|ChildLogger}
+   *  {Object} props.loggers {String} category -> {Loggers|Logger}
    *  {Object} props.categoryTags {String} category -> {{String} tag -> {Object}}
    *  {Object} props.logLevel {String} level name or 'default' -> {logLevel: {String}}
    *  {Object} props.levelSeverity {String} level plus 'on', 'off', and 'default'
@@ -76,6 +76,7 @@ class Loggers {
    * Notes to Maintainers
    *  1. Check whether toString() should be converted to valueToScalar()
    *  2. tags, message, and context provided to public methods should never be modified
+   *  3. The output of Object.keys and Object.entries should be cached for static objects
    *
    * @todo
    * 1. When console data is requested but colors are disabled, output data without colors using a
@@ -87,14 +88,15 @@ class Loggers {
    * 6. Document custom levels and colors
    * 7. Test redaction
    * 8. Document redaction
-   * 9. Move ChildLogger to another module - see
+   * 9. Move Logger to another module - see
    *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
    */
   /**
    * @constructor
    * @param {Object} options
-   * @param {Object} levels An object with properties levels and colors, both of which are objects whose keys are level
-   *  names
+   * @param {Object} [levels] An object with properties levels and colors, both of which are objects whose keys are
+   *  level names. This is the same object that is provided when creating Winston loggers. See an example at
+   *  https://www.npmjs.com/package/winston#using-custom-logging-levels
    */
   constructor(options, levels = Loggers.defaultLevels) {
     this.props = {};
@@ -106,27 +108,14 @@ class Loggers {
     // Copy environment variables to options (begin)
 
     /**
-     * @description Converts a scalar to a bool
-     * @param {*} value A scalar to convert
-     * @return {*} value, if value is not a number. Otherwise, value converted
-     *     to a boolean.
-     */
-    const toBool = (value) => {
-      if (value === 'true') return true;
-      if (value === 'false') return true;
-      return Number(value) !== 0;
-    };
-
-    /**
-     * @description Sets options.console.{key} if a CONSOLE_{KEY} environment
-     * variable exists
+     * @description Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
      * @param {String} key 'data' or 'colors'
      */
     const envToConsoleKey = (key) => {
       const envKey = `CONSOLE_${key.toUpperCase()}`;
       const value = process.env[envKey];
       if (value === undefined) return;
-      options.console[key] = toBool(value);
+      options.console[key] = value === 'true' ? true : !!Number(value);
     };
 
     // Copy environment variables to options (end)
@@ -331,7 +320,7 @@ class Loggers {
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
    *  See https://jsperf.com/testing-for-any-keys-in-js
    * @param {Object} object An object to test
-   * @return {Boolean} true if object has properties
+   * @return {Boolean} true if object has properties (including inherited)
    */
   static hasKeys(object) {
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
@@ -592,7 +581,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
   /**
    * @description Internal function called by methods that are named after
    * levels. Allows tags to be provided.
-   * @param {Loggers|ChildLogger} obj
+   * @param {Loggers|Logger} obj
    * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrContext
@@ -678,6 +667,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     if (tags) ({ tags } = tags);
     if (!tags) return false;
 
+    // This code is only called once per category so use of Object.entries is fine
     Object.entries(tags).forEach(([tag, tagInfo]) => {
       let categoryTags = this.props.categoryTags[category];
       if (!categoryTags) categoryTags = this.props.categoryTags[category] = {};
@@ -1326,7 +1316,7 @@ category ${category}`);
   /**
    * @description Returns a logger associated with a category
    * @param {String} [category]
-   * @return {Loggers|ChildLogger}
+   * @return {Loggers|Logger}
    */
   logger(category) {
     category = this.checkCategory(category);
@@ -1335,7 +1325,7 @@ category ${category}`);
     // Initialize the category
     this.processCategoryTags(category);
     // eslint-disable-next-line no-use-before-define
-    logger = new ChildLogger(this, undefined, undefined, category);
+    logger = new Logger(this, undefined, undefined, category);
     this.props.loggers[category] = logger;
     return logger;
   }
@@ -1345,13 +1335,13 @@ category ${category}`);
    * @param {*} [tags]
    * @param {*} [context]
    * @param {String} [category]
-   * @return {ChildLogger}
+   * @return {Logger}
    */
   child(tags, context, category) {
     const logger = this.logger(category);
     if (!tags && !context) return logger;
     // eslint-disable-next-line no-use-before-define
-    return new ChildLogger(logger, tags, context);
+    return new Logger(logger, tags, context);
   }
 
   /**
@@ -2093,25 +2083,21 @@ Loggers.defaultLevels = {
  *  {Object} context
  *  {String} category
  */
-class ChildLogger {
+class Logger {
   /**
    * Private Properties
    *  {Object} loggersObj
    *  {Object} parentObj
-   *
-   * Notes to Maintainers
-   *  1. Check whether toString() should be converted to valueToScalar()
-   *  2. tags, message, and context provided to public methods should never be modified
    */
   /**
    * @constructor
-   * @param {Loggers|ChildLogger} logger
+   * @param {Loggers|Logger} logger
    * @param {*} [tags]
    * @param {*} [context]
    * @param {String} [category]
    */
   constructor(logger, tags, context, category) {
-    if (logger instanceof ChildLogger) {
+    if (logger instanceof Logger) {
       tags = Loggers.tags(logger.tags, tags);
       context = Loggers.context(logger.context, context);
       if (!category) category = logger.category;
@@ -2119,7 +2105,7 @@ class ChildLogger {
       this.parentObj = logger;
     } else {
       if (!(logger instanceof Loggers)) {
-        throw new Error('logger must be an instance of Loggers or ChildLogger');
+        throw new Error('logger must be an instance of Loggers or Logger');
       }
       // eslint-disable-next-line no-multi-assign
       this.loggersObj = this.parentObj = logger;
@@ -2152,7 +2138,7 @@ class ChildLogger {
   }
 
   /**
-   * @return {Loggers|ChildLogger}
+   * @return {Loggers|Logger}
    */
   parent() {
     return this.parentObj;
@@ -2160,7 +2146,7 @@ class ChildLogger {
 
   /**
    * @param {String} [category]
-   * @return {Loggers|ChildLogger}
+   * @return {Loggers|Logger}
    */
   logger(category) {
     return this.loggersObj.logger(category || this.category);
@@ -2170,10 +2156,10 @@ class ChildLogger {
    * @param {*} [tags]
    * @param {*} [context]
    * @param {String} [category]
-   * @return {ChildLogger}
+   * @return {Logger}
    */
   child(tags, context, category) {
-    return new ChildLogger(this, tags, context, category || this.category);
+    return new Logger(this, tags, context, category || this.category);
   }
 
   /**
