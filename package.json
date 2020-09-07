@@ -1,13 +1,13 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Winston3-based logging for Node.js",
   "scripts": {
     "lint": "eslint . --fix",
     "prettier": "prettier . --write",
     "pub": "npm publish --access=public",
     "test": "node tests/test.js",
-    "generate-docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose *.js"
+    "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js"
   },
   "main": "Loggers.js",
   "repository": {

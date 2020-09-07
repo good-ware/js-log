@@ -335,7 +335,7 @@ If an AWS region is not specified, the environment variables are used in the fol
 2. AWS_CLOUDWATCH_REGION
 3. AWS_DEFAULT_REGION
 
-# Begin/End/Error Utilities
+# Begin/End/Error Utility Classes
 
 Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin
 log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is set added
