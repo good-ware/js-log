@@ -1,4 +1,4 @@
-# @goodware/log: Winston3-Based Logging for NodeJS
+# @goodware/log: Winston3-based logging to console, file, and/or AWS CloudWatch Logs
 
 Better documentation is coming.
 
@@ -18,7 +18,7 @@ ECMAScript 2017
 
 # Features
 
-1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered via tags in addition to logging levels.
+1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by on tags on a per-tranport basis.
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid

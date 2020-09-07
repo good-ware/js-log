@@ -918,7 +918,6 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
    * flushed.
    * @return {Promise}
    */
-  // eslint-disable-next-line no-unused-vars
   async flushCloudWatch() {
     if (!this.cloudWatch) return;
 
@@ -1023,6 +1022,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
       if (true) {
         errorLoggers.close();
       } else {
+        // For testing
         // @todo finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
@@ -1084,11 +1084,8 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     this.props.stopping = true;
 
     if (this.unitTest) {
-      // eslint-disable-next-line no-new
-      new Promise(() => {
-        this.stop().then(() => {
-          if (!this.unitTest.hasStopWaiters) throw new Error('Waiting while stopping failed');
-        });
+      this.stop().then(() => {
+        if (!this.unitTest.hasStopWaiters) throw new Error('Waiting while stopping failed');
       });
     }
 
