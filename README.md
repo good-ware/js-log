@@ -5,12 +5,16 @@ Better documentation is coming.
 # Links
 
 - [npm](https://www.npmjs.com/package/@goodware/log)
-- [Git](https://github.com/good-ware/js-log)
-- [API](https://good-ware.github.io/js-log)
+- [git](https://github.com/good-ware/js-log)
+- [API](https://good-ware.github.io/js-log/)
 
 # Requirements
 
 ECMAScript 2017
+
+# Installation
+
+`npm i --save @goodware/log`
 
 # Features
 
@@ -339,9 +343,9 @@ If an AWS region is not specified, the environment variables are used in the fol
 # Begin/End/Error Utility Classes
 
 Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin
-log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is set added
-to both entries with the same uuid generated for the operation. If an exception is thrown, an error is logged. These
-functions are implemented as static class methods.
+log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is added to both
+log entries with the same uuid generated for the operation. If an exception is thrown, an error is logged. These
+functions are implemented as static methods.
 
 The following classes are available:
 
