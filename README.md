@@ -1,6 +1,9 @@
 # Winston3-Based Logging for NodeJS
 
-[npm](https://www.npmjs.com/package/@goodware/log)
+# Links
+
+- [npm home](https://www.npmjs.com/package/@goodware/log)
+- [API docs](https://good-ware.github.io/js-log)
 
 Better documentation is coming soon.
 
