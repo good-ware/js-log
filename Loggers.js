@@ -40,6 +40,7 @@ const errorRegex = /^Error: /;
 
 /**
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
+ * @private
  */
 class LogEntry {}
 
@@ -201,6 +202,7 @@ class Loggers {
 
   /**
    * @description Converts a number to a string with leading zeroes
+   * @private
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
    * @return {String} num converted to a string with leading zeroes if necessary
@@ -212,8 +214,8 @@ class Loggers {
   }
 
   /**
-   * @description Returns local time in ISO8601 format with the local timezone
-   * offset
+   * @description Returns local time in ISO8601 format with the local timezone offset
+   * @private
    * @return {String}
    */
   static now() {
@@ -228,11 +230,10 @@ class Loggers {
   }
 
   /**
-   * @description Combines tags into an object
+   * @description Combines two sets of tags into a single object
    * @param {*} [tags]
    * @param {*} [moreTags]
-   * @return {Object} An object consisting of tags and moreTags combined, one
-   *     key per tag name whose truthy value
+   * @return {Object} An object consisting of tags and moreTags combined, one key per tag name whose truthy value
    *  indicates the tag is enabled, or undefined if tags and moreTags are falsey
    */
   static tags(tags, moreTags) {
@@ -280,6 +281,7 @@ class Loggers {
 
   /**
    * @description Converts an context value to an object
+   * @private
    * @param {*} [context]
    * @return {Object} If context is falsey, returns context. If context is a string, returns {logMessage: context}. If
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
@@ -294,7 +296,7 @@ class Loggers {
   }
 
   /**
-   * @description Combines the keys of two optional objects and returns a new object
+   * @description Combines the keys of two context objects and returns a new object
    * @param {*} [context]
    * @param {*} [more]
    * @return {Object} false if context and more are falsey. If context is truthy and more is falsey,
@@ -319,6 +321,7 @@ class Loggers {
   /**
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
    *  See https://jsperf.com/testing-for-any-keys-in-js
+   * @private
    * @param {Object} object An object to test
    * @return {Boolean} true if object has properties (including inherited)
    */
@@ -2074,11 +2077,12 @@ Loggers.defaultLevels = {
 };
 
 /**
- * @description This class contains a (tags, context, category) tuple. Its methods accept tags, context, and category,
+ * @description This class manages a (tags, context, category) tuple. Its methods accept tags, context, and category,
  *  which, if provided, are combined with the object's corresponding properties. For example, if the object is created
- *  with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.'
+ *  with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has level-specific logging
+ *  methods such  as error().
  *
- * Public Properties
+ * Public Properties:
  *  {Object} tags
  *  {Object} context
  *  {String} category
