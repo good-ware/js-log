@@ -1,4 +1,4 @@
-# Winston3-Based Logging for NodeJS
+# @goodware/log: Winston3-Based Logging for NodeJS
 
 Better documentation is coming.
 
