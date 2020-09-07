@@ -1,12 +1,13 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Winston3-based logging for Node.js",
   "scripts": {
     "lint": "eslint . --fix",
     "prettier": "prettier . --write",
     "pub": "npm publish --access=public",
-    "test": "node tests/test.js"
+    "test": "node tests/test.js",
+    "generate-docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose *.js"
   },
   "main": "Loggers.js",
   "repository": {
@@ -39,6 +40,8 @@
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
+    "jsdoc": "^3.6.5",
+    "minami": "^1.2.3",
     "prettier": "^2.1.1",
     "request-promise": "^4.2.6",
     "why-is-node-running": "^2.2.0"

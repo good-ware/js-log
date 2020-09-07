@@ -9,7 +9,7 @@ class MySql {
    * @param {Object} logger
    * @param {Connection} connection mysql2 Connection object
    * @param {String} sql SQL statement to execute
-   * @param {*[]} [values] SQL statement placeholder arguments
+   * @param {Array} [values] SQL statement placeholder arguments
    * @param {Object} [options] Additional options to send to connection.query()
    * @return {Promise} Returns the return value of connection.query(sql, values, ...options)
    */
@@ -31,7 +31,7 @@ class MySql {
    * @param {Object} logger
    * @param {Object} connection A mysql2 Connection object
    * @param {String} sql A SQL statement to execute
-   * @param {*[]} [values] Placeholder arguments for the sql statement
+   * @param {Array} [values] Placeholder arguments for the sql statement
    * @param {Object} [options] Additional options to send to connection.query
    * @return {Object[]} The first array entry is a stream object. The second entry is the object returned by
    *  GeneratorLogger.begin with the following additional properties:
