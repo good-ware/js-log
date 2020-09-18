@@ -17,6 +17,8 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 
 const { format } = winston;
 
+const banner = '[@goodware/log] ';
+
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
@@ -534,7 +536,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   start() {
     if (!this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('Loggers> Not stopped'));
+      console.error(new Error(`${banner}Not stopped`));
       return;
     }
     this.props.starting = true;
@@ -543,7 +545,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.warn('Loggers> Unit test mode enabled');
+      console.log(`${banner}Unit test mode enabled`);
 
       this.unitTest = {
         entries: [],
@@ -558,7 +560,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (this.options.say.banner) {
       // eslint-disable-next-line no-console
-      console.log(`Loggers> ${options.service} v${options.version} \
+      console.log(`{banner}${options.service} v${options.version} \
 stage: '${options.stage}' host id: ${this.props.hostId}`);
     }
 
@@ -630,17 +632,15 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.warn('Loggers> Unable to create logs directory');
+    console.error(`${banner}Unable to create logs directory. Directories attempted:
+${directories.join('\n')}`);
   }
 
   /**
-   * @description Checks whether the provided category value is a string or a
-   * falsey value
+   * @description Checks whether the provided category value is a string or a falsey value
    * @param {*} category
-   * @return {String} Returns the provided category if it is a truthy string;
-   *     otherwise, returns the default category
-   * @throws When this.options.unitTest is true, throws an exception if the
-   *     category is not a string
+   * @return {String} Returns the provided category if it is a truthy string; otherwise, returns the default category
+   * @throws When this.options.unitTest is true, throws an exception if the category is not a string
    */
   checkCategory(category) {
     if (category) {
@@ -649,7 +649,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
       // eslint-disable-next-line no-console
-      console.error(new Error(`Loggers> Invalid datatype for category: ${type}`));
+      console.error(new Error(`${banner}Invalid datatype for category: ${type}`));
     }
     return this.options.defaultCategory;
   }
@@ -932,7 +932,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`Loggers> Waiting up to ${duration} to send messages to CloudWatch Logs`);
+        console.log(`${banner}Waiting up to ${duration} to flush AWS CloudWatch Logs`);
       }, 2500);
     }
 
@@ -947,7 +947,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log('Loggers> Messages sent to CloudWatch Logs');
+      console.log(`${banner}Flushed AWS CloudWatch Logs`);
     }
   }
 
@@ -958,7 +958,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
    */
   async close() {
     // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log('Loggers> Stopping');
+    if (this.options.say.stopping) console.log(`${banner}Stopping`);
 
     if (this.unitTest && !this.unitTest.flush) {
       // Test uncaught exception - expect Error: Loggers> Stopping
@@ -992,7 +992,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
             // eslint-disable-next-line no-console
           })
             // eslint-disable-next-line no-console
-            .catch(console.warn)
+            .catch((error) => console.error(`[${category}]`, error))
         );
       })
     );
@@ -1032,7 +1032,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
             .on('finish', () => setImmediate(() => errorLoggers.close()))
             .end();
           // eslint-disable-next-line no-console
-        }).catch(console.warn);
+        }).catch(console.error);
       }
     }
 
@@ -1056,7 +1056,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     this.props.stopped = true;
 
     // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log('Loggers> Stopped');
+    if (this.options.say.stopped) console.log(`${banner}Stopped`);
   }
 
   /**
@@ -1184,10 +1184,10 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`Loggers> AWS region was not specified for CloudWatch Logs for category '${category}'`);
+          console.error(`[${category}] Region was not specified for AWS CloudWatch Logs`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`Loggers> CloudWatch Logs log group was not specified for category '${category}'`);
+          console.error(`[${category}] Log group was not specified for AWS CloudWatch Logs`);
         } else {
           this.initCloudWatch();
 
@@ -1196,9 +1196,8 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
           if (this.options.say.openCloudWatch) {
             // eslint-disable-next-line no-console
-            console.log(`Loggers> Opening CloudWatch Logs stream \
-'${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName}' at level '${level}' for \
-category ${category}`);
+            console.log(`[${category}] Opening CloudWatch Logs stream \
+${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level}`);
           }
 
           const { uploadRate } = awsOptions;
@@ -1365,7 +1364,7 @@ category ${category}`);
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(new Error('Loggers> Stopped'));
+      console.error(new Error(`${banner}Stopped`));
       return false;
     }
 
@@ -1924,8 +1923,8 @@ category ${category}`);
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== this.options.cloudWatch.errorCategory) {
       // eslint-disable-next-line no-console
-      console.warn(
-        new Error(`Loggers> Stopping. Unable to log:
+      console.error(
+        new Error(`[${category}] Stopping. Unable to log:
 ${util.inspect(entry)}`)
       );
       return;
@@ -2016,8 +2015,8 @@ ${util.inspect(entry)}`)
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(
-        new Error(`Loggers> Stopped. Unable to log:
+      console.error(
+        new Error(`[$category] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
