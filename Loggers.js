@@ -422,12 +422,18 @@ CloudWatch`
         .default({}),
 
       // Errors
-      errorKeys: Joi.array().items(Joi.string()).default(['error', 'originalError', 'cause']),
       maxErrors: Joi.number()
         .integer()
         .min(1)
         .default(25)
         .description('Errors reference other errors. This is the maximum number of errors to log.'),
+      // eslint-disable-next-line quotes
+      maxErrorDepth: Joi.number().integer().min(1).default(5).description(
+        `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
+traverse.`
+      ),
+
+      // Converting objects to strings
       maxArrayLength: Joi.number()
         .integer()
         .min(1)
@@ -438,11 +444,6 @@ CloudWatch`
         .min(1)
         .default(10)
         .description('Maximum depth to traverse when converting an object to a string'),
-      // eslint-disable-next-line quotes
-      maxErrorDepth: Joi.number().integer().min(1).default(5).description(
-        `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
-traverse.`
-      ),
 
       // Turn console status messages on and off
       say: Joi.object({
@@ -1587,10 +1588,9 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
   }
 
   /**
-   * @description Does nothing if the provided key is redacted. Helper function
-   * to combines 'message' and 'context'. Handles overlapping keys in both. Sets
-   * state.currentData to state.data or state.contextData and then sets
-   *  state.currentData[key] to value.
+   * @description Does nothing if the provided key is redacted. Helper function to combine 'message' and 'context'.
+   * Handles overlapping keys in both. Sets state.currentData to state.data or state.contextData and then sets
+   * state.currentData[key] to value.
    * @param {String} level
    * @param {Object} tags
    * @param {String} state An object with keys data, contextData, and currentData
@@ -1666,8 +1666,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       logTransports: info.logTransports,
     });
 
-    // Points to data first and contextData if there are the same keys in message
-    // and context
+    // Points to data first and contextData if there are the same keys in message and context
     const state = {};
     const { tags } = info;
 
@@ -1688,8 +1687,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
           // eslint-disable-next-line guard-for-in, no-restricted-syntax
           for (const key in item) {
             const value = item[key];
-            // Despite being non-enumerable, if these properties are added explicitly, they will
-            // be found by 'in' and Object.keys
+            // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
             if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
               // stack and message are handled below
               this.copyData(level, tags, state, key, value);
@@ -1725,6 +1723,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
             entry[key] = value;
           }
         }
+
         if (key === 'message') delete data[key];
       });
 
@@ -1815,9 +1814,9 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       if (!addContext) {
         contextData = undefined; // Avoid infinite recursion
       } else {
-        // contextData might have errorish keys from context - remove them from
-        // context so overlap doesn't happen again
-        this.options.errorKeys.forEach((key) => {
+        // contextData might have errors from context - remove them so overlap doesn't happen again
+        // eslint-disable-next-line guard-for-in, no-restricted-syntax
+        for (const key in contextData) {
           const value = contextData[key];
           if (value instanceof Error) {
             if (!errors) {
@@ -1826,75 +1825,58 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
               errors.push(value);
             }
           }
-        });
+        }
       }
     }
 
     const { data } = entry;
     if (data) {
-      let innerError;
+      // eslint-disable-next-line guard-for-in, no-restricted-syntax
+      for (const key in data) {
+        const value = data[key];
+        if (value instanceof Error) {
+          entry.error = this.objectToString(value);
+          // If there is no message, set it to an error if it exists
+          if (!entry.message) entry.message = entry.error;
+          break;
+        }
+      }
 
       if (addContext) {
-        this.options.errorKeys.forEach((key) => {
+        // eslint-disable-next-line guard-for-in, no-restricted-syntax
+        for (const key in data) {
           const value = data[key];
-          if (!value) return;
+          // eslint-disable-next-line no-continue
+          if (!(value instanceof Error)) continue;
 
-          // If value is a string, it's logged separately in order to appear in
-          // the console - it already appears in files and CloudWatch inside
-          // data
-          if (value instanceof Error) {
-            let addIt = true;
+          let addIt = true;
 
-            // Check for circular references
-            if (!errors) {
-              errors = [value];
-            } else if (errors.length < this.options.maxErrors && !errors.includes(value)) {
-              errors.push(value);
-            } else {
-              addIt = false;
+          // Check for circular references
+          if (!errors) {
+            errors = [value];
+          } else if (errors.length < this.options.maxErrors && !errors.includes(value)) {
+            errors.push(value);
+          } else {
+            addIt = false;
+          }
+
+          if (addIt) {
+            if (!contextMessages) contextMessages = [value];
+            else contextMessages.push(value);
+          }
+
+          if (context && key in context) {
+            // Otherwise it will reappear in the next call to log()
+            if (!contextCopied) {
+              context = { ...context };
+              contextCopied = true;
             }
-
-            if (addIt) {
-              if (!contextMessages) {
-                contextMessages = [value];
-              } else {
-                contextMessages.push(value);
-              }
-            }
-
-            if (context && key in context) {
-              // Otherwise it will reappear in the next call to log()
-              if (!contextCopied) {
-                context = { ...context };
-                contextCopied = true;
-              }
-              delete context[key];
-            }
+            delete context[key];
           }
 
           // Error->string
-          const errmsg = (data[key] = this.objectToString(value));
-          if (!innerError) innerError = errmsg;
-        });
-      }
-
-      // If there is no message, set it to an error if it exists
-      if (!entry.message.length) {
-        this.options.errorKeys.every((key) => {
-          const value = data[key];
-          if (value) {
-            entry.message = this.objectToString(value);
-            return false;
-          }
-          return true;
-        });
-      }
-
-      // Set error meta
-      if (innerError) {
-        entry.error = innerError;
-      } else if (typeof data.error === 'string') {
-        entry.error = data.error;
+          data[key] = this.objectToString(value);
+        }
       }
 
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
@@ -1964,8 +1946,7 @@ ${util.inspect(entry)}`)
       !(tags instanceof Array) &&
       (tags.tags || tags.level || tags.message || tags.context)
     ) {
-      // The first argument is a single argument to use as all the other
-      // arguments?
+      // The first argument is a single argument to use as all the other arguments
       if (tags.message) message = tags.message;
       context = Loggers.context(context, tags.context);
       if (tags.category) category = tags.category;

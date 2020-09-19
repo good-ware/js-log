@@ -109,9 +109,9 @@ An object that is sent to a transport. A log entry consists of meta and data.
 
 ## meta
 
-The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which
-are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, error, tags, category,
-code, responseCode (renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId,
+The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
+Meta keys are: timestamp, ms (elpased time between log entries), level, message, error, tags, category, code,
+responseCode (renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId,
 requestId, tenantId, hostId, stage, version, service, stack, logStack, and logTransports.
 
 ## data
@@ -242,16 +242,29 @@ setting. Properties are copied to meta if their values are scalar and their name
 ## both
 
 message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap
-with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta key value.
+with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta value.
 
-## error
+## Logging errors
 
-Errors can be provided via both, both.error, both.cause, and both.originalError. Error objects may
-also have these keys. All error objects are logged separately such that each log entry has the same logGroupId meta
-key value. The values of the error, cause, and originalError are set to the Error objects' message property and
-therefore do not, for example, contain stack traces. As Error objects are traversed, embedded error objects are also
-traversed and logged recursively. The logDepth meta key contains a number, starting from 0, that indicates the
-recursion depth from both.
+Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and
+recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable
+redaction rules. Each log entry contains the same logGroupId meta value. The data keys of parent entries contain Error
+objects converted to strings. This process is performed recursively and circular references are handled gracefully. The
+logDepth meta key contains a number, starting from 0, that indicates the recursion depth from both. The maximum
+recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified
+via the 'maxErrors' options setting.
+
+The following example produces three three log entries. error3 will be logged first, followed by error2, followed by
+error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'
+
+```js
+const error = new Error('error1');
+const error2 = new Error('error2');
+const error3 = new Error('error3');
+error1.cause = error2;
+error2.error = error3;
+logger.log('error', error);
+```
 
 ## transport
 
@@ -308,7 +321,9 @@ CONSOLE_COLORS
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'context' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the
+When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors,
+overridden 'context' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the
+console with a log entry's message. To override the value for 'data', set the
 
 ```shell
 CONSOLE_DATA

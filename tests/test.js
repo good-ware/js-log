@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable no-console */
 // const why = require('why-is-node-running');
 const Loggers = require('../Loggers');
 
@@ -78,16 +77,18 @@ async function go(colors) {
   {
     logger.info({ code: 5 });
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
-    console.log(entry.code);
+    // check for conversion to string
     if (entry.code !== 5) throw new Error();
     if (entry.data.code !== 5) throw new Error();
   }
 
   // Error meta test
   {
-    logger.error({ error: 5 });
+    logger.error('some error', new Error('5'));
+    const entry1 = unitTest.file.entries[unitTest.file.entries.length - 2];
+    if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
-    if (entry.error !== '5') throw new Error();
+    if (!entry.error) throw new Error();
   }
 
   const tags = Loggers.tags('message');
@@ -103,6 +104,7 @@ async function go(colors) {
   // test 'on'
   let onRan;
   loggers.winstonLogger().on('close', () => {
+    // eslint-disable-next-line no-console
     console.log('** closed **');
     onRan = true;
   });
@@ -405,14 +407,10 @@ async function go(colors) {
 
   loggers.log('warn', 'This is your final warning');
 
-  // extra 'foo' goes into data; add stack; message remains blank
-  {
-    const oldLen = unitTest.dataCount;
-    loggers.log('error', '', { foo: new Error('data') });
-    if (unitTest.entries[unitTest.entries.length - 1].message) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].stack.startsWith('Error')) throw new Error();
-    if (unitTest.dataCount - oldLen !== 1) throw new Error();
-  }
+  // Error 'foo' goes into message
+  loggers.log('error', '', { foo: new Error('data') });
+  if (!unitTest.entries[unitTest.entries.length - 1].message) throw new Error();
+  if (!unitTest.entries[unitTest.entries.length - 1].stack.startsWith('Error')) throw new Error();
 
   // Test logStack meta
   {
@@ -533,10 +531,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 122 + hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 124 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 21) throw new Error(len);
-    if (unitTest.dataCount !== 63 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 23) throw new Error(len);
+    if (unitTest.dataCount !== 65 + hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
@@ -562,8 +560,10 @@ async function test() {
   try {
     await go(false);
     await go(true);
+    // eslint-disable-next-line no-console
     console.log('Successful');
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(error);
   }
 
@@ -576,4 +576,5 @@ async function test() {
   // why();
 }
 
+// eslint-disable-next-line no-console
 test().catch(console.error);

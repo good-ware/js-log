@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "lint": "eslint . --fix",
@@ -21,7 +21,7 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "aws-sdk": "^2.747.0",
+    "aws-sdk": "^2.756.0",
     "hostid": "^1.0.23",
     "humanize-duration": "^3.23.1",
     "joi": "^17.2.1",
@@ -36,13 +36,13 @@
   "devDependencies": {
     "deepmerge": "^4.2.2",
     "dotenv": "^8.2.0",
-    "eslint": "^7.8.1",
+    "eslint": "^7.9.0",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
     "jsdoc": "^3.6.5",
     "minami": "^1.2.3",
-    "prettier": "^2.1.1",
+    "prettier": "^2.1.2",
     "request-promise": "^4.2.6",
     "why-is-node-running": "^2.2.0"
   }
