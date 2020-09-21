@@ -22,6 +22,12 @@ const banner = '[@goodware/log] ';
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
+ * @description Removes internal functions from the stack trace. This regular expression must be
+ * modified whenever this code changes.
+ */
+const stackRegex = /^Error(.*\n){6}/;
+
+/**
  * @description Used for tag filtering
  */
 const transportObj = {};
@@ -173,7 +179,6 @@ class Loggers {
     });
 
     this.props.meta.message = 'message';
-    this.props.meta.stack = 'stack';
 
     this.props.metaKeys = Object.keys(this.props.meta);
     // Process meta keys (end)
@@ -1687,6 +1692,9 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
             }
           }
 
+          const { stack } = item;
+          if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
+
           // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
           const msg = this.objectToString(item);
           if (msg) this.copyData(level, tags, state, 'message', msg);
@@ -1758,9 +1766,8 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     }
 
     if (addStack) {
-      let { stack } = new Error();
-      stack = stack.substr(6); // Remove Error:\n
-      entry.stack = stack;
+      // Set the stack meta 
+      entry.stack = `${entry.message}\n${(new Error()).stack.replace(stackRegex, '')}`;
     }
 
     return entry;
@@ -1855,16 +1862,13 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       }
 
       // The default message is data.error if it exists
-      if (entry.message === undefined && scalars[typeof data.error]) entry.message = data.error;
+      if (!entry.message && scalars[typeof data.error]) entry.message = data.error;
 
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
     // Remove falsey values from entry that were set to false by logEntry()
     if (!entry.stack) delete entry.stack;
-
-    // All entries have a message
-    if (entry.message === undefined) entry.message = '';
 
     // Set logGroupId meta
     if ((contextData || contextMessages) && !logGroupId) logGroupId = uuidv1();

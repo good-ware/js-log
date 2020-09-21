@@ -244,7 +244,9 @@ setting. Properties are copied to meta if their values are scalar and their name
 message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap
 with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta value.
 
-## Logging errors
+## Errors
+
+If both.error is truthy and both.message is falsey, both.message is set to both.error converted to a string.
 
 Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and
 recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable

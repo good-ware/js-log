@@ -89,6 +89,7 @@ async function go(colors) {
     if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (entry.message !== 'Error: 5') throw new Error();
+    if (!entry.data.stack) throw new Error();
   }
 
   // Error
@@ -537,7 +538,7 @@ async function go(colors) {
     if (unitTest.entries.length !== 125 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 57 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 66 + hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
