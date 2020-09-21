@@ -85,7 +85,7 @@ uncaught exceptions.
 
 ## Adding stack traces
 
-When a log entry's level is 'error', the current stack trace is added to the to the 'stack' or 'logStack' meta key. This
+When a log entry's level is 'error', the current stack trace is added to the to the 'stack' meta key. This
 behavior is disabled via the 'logStack' meta tag.
 
 # Concepts
@@ -112,7 +112,7 @@ An object that is sent to a transport. A log entry consists of meta and data.
 The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
 Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, code, responseCode
 (renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId, requestId, tenantId,
-hostId, stage, version, service, stack, logStack, and logTransports.
+hostId, stage, version, service, stack, and logTransports.
 
 ## data
 
@@ -164,8 +164,8 @@ The level can be specified via the logLevel meta tag. The level can also be modi
 
 ## meta tag
 
-Some tags alter logging behavior. The tags' value (tags can be specified as an object) enables and
-disables the feature, based on their truthiness. Meta tags are not logged. Meta tag names start with 'log' and
+Some tags alter logging behavior. A tag's value (tags can be specified as an object) enables and disables
+the feature, based on their truthiness. Meta tags are not logged. Meta tag names start with 'log' and
 'noLog.' Meta tags tags that start with noLog negate their corresponding meta tags. For example,
 {logStack: true} is identical to 'logStack'. {logStack: false} is identical to 'noLogStack.' Meta tag names are:
 
@@ -175,7 +175,7 @@ Use the meta tag's value as a log entry's logging level
 
 ### logStack
 
-Whether to add the current stack to meta. When true, populates the 'stack' or the 'logStack' meta key.
+Whether to add the current stack to meta. When true, populates the 'stack' meta key.
 This is the default behavior when a log entry's level is 'error.'
 
 ## tag filtering

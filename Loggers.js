@@ -1627,12 +1627,10 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} message
    * @param {*} context
-   * @param {Number} depth When falsey, create the 'root' log entry. When
-   *     truthy, create a secondary entry
-   *  that is in the same group as the root log entry.
-   *  1. When the level is 'error', either the stack or logStack meta key is
-   * added only when falsey
-   *  2. The logStack and noLogStack meta tags are applied only when falsey
+   * @param {Number} depth When falsey, create the 'root' log entry. When truthy, create a secondary entry that is in
+   * the same group as the root log entry.
+   * 1. When the level is 'error', the stack is added when falsey
+   * 2. The logStack and noLogStack meta tags are applied when falsey
    * @return {Object} A log entry
    */
   logEntry(info, message, context, depth) {
@@ -1657,7 +1655,6 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       version: this.options.version,
       commitSha: undefined,
       stack: false, // Set and removed by send()
-      logStack: false, // Set and removed by send()
       data: undefined,
       logTransports: info.logTransports,
     });
@@ -1689,9 +1686,6 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
               this.copyData(level, tags, state, key, value);
             }
           }
-
-          const { stack } = item;
-          if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
 
           // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
           const msg = this.objectToString(item);
@@ -1766,12 +1760,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     if (addStack) {
       let { stack } = new Error();
       stack = stack.substr(6); // Remove Error:\n
-      // Use logStack if stack exists
-      if (entry.stack) {
-        entry.logStack = stack;
-      } else {
-        entry.stack = stack;
-      }
+      entry.stack = stack;
     }
 
     return entry;
@@ -1873,7 +1862,6 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
 
     // Remove falsey values from entry that were set to false by logEntry()
     if (!entry.stack) delete entry.stack;
-    if (!entry.logStack) delete entry.logStack;
 
     // All entries have a message
     if (entry.message === undefined) entry.message = '';
@@ -2011,14 +1999,14 @@ ${util.inspect({
  *  copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the tuple b: 'b'.
  */
 Loggers.defaultMetaKeys = {
-  transactionId: undefined,
+  code: undefined,
+  commitSha: undefined,
   correlationId: undefined,
   operationId: undefined,
   requestId: undefined,
-  tenantId: undefined,
   responseCode: 'statusCode',
-  code: undefined,
-  commitSha: undefined,
+  tenantId: undefined,
+  transactionId: undefined,
 };
 
 /**

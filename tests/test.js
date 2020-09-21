@@ -417,7 +417,6 @@ async function go(colors) {
   // Error 'foo' goes into message
   loggers.log('error', '', { foo: new Error('data') });
   if (!unitTest.entries[unitTest.entries.length - 1].message) throw new Error();
-  if (!unitTest.entries[unitTest.entries.length - 1].stack.startsWith('Error')) throw new Error();
 
   // Test logStack meta
   {
@@ -441,8 +440,7 @@ async function go(colors) {
     if (item.requestId !== 1) throw new Error();
     if (item.data.extra !== 2) throw new Error();
     if (item.message !== 'outer error') throw new Error();
-    if (!item.logStack) throw new Error();
-    if (item.stack !== 'x') throw new Error();
+    if (!item.stack) throw new Error();
     if (item.data.error !== 'Error: inner error') throw new Error();
     item = unitTest.entries[unitTest.entries.length - 1];
     if (item.requestId !== 1) throw new Error();
@@ -459,14 +457,12 @@ async function go(colors) {
   {
     logger.info(new Error());
     const item = unitTest.entries[unitTest.entries.length - 1];
-    if (!item.stack) throw new Error();
-    if (item.logStack) throw new Error();
+    if (item.stack) throw new Error();
   }
   {
     logger.error(['logStack'], new Error());
     const item = unitTest.entries[unitTest.entries.length - 1];
     if (!item.stack) throw new Error();
-    if (!item.logStack) throw new Error();
   }
 
   // extra converted to a string using toString
@@ -541,7 +537,7 @@ async function go(colors) {
     if (unitTest.entries.length !== 125 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 66 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 57 + hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
