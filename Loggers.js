@@ -1766,8 +1766,8 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     }
 
     if (addStack) {
-      // Set the stack meta 
-      entry.stack = `${entry.message}\n${(new Error()).stack.replace(stackRegex, '')}`;
+      // Set the stack meta
+      entry.stack = `${entry.message}\n${new Error().stack.replace(stackRegex, '')}`;
     }
 
     return entry;
@@ -1824,7 +1824,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     const { data } = entry;
     if (data) {
       if (addContext) {
-        // Add Errors to errors array 
+        // Add Errors to errors array
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in data) {
           const value = data[key];
