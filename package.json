@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "lint": "eslint . --fix",
@@ -40,7 +40,7 @@
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
-    "jsdoc": "^3.6.5",
+    "jsdoc": "^3.6.6",
     "minami": "^1.2.3",
     "prettier": "^2.1.2",
     "request-promise": "^4.2.6",
