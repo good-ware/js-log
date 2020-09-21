@@ -82,13 +82,20 @@ async function go(colors) {
     if (entry.data.code !== 5) throw new Error();
   }
 
-  // Error meta test
+  // Error
   {
     logger.error('some error', new Error('5'));
     const entry1 = unitTest.file.entries[unitTest.file.entries.length - 2];
     if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
-    if (!entry.error) throw new Error();
+    if (entry.message !== 'Error: 5') throw new Error();
+  }
+
+  // Error
+  {
+    logger.error('', new Error('5'));
+    const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
+    if (entry.message !== 'Error: 5') throw new Error();
   }
 
   const tags = Loggers.tags('message');
@@ -531,10 +538,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 124 + hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 125 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 65 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 66 + hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

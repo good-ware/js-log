@@ -110,9 +110,9 @@ An object that is sent to a transport. A log entry consists of meta and data.
 ## meta
 
 The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
-Meta keys are: timestamp, ms (elpased time between log entries), level, message, error, tags, category, code,
-responseCode (renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId,
-requestId, tenantId, hostId, stage, version, service, stack, logStack, and logTransports.
+Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, code, responseCode
+(renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId, requestId, tenantId,
+hostId, stage, version, service, stack, logStack, and logTransports.
 
 ## data
 

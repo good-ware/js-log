@@ -30,15 +30,13 @@ transportNames.forEach((transport) => {
 });
 
 /**
- * @description Used by valueToScalar
+ * @description Which datatypes are scalars
  */
 const scalars = {
   number: true,
   string: true,
   boolean: true,
 };
-
-const errorRegex = /^Error: /;
 
 /**
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
@@ -77,14 +75,13 @@ class Loggers {
    *   -> {Number} {Object} winstonLevels Passed to Winston when creating a logger
    *
    * Notes to Maintainers
-   *  1. Check whether toString() should be converted to valueToScalar()
-   *  2. tags, message, and context provided to public methods should never be modified
-   *  3. The output of Object.keys and Object.entries should be cached for static objects
+   *  1. tags, message, and context provided to public methods should never be modified
+   *  2. The output of Object.keys and Object.entries should be cached for static objects
    *
    * @todo
    * 1. When console data is requested but colors are disabled, output data without colors using a
    *    new formatter.
-   * 2. Add a new data prop to output to the non-data console
+   * 2. Add a new data prop to output to the plain console
    * 3. Document transactionId and operationId
    * 4. Document level-named methods take a tag name as a string if the first argument has no space
    * 5. Document defaultTagAllowLevel
@@ -1645,12 +1642,11 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     // undefined values are placeholders for ordering and are deleted at the end
     // of this method
     Object.assign(entry, {
-      message: '',
+      message: undefined,
       level,
       timestamp: Loggers.now(),
       ms: false, // Set via a formatter; intentionally not removed
       tags: false,
-      error: false, // Set and removed by send()
       ...this.props.userMeta,
       category: info.category, // Overwritten by defaultMeta
       logGroupId: false, // Set and removed by send()
@@ -1768,8 +1764,8 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     }
 
     if (addStack) {
-      const msg = entry.message.replace(errorRegex, ''); // Remove Error: Error:
-      const { stack } = new Error(msg);
+      let { stack } = new Error();
+      stack = stack.substr(6); // Remove Error:\n
       // Use logStack if stack exists
       if (entry.stack) {
         entry.logStack = stack;
@@ -1831,18 +1827,8 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
 
     const { data } = entry;
     if (data) {
-      // eslint-disable-next-line guard-for-in, no-restricted-syntax
-      for (const key in data) {
-        const value = data[key];
-        if (value instanceof Error) {
-          entry.error = this.objectToString(value);
-          // If there is no message, set it to an error if it exists
-          if (!entry.message) entry.message = entry.error;
-          break;
-        }
-      }
-
       if (addContext) {
+        // Add Errors to errors array 
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in data) {
           const value = data[key];
@@ -1879,13 +1865,18 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
         }
       }
 
+      // The default message is data.error if it exists
+      if (entry.message === undefined && scalars[typeof data.error]) entry.message = data.error;
+
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
     // Remove falsey values from entry that were set to false by logEntry()
     if (!entry.stack) delete entry.stack;
     if (!entry.logStack) delete entry.logStack;
-    if (!entry.error) delete entry.error;
+
+    // All entries have a message
+    if (entry.message === undefined) entry.message = '';
 
     // Set logGroupId meta
     if ((contextData || contextMessages) && !logGroupId) logGroupId = uuidv1();
