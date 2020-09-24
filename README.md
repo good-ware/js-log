@@ -79,8 +79,8 @@ Finally, logger instances have the properties tags, context, and category.
 
 ## Unhandled exceptions and Promise rejections
 
-While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using the category
-@log/uncaught. The process is not terminated after logging uncaught exceptions.
+While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category
+@log/unhandled. The process is not terminated after logging uncaught exceptions.
 
 ## Adding stack traces
 
