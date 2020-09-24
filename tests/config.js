@@ -33,7 +33,7 @@ configs.dev = {
         console: 'silly',
         file: 'silly',
         errorFile: 'on',
-        cloudWatch: 'on',
+        cloudWatch: 'info',
       },
     },
   },

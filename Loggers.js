@@ -26,13 +26,13 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
  * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
  * code changes.
  */
-const stackRegex = /^Error(.*\n){6}/;
+const stripLogStack = /^(.*\n){6}/;
 
 /**
  * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
  * code changes.
  */
-const invalidCategoryRegex = /^Error(.*\n){6}/;
+const stripInvalidCategoryStack = stripLogStack; // This is just a coincidence
 
 /**
  * @description Used for tag filtering
@@ -56,7 +56,7 @@ const scalars = {
  */
 const logCategories = {
   unhandled: '@log/unhandled',
-  cloudWatch: '@log/cloudwatch',
+  cloudWatch: '@log/cloudwatch-error',
   log: '@log/log', // When the API is misused
 };
 
@@ -573,12 +573,6 @@ Enable the tag for log entries with severity levels equal to or greater than the
       });
     }
 
-    if (this.options.say.banner) {
-      // eslint-disable-next-line no-console
-      console.log(`{banner}${options.service} v${options.version} \
-stage: '${options.stage}' host id: ${this.props.hostId}`);
-    }
-
     this.props.stopped = false;
 
     // Create one logger for uncaught Promise rejection and exceptions.
@@ -596,6 +590,8 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
     }
 
     this.props.starting = false;
+
+    if (this.options.say.banner) this.log('info', `v${options.version} ${options.service} ${options.stage}`);
   }
 
   /**
@@ -647,7 +643,7 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.error(`${banner}Unable to create logs directory. Directories attempted:
+    console.error(`${banner}Creating logs directory failed. Directories attempted:
 ${directories.join('\n')}`);
   }
 
@@ -668,7 +664,7 @@ ${directories.join('\n')}`);
       // Send error message to console with the immediate caller (from the call stack) in the same line for easier
       // identification. Log the full stack to a file.
       this.log('error', error, null, logCategories.log);
-      const stack = error.stack.replace(invalidCategoryRegex, '');
+      const stack = error.stack.replace(stripInvalidCategoryStack, '');
       // eslint-disable-next-line no-console
       console.error(`${banner}${message}${stack}`);
       // Throw exception when unit testing
@@ -875,24 +871,36 @@ ${directories.join('\n')}`);
     transports.push(this.createConsoleTransport('error', false));
 
     // File
-    const filename = path.join(this.props.logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
-    mkdirp(path.dirname(filename));
-
     this.createLogsDirectory();
     if (this.props.logsDirectory) {
-      transports.push(
-        new winston.transports.DailyRotateFile({
-          filename,
-          extension: '.log',
-          datePattern: 'YYYY-MM-DD-HH',
-          zippedArchive: true,
-          maxSize: this.options.file.maxSize,
-          maxFiles: this.options.file.maxAge,
-          format: format.json(),
-          level: 'error',
-          handleExceptions: false,
-        })
-      );
+      let filename = path.join(this.props.logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
+      const dir = path.dirname(filename);
+
+      if (dir !== this.props.logsDirectory)
+        try {
+          mkdirp(dir);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`{$banner}Creating directory failed: ${dir}
+${error}`);
+          filename = null;
+        }
+
+      if (filename) {
+        transports.push(
+          new winston.transports.DailyRotateFile({
+            filename,
+            extension: '.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: true,
+            maxSize: this.options.file.maxSize,
+            maxFiles: this.options.file.maxAge,
+            format: format.json(),
+            level: 'error',
+            handleExceptions: false,
+          })
+        );
+      }
     }
 
     return winston.createLogger({
@@ -915,7 +923,7 @@ ${directories.join('\n')}`);
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     if (error.code === 'InvalidParameterException') return;
-    this.error(error, null, logCategories.cloudWatch);
+    this.log('error', error, null, logCategories.cloudWatch);
   }
 
   /**
@@ -1162,24 +1170,37 @@ ${directories.join('\n')}`);
 
       if (level !== 'off') {
         this.createLogsDirectory();
-        const filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
-        mkdirp(path.dirname(filename));
 
         if (this.props.logsDirectory) {
-          const checkTags = winston.format((info) => this.checkTags('file', info))();
-          const transport = new winston.transports.DailyRotateFile({
-            filename,
-            extension: '.log',
-            datePattern: 'YYYY-MM-DD-HH',
-            zippedArchive: true,
-            maxSize: this.options.file.maxSize,
-            maxFiles: this.options.file.maxAge,
-            format: format.combine(checkTags, format.json()),
-            level,
-            handleExceptions: this.props.starting,
-          });
+          let filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
+          const dir = path.dirname(filename);
 
-          transports.push(transport);
+          if (dir !== this.props.logsDirectory)
+            try {
+              mkdirp(dir);
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error(`{$banner}Creating directory failed: ${dir}
+${error}`);
+              filename = null;
+            }
+
+          if (filename) {
+            const checkTags = winston.format((info) => this.checkTags('file', info))();
+            const transport = new winston.transports.DailyRotateFile({
+              filename,
+              extension: '.log',
+              datePattern: 'YYYY-MM-DD-HH',
+              zippedArchive: true,
+              maxSize: this.options.file.maxSize,
+              maxFiles: this.options.file.maxAge,
+              format: format.combine(checkTags, format.json()),
+              level,
+              handleExceptions: this.props.starting,
+            });
+
+            transports.push(transport);
+          }
         }
       }
 
@@ -1230,7 +1251,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
               this.log(
                 'info',
                 `Opening CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level} for category ${category}`,
+${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level} for category: ${category}`,
                 {
                   category,
                   logGroup: logGroupName,
@@ -1805,7 +1826,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
 
     if (addStack) {
       // Set the stack meta
-      const stack = new Error().stack.replace(stackRegex, '');
+      const stack = new Error().stack.replace(stripLogStack, '');
       entry.stack = `${entry.message}\n${stack}`;
     }
 
