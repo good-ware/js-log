@@ -551,11 +551,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @description Starts the logger after the constructor or stop() is called
    */
   start() {
-    if (!this.props.stopped) {
-      // eslint-disable-next-line no-console
-      console.error(`${banner} ${(new Error('Not stopped')).stack}`);
-      return;
-    }
+    if (!this.props.stopped) return;
+    if (this.props.starting) throw new Error('Starting');
+
     this.props.starting = true;
 
     const { options } = this;
@@ -875,6 +873,8 @@ ${directories.join('\n')}`);
 
     // Console
     transports.push(this.createConsoleTransport('error', false));
+
+    // File
     const filename = path.join(this.props.logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
     mkdirp(path.dirname(filename));
 
@@ -987,7 +987,7 @@ ${directories.join('\n')}`);
     if (this.options.say.stopping) console.log(`${banner}Stopping`);
 
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception - expect Error: Loggers> Stopping
+      // Test uncaught exception
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
       });
@@ -1216,19 +1216,34 @@ ${directories.join('\n')}`);
           console.error(`[${category}] Log group was not specified for AWS CloudWatch Logs`);
         } else {
           this.initCloudWatch();
+          const { uploadRate } = awsOptions;
 
           // log group ends with a slash
           logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
 
           if (this.options.say.openCloudWatch) {
-            // eslint-disable-next-line no-console
-            console.log(`[${category}] Opening CloudWatch Logs stream \
+            if (category === logCategories.log) {
+              // eslint-disable-next-line no-console
+              console.log(`[${category}] Opening CloudWatch Logs stream \
 ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level}`);
+            } else {
+              this.log(
+                'info',
+                `Opening CloudWatch Logs stream \
+${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level} for category ${category}`,
+                {
+                  category,
+                  logGroup: logGroupName,
+                  logStream: this.cloudWatch.streamName,
+                  level,
+                  awsRegion: awsOptions.region,
+                  uploadRate,
+                },
+                logCategories.log
+              );
+            }
           }
 
-          const { uploadRate } = awsOptions;
-
-          // @todo add more options supported by winston-cloudwatch
           awsOptions = { region: awsOptions.region };
 
           const checkTags = (info) => {
@@ -1237,6 +1252,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
             return JSON.stringify(info);
           };
 
+          // @todo add more options supported by winston-cloudwatch
           const transport = new WinstonCloudWatch({
             messageFormatter: checkTags,
             logStreamName: this.cloudWatch.streamName,
@@ -1389,7 +1405,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(`${banner} ${(new Error('Stopped')).stack}`);
+      console.error(`${banner} ${new Error('Stopped').stack}`);
       return false;
     }
 
@@ -1913,7 +1929,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopping. Unable to log:
 ${util.inspect(entry)}
-${(new Error('Stopping')).stack}`);
+${new Error('Stopping').stack}`);
       return;
     }
 
@@ -2008,7 +2024,7 @@ ${util.inspect({
   message,
   context,
 })}
-${(new Error('Stopped')).stack}`);
+${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, context);

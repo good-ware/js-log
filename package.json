@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "lint": "eslint . --fix",
