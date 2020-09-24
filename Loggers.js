@@ -575,11 +575,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.stopped = false;
 
-    // Create one logger for uncaught Promise rejection and exceptions.
-    // Winston transports have some magic to catch uncaught exceptions.
-    // process.on('uncaughtException') is dangerous and doesn't work for
-    // exceptions thrown in a function called by the event loop (e.g.,
-    // setTimeout(...throw...).
+    // Create one logger for uncaught Promise rejection and exceptions. Winston transports have some magic to catch
+    // uncaught exceptions.
+    // process.on('uncaughtException') is dangerous and doesn't work for exceptions thrown in a function called by the
+    // event loop (e.g., setTimeout(...throw...)
     const unhandledLoggers = this.logger(logCategories.unhandled);
     // Create a Winston logger now to catch uncaught exceptions
     if (unhandledLoggers.isLevelEnabled('error')) {
@@ -591,7 +590,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.starting = false;
 
-    if (this.options.say.banner) this.log('info', `v${options.version} ${options.service} ${options.stage}`);
+    if (this.options.say.banner) this.log('info',
+      `Ready ${options.service} v${options.version} ${options.stage}`, null, logCategories.log);
   }
 
   /**
@@ -658,7 +658,7 @@ ${directories.join('\n')}`);
       const type = typeof category;
       if (type === 'string') return category;
 
-      const message = `Invalid datatype for category: ${type}`;
+      const message = `Invalid datatype for category ${type}`;
       const error = Error(message);
 
       // Send error message to console with the immediate caller (from the call stack) in the same line for easier
@@ -844,19 +844,19 @@ ${directories.join('\n')}`);
   }
 
   /**
-   * @description Sets this.cloudWatch
+   * @description Sets this.props.cloudWatch
    */
   initCloudWatch() {
-    if (this.cloudWatch) return;
+    if (this.props.cloudWatch) return;
 
-    this.cloudWatch = {};
-    this.cloudWatch.transports = [];
+    this.props.cloudWatch = {};
+    this.props.cloudWatch.transports = [];
 
     let stream = this.props.created.replace('T', ' ');
     // CloudWatch UI already sorts on time
     stream = `${stream} ${this.props.hostId}`;
     stream = stream.replace(/:/g, '');
-    this.cloudWatch.streamName = stream;
+    this.props.cloudWatch.streamName = stream;
   }
 
   /**
@@ -953,7 +953,7 @@ ${error}`);
    * @return {Promise}
    */
   async flushCloudWatch() {
-    if (!this.cloudWatch) return;
+    if (!this.props.cloudWatch) return;
 
     const { flushTimeout } = this.options.cloudWatch;
 
@@ -971,7 +971,7 @@ ${error}`);
     }
 
     await Promise.all(
-      this.cloudWatch.transports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
+      this.props.cloudWatch.transports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
     );
 
     // For testing the message
@@ -1030,11 +1030,11 @@ ${error}`);
     );
 
     // Close the CloudWatch error logger last
-    if (this.cloudWatch) {
+    if (this.props.cloudWatch) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
       await this.flushCloudWatch();
-      delete this.cloudWatch;
+      delete this.props.cloudWatch;
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
@@ -1196,7 +1196,7 @@ ${error}`);
               maxFiles: this.options.file.maxAge,
               format: format.combine(checkTags, format.json()),
               level,
-              handleExceptions: this.props.starting,
+              handleExceptions: category === logCategories.unhandled,
             });
 
             transports.push(transport);
@@ -1245,17 +1245,17 @@ ${error}`);
           if (this.options.say.openCloudWatch) {
             if (category === logCategories.log) {
               // eslint-disable-next-line no-console
-              console.log(`[${category}] Opening CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level}`);
+              console.log(`[${category}] Opening AWS CloudWatch Logs stream \
+${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level ${level}`);
             } else {
               this.log(
                 'info',
-                `Opening CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${level} for category: ${category}`,
+                `Opening AWS CloudWatch Logs stream \
+${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level ${level} for category ${category}`,
                 {
                   category,
                   logGroup: logGroupName,
-                  logStream: this.cloudWatch.streamName,
+                  logStream: this.props.cloudWatch.streamName,
                   level,
                   awsRegion: awsOptions.region,
                   uploadRate,
@@ -1276,7 +1276,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
           // @todo add more options supported by winston-cloudwatch
           const transport = new WinstonCloudWatch({
             messageFormatter: checkTags,
-            logStreamName: this.cloudWatch.streamName,
+            logStreamName: this.props.cloudWatch.streamName,
             createLogGroup: true,
             createLogStream: true,
             logGroupName,
@@ -1284,10 +1284,10 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
             level,
             errorHandler: (error) => this.cloudWatchError(error),
             uploadRate,
-            handleExceptions: this.props.starting,
+            handleExceptions: category === logCategories.unhandled,
           });
 
-          this.cloudWatch.transports.push(transport);
+          this.props.cloudWatch.transports.push(transport);
           transports.push(transport);
         }
       }
@@ -1305,8 +1305,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       // active
       if (!transports.length && level === 'off') level = 'error';
 
-      // When this.props.starting is true, the 'unhandled' console is being created that will log exceptions
-      if (level !== 'off') transports.push(this.createConsoleTransport(level, this.props.starting));
+      if (level !== 'off') transports.push(this.createConsoleTransport(level, category === logCategories.unhandled));
 
       // Error file
       level = settings.errorFile || 'off';
@@ -1329,7 +1328,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
             maxFiles: this.options.file.maxAge,
             format: format.combine(checkTags, format.json()),
             level,
-            handleExceptions: this.props.starting,
+            handleExceptions: category === logCategories.unhandled,
           });
 
           transports.push(transport);

@@ -45,6 +45,8 @@ async function go(colors) {
   };
 
   loggers = new Loggers(config.logging);
+  const hasCloudWatch = loggers.props.cloudWatch?1:0;
+
   const logger = loggers.logger();
   const { unitTest } = loggers;
 
@@ -58,7 +60,6 @@ async function go(colors) {
   // logger.error({message:'lksdjf', error: new Error('lksjadf')});
 
   // This is logged as info
-  // @todo test this
   {
     loggers.child('error').info('Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
@@ -178,7 +179,8 @@ async function go(colors) {
 
   // Tag filtering
   // eslint-disable-next-line no-empty-pattern
-  for (const {} of [1, 2]) {
+  for (const i of [1, 2]) {
+    const extra = (hasCloudWatch && i == 1)?1:0; 
     // Repeat to test switch caching
     // Default category
     {
@@ -240,9 +242,8 @@ async function go(colors) {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
       loggers.log(['more', 'nurse'], 'Nurse more', null, 'nurse');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-      // Did not write to file
-      if (fileEntries !== unitTest.file.entries.length) throw new Error();
+      if (consoleEntries+extra !== unitTest.console.entries.length) throw new Error();
+      if (fileEntries+extra !== unitTest.file.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -262,9 +263,9 @@ async function go(colors) {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
       logger.more(['doctor'], 'Doctor more', null, 'doctor');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if ((consoleEntries + extra) !== unitTest.console.entries.length) throw new Error();
       // Wrote to file because 'other' defined at category level
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
+      if ((fileEntries + extra) === unitTest.file.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -286,7 +287,7 @@ async function go(colors) {
   {
     const entries = unitTest.console.entries.length;
     logger.silly('a message', null, 'coordinator');
-    if (entries !== unitTest.console.entries.length) throw new Error();
+    if (entries+hasCloudWatch !== unitTest.console.entries.length) throw new Error();
     logger.silly('coordinator', 'Silly changed to info', null, 'coordinator');
     if (entries === unitTest.console.entries.length) throw new Error();
   }
@@ -507,8 +508,6 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
-  const hasCloudWatch = !!loggers.props.cloudWatch;
-
   // Stop the logger
   await new Promise((resolve) => setTimeout(() => loggers.stop().then(resolve), 100));
 
@@ -519,10 +518,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 127 + hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 127 + 10*hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 67 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 22+hasCloudWatch) throw new Error(len);
+    if (unitTest.dataCount !== 67 + 10*hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
