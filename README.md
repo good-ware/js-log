@@ -79,9 +79,8 @@ Finally, logger instances have the properties tags, context, and category.
 
 ## Unhandled exceptions and Promise rejections
 
-While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using a category specified via
-the 'uncaughtCategory' options setting which defaults to 'uncaught.' The process is not terminated after logging
-uncaught exceptions.
+While a Loggers instance is active, uncaught exceptions and Promise rejections are logged using the category
+@log/uncaught. The process is not terminated after logging uncaught exceptions.
 
 ## Adding stack traces
 
@@ -110,9 +109,9 @@ An object that is sent to a transport. A log entry consists of meta and data.
 ## meta
 
 The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
-Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, code, responseCode
-(renamed to statusCode), statusCode, logGroupId, logDepth, commitSha, correlationId, operationId, requestId, tenantId,
-hostId, stage, version, service, stack, and logTransports.
+Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logGroupId, logDepth,
+hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys,
+optionally renaming them, via the 'metaKeys' options setting.
 
 ## data
 
@@ -175,8 +174,8 @@ Use the meta tag's value as a log entry's logging level
 
 ### logStack
 
-Whether to add the current stack to meta. When true, populates the 'stack' meta key.
-This is the default behavior when a log entry's level is 'error.'
+Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when
+the log entry's level is 'error.'
 
 ## tag filtering
 
@@ -246,15 +245,16 @@ with those in 'context,' 'context' is logged separately; both log entries will h
 
 ## Errors
 
-If both.error is truthy and both.message is falsey, both.message is set to both.error converted to a string.
+If both.error is truthy and both.message is falsey, both.message is set to `both.error.asString()`.
 
 Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and
 recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable
-redaction rules. Each log entry contains the same logGroupId meta value. The data keys of parent entries contain Error
-objects converted to strings. This process is performed recursively and circular references are handled gracefully. The
-logDepth meta key contains a number, starting from 0, that indicates the recursion depth from both. The maximum
-recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified
-via the 'maxErrors' options setting.
+redaction rules. Each log entry contains the same logGroupId meta value. The data properties of parent entries contain
+the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the
+Error object converted to a string. This process is performed recursively. Circular references are handled
+gracefully. The logDepth meta key contains a number, starting from 0, that indicates the recursion depth from both. The
+maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is
+specified via the 'maxErrors' options setting.
 
 The following example produces three three log entries. error3 will be logged first, followed by error2, followed by
 error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'
@@ -324,7 +324,7 @@ CONSOLE_COLORS
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
 When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors,
-overridden 'context' properties objects, and stack traces. When it is false, a small set of meta keys are sent to the
+overridden 'context' properties objects, and stack traces. When it is false, a subset of meta keys are sent to the
 console with a log entry's message. To override the value for 'data', set the
 
 ```shell
@@ -337,10 +337,11 @@ environment variable such that blank, 0, and 'false' are false and all other val
 
 Log entries are written to files as JSON strings to a directory specified via the 'file' options setting. If no
 directory in the provided array does not exist and can be created, the file-related transports are disabled. File
-names contain the category and the date and hour of the local time when this object was instantiated. For error log
-files, '-error' is appended to the category. Files have the extension .log. An example file name is:
-uncaught-error-2020-07-18-18.log. Files are rotated and zipped on an hourly basis. The maximum number of archived
-log files defaults to 14 days and can be specified via the 'file' options setting.
+names contain the category and the date and hour of the local time when this object was instantiated. Category names
+may contain operating-system directory separators and must conform to the filesystem rules of the operating system. For
+error log files, '-error' is appended to the category. Files have the extension .log. An example file name is:
+general-error-2020-07-18-18.log. Files are rotated and zipped on an hourly basis. The maximum number of archived log
+files defaults to 14 days and can be specified via the 'file' options setting.
 
 ### cloudWatch
 

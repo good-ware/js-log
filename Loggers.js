@@ -9,6 +9,7 @@ const Joi = require('joi');
 const prune = require('json-prune');
 const util = require('util');
 const { v1: uuidv1 } = require('uuid');
+const path = require('path');
 // Winston includes
 const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
@@ -17,15 +18,21 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 
 const { format } = winston;
 
-const banner = '[@goodware/log] ';
+const banner = '[@log] ';
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
- * @description Removes internal functions from the stack trace. This regular expression must be
- * modified whenever this code changes.
+ * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
+ * code changes.
  */
 const stackRegex = /^Error(.*\n){6}/;
+
+/**
+ * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
+ * code changes.
+ */
+const invalidCategoryRegex = /^Error(.*\n){6}/;
 
 /**
  * @description Used for tag filtering
@@ -42,6 +49,15 @@ const scalars = {
   number: true,
   string: true,
   boolean: true,
+};
+
+/**
+ * @description Category names for internal loggers
+ */
+const logCategories = {
+  unhandled: '@log/unhandled',
+  cloudWatch: '@log/cloudwatch',
+  log: '@log/log', // When the API is misused
 };
 
 /**
@@ -375,7 +391,6 @@ class Loggers {
 
     const cloudWatchObject = cloudWatchLogObject
       .keys({
-        errorCategory: Joi.string().default('cloudwatch-error'),
         // eslint-disable-next-line quotes
         flushTimeout: Joi.number().integer().min(1).default(90000).description(
           `The maximum number of milliseconds to wait when sending the current batch of log entries to \
@@ -401,7 +416,6 @@ CloudWatch`
       defaultCategory: Joi.string().default('general'),
       defaultLevel: levelEnum.default('debug').description('Level to use when a level is not found in tags'),
       defaultTagAllowLevel: offDefaultLevelEnum.default('warn'),
-      uncaughtCategory: Joi.string().default('uncaught'),
 
       // Colors
       levelColors: Joi.object().pattern(levelEnum, Joi.string().required()),
@@ -525,7 +539,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // Looping twice assigns keys to objects that are defaulted as {}
     for (let i = 0; i < 2; ++i) {
       const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(`Loggers> ${validation.error.message}`);
+      if (validation.error) throw new Error(validation.error.message);
       options = validation.value;
     }
 
@@ -539,7 +553,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   start() {
     if (!this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(new Error(`${banner}Not stopped`));
+      console.error(`${banner} ${(new Error('Not stopped')).stack}`);
       return;
     }
     this.props.starting = true;
@@ -569,16 +583,16 @@ stage: '${options.stage}' host id: ${this.props.hostId}`);
 
     this.props.stopped = false;
 
-    // Create one logger for uncaught Promise rejection and exceptions
+    // Create one logger for uncaught Promise rejection and exceptions.
     // Winston transports have some magic to catch uncaught exceptions.
     // process.on('uncaughtException') is dangerous and doesn't work for
     // exceptions thrown in a function called by the event loop (e.g.,
     // setTimeout(...throw...).
-    const uncaughtLoggers = this.logger(options.uncaughtCategory);
+    const unhandledLoggers = this.logger(logCategories.unhandled);
     // Create a Winston logger now to catch uncaught exceptions
-    if (uncaughtLoggers.isLevelEnabled('error')) {
+    if (unhandledLoggers.isLevelEnabled('error')) {
       this.props.unhandledPromiseListener = (error) => {
-        uncaughtLoggers.error('Unhandled Promise rejection', { error });
+        unhandledLoggers.error('Unhandled Promise rejection', { error });
       };
       process.on('unhandledRejection', this.props.unhandledPromiseListener);
     }
@@ -649,11 +663,20 @@ ${directories.join('\n')}`);
     if (category) {
       const type = typeof category;
       if (type === 'string') return category;
-      // Throw exception when unit testing
-      if (this.options.unitTest) throw new Error(`Invalid datatype for category: ${type}`);
+
+      const message = `Invalid datatype for category: ${type}`;
+      const error = Error(message);
+
+      // Send error message to console with the immediate caller (from the call stack) in the same line for easier
+      // identification. Log the full stack to a file.
+      this.log('error', error, null, logCategories.log);
+      const stack = error.stack.replace(invalidCategoryRegex, '');
       // eslint-disable-next-line no-console
-      console.error(new Error(`${banner}Invalid datatype for category: ${type}`));
+      console.error(`${banner}${message}${stack}`);
+      // Throw exception when unit testing
+      if (this.options.unitTest) throw error;
     }
+
     return this.options.defaultCategory;
   }
 
@@ -706,8 +729,7 @@ ${directories.join('\n')}`);
    * @return {Object}
    */
   static defaultMeta(category) {
-    // Do not add more fields here. category is needed by the custom formatter
-    // for logging uncaught exceptions.
+    // Do not add more fields here. category is needed by the custom formatter for logging uncaught exceptions.
     return {
       category, // The category of the Winston logger, not the category
       // provided to log() etc.
@@ -849,17 +871,18 @@ ${directories.join('\n')}`);
    * @return {Object} logger
    */
   createCloudWatchErrorLoggers() {
-    const { errorCategory } = this.options.cloudWatch;
     const transports = [];
 
     // Console
     transports.push(this.createConsoleTransport('error', false));
+    const filename = path.join(this.props.logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
+    mkdirp(path.dirname(filename));
 
     this.createLogsDirectory();
     if (this.props.logsDirectory) {
       transports.push(
         new winston.transports.DailyRotateFile({
-          filename: `${this.props.logsDirectory}/${errorCategory}-%DATE%`,
+          filename,
           extension: '.log',
           datePattern: 'YYYY-MM-DD-HH',
           zippedArchive: true,
@@ -873,7 +896,7 @@ ${directories.join('\n')}`);
     }
 
     return winston.createLogger({
-      defaultMeta: Loggers.defaultMeta(errorCategory),
+      defaultMeta: Loggers.defaultMeta(logCategories.cloudWatch),
       exitOnError: false,
       format: this.formatter(),
       levels: this.props.levelSeverity,
@@ -892,7 +915,7 @@ ${directories.join('\n')}`);
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     if (error.code === 'InvalidParameterException') return;
-    this.error(error, null, this.options.cloudWatch.errorCategory);
+    this.error(error, null, logCategories.cloudWatch);
   }
 
   /**
@@ -977,12 +1000,10 @@ ${directories.join('\n')}`);
 
     await this.flushCloudWatch();
 
-    const { errorCategory: cloudWatchErrorCategory } = this.options.cloudWatch;
-
     // Close
     await Promise.all(
       Object.entries(this.props.winstonLoggers).map(([category, logger]) => {
-        if (!logger.writable || category === cloudWatchErrorCategory) {
+        if (!logger.writable || category === logCategories.cloudWatch) {
           return Promise.resolve();
         }
         return (
@@ -1002,8 +1023,7 @@ ${directories.join('\n')}`);
 
     // Close the CloudWatch error logger last
     if (this.cloudWatch) {
-      // Flush again because uncaught exceptions can be sent to CloudWatch
-      // transports during the close process
+      // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
       await this.flushCloudWatch();
       delete this.cloudWatch;
@@ -1017,22 +1037,22 @@ ${directories.join('\n')}`);
 
     this.props.winstonLoggers = {};
 
-    const errorLoggers = this.props.winstonLoggers[cloudWatchErrorCategory];
+    const errorLogger = this.props.winstonLoggers[logCategories.cloudWatch];
     this.props.loggers = {};
 
-    if (errorLoggers && errorLoggers.writable) {
+    if (errorLogger && errorLogger.writable) {
       // eslint-disable-next-line no-constant-condition
       if (true) {
-        errorLoggers.close();
+        errorLogger.close();
       } else {
         // For testing
         // @todo finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
-          errorLoggers
+          errorLogger
             .on('error', reject)
             .on('close', resolve)
-            .on('finish', () => setImmediate(() => errorLoggers.close()))
+            .on('finish', () => setImmediate(() => errorLogger.close()))
             .end();
           // eslint-disable-next-line no-console
         }).catch(console.error);
@@ -1110,7 +1130,7 @@ ${directories.join('\n')}`);
 
     let logger;
 
-    if (category === this.options.cloudWatch.errorCategory) {
+    if (category === logCategories.cloudWatch) {
       logger = this.createCloudWatchErrorLoggers();
     } else {
       if (this.props.stopping) throw new Error('Stopping');
@@ -1142,10 +1162,13 @@ ${directories.join('\n')}`);
 
       if (level !== 'off') {
         this.createLogsDirectory();
+        const filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
+        mkdirp(path.dirname(filename));
+
         if (this.props.logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('file', info))();
           const transport = new winston.transports.DailyRotateFile({
-            filename: `${this.props.logsDirectory}/${category}-%DATE%`,
+            filename,
             extension: '.log',
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
@@ -1245,8 +1268,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
       // active
       if (!transports.length && level === 'off') level = 'error';
 
-      // When this.props.starting is true, the 'unhandled' console is being created
-      // which will log exceptions
+      // When this.props.starting is true, the 'unhandled' console is being created that will log exceptions
       if (level !== 'off') transports.push(this.createConsoleTransport(level, this.props.starting));
 
       // Error file
@@ -1367,7 +1389,7 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(new Error(`${banner}Stopped`));
+      console.error(`${banner} ${(new Error('Stopped')).stack}`);
       return false;
     }
 
@@ -1767,7 +1789,8 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
 
     if (addStack) {
       // Set the stack meta
-      entry.stack = `${entry.message}\n${new Error().stack.replace(stackRegex, '')}`;
+      const stack = new Error().stack.replace(stackRegex, '');
+      entry.stack = `${entry.message}\n${stack}`;
     }
 
     return entry;
@@ -1886,12 +1909,11 @@ ${awsOptions.region}:${logGroupName}:${this.cloudWatch.streamName} at level ${le
     }
 
     // Only CloudWatch's error logger can be used while stopping
-    if (this.props.stopping && category !== this.options.cloudWatch.errorCategory) {
+    if (this.props.stopping && category !== logCategories.cloudWatch) {
       // eslint-disable-next-line no-console
-      console.error(
-        new Error(`[${category}] Stopping. Unable to log:
-${util.inspect(entry)}`)
-      );
+      console.error(`[${category}] Stopping. Unable to log:
+${util.inspect(entry)}
+${(new Error('Stopping')).stack}`);
       return;
     }
 
@@ -1979,15 +2001,14 @@ ${util.inspect(entry)}`)
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(
-        new Error(`[$category] Stopped. Unable to log:
+      console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
   message,
   context,
-})}`)
-      );
+})}
+${(new Error('Stopped')).stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, context);
@@ -2002,16 +2023,7 @@ ${util.inspect({
  *  example, given the tuple a: 'b', both.a is copied to meta.b. The 'both' object is not altered; its keys are also
  *  copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the tuple b: 'b'.
  */
-Loggers.defaultMetaKeys = {
-  code: undefined,
-  commitSha: undefined,
-  correlationId: undefined,
-  operationId: undefined,
-  requestId: undefined,
-  responseCode: 'statusCode',
-  tenantId: undefined,
-  transactionId: undefined,
-};
+Loggers.defaultMetaKeys = {};
 
 /**
  * @description These follow npm levels defined at

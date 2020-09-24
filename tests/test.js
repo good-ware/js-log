@@ -73,15 +73,6 @@ async function go(colors) {
     if (level !== 'debug') throw new Error();
   }
 
-  // Code meta test
-  {
-    logger.info({ code: 5 });
-    const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
-    // check for conversion to string
-    if (entry.code !== 5) throw new Error();
-    if (entry.data.code !== 5) throw new Error();
-  }
-
   // Error
   {
     logger.error('some error', new Error('5'));
@@ -419,18 +410,6 @@ async function go(colors) {
   loggers.log('error', '', { foo: new Error('data') });
   if (!unitTest.entries[unitTest.entries.length - 1].message) throw new Error();
 
-  // Test logStack meta
-  {
-    loggers.log({ info: true, logStack: true }, 'hello');
-    let item = unitTest.entries[unitTest.entries.length - 1];
-    if (!item.stack) throw new Error();
-    if (item.logStack) throw new Error();
-    loggers.log({ info: true, logStack: false }, 'hello');
-    item = unitTest.entries[unitTest.entries.length - 1];
-    if (item.stack) throw new Error();
-    if (item.logStack) throw new Error();
-  }
-
   {
     loggers.log(
       'error',
@@ -438,17 +417,22 @@ async function go(colors) {
       { requestId: 1, extra: 2 }
     );
     let item = unitTest.entries[unitTest.entries.length - 2];
-    if (item.requestId !== 1) throw new Error();
     if (item.data.extra !== 2) throw new Error();
     if (item.message !== 'outer error') throw new Error();
     if (!item.stack) throw new Error();
     if (item.data.error !== 'Error: inner error') throw new Error();
     item = unitTest.entries[unitTest.entries.length - 1];
-    if (item.requestId !== 1) throw new Error();
-    if (item.logStack) throw new Error();
   }
 
   // logStack tests
+  {
+    loggers.log({ info: true, logStack: true }, 'hello');
+    let item = unitTest.entries[unitTest.entries.length - 1];
+    if (!item.stack) throw new Error();
+    loggers.log({ info: true, logStack: false }, 'hello');
+    item = unitTest.entries[unitTest.entries.length - 1];
+    if (item.stack) throw new Error();
+  }
   {
     logger.info(['logStack'], 'A message');
     const item = unitTest.entries[unitTest.entries.length - 1];
@@ -535,10 +519,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 125 + hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 126 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 66 + hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 67 + hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
