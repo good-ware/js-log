@@ -1,15 +1,15 @@
 {
   "name": "@goodware/log",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
-    "lint": "eslint . --fix",
-    "prettier": "prettier . --write",
-    "pub": "npm publish --access=public",
-    "test": "node tests/test.js",
-    "playground": "node tests/playground.js",
     "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
-    "prepush": "npm upgrade && npm run prettier && npm run lint && npm run docs"
+    "lint": "eslint . --fix",
+    "playground": "node tests/playground.js",
+    "prettier": "prettier . --write",
+    "prepub": "npm test && npm upgrade && npm run prettier && npm run lint && npm run docs",
+    "pub": "npm publish --access=public",
+    "test": "node tests/test.js"
   },
   "main": "Loggers.js",
   "repository": {

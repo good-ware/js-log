@@ -511,7 +511,7 @@ async function go(colors) {
     // These values must be tweaked whenever more entries are logged
     if (unitTest.entries.length !== 127 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 22 + hasCloudWatch) throw new Error(len);
+    if (len !== 23) throw new Error(len);
     if (unitTest.dataCount !== 67 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
@@ -535,14 +535,15 @@ async function go(colors) {
  * @description Tester
  */
 async function test() {
+  let error;
+
   try {
     await go(false);
     await go(true);
     // eslint-disable-next-line no-console
     console.log('Successful');
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
+  } catch (err) {
+    error = err;
   }
 
   if (loggers) {
@@ -552,7 +553,12 @@ async function test() {
 
   // Uncomment if the process is hanging to investigate
   // why();
+
+  if (error) throw error;
 }
 
 // eslint-disable-next-line no-console
-test().catch(console.error);
+test().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
