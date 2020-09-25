@@ -84,6 +84,7 @@ class Loggers {
    *  {Function} props.unhandledPromiseListener
    *  {Function[]} props.stopWaiters
    *  {String[]} props.levels {String} with 'default'
+   *  {Object} props.logStackLevels
    *  {Object} props.winstonLoggers {String} category -> Winston logger
    *  {Object} props.userMeta {String} metaFieldName -> undefined
    *  {Object} unitTest
@@ -215,6 +216,15 @@ class Loggers {
     this.props.categoryTags = {};
     if (!this.processCategoryTags('default')) {
       this.props.categoryTags.default = { on: true };
+    }
+
+    // Set props.logStackLevels
+    {
+      const obj = (this.props.logStackLevels = {});
+      options.logStackLevels.forEach((level) => {
+        if (level === 'default') level = options.defaultLevel;
+        obj[level] = true;
+      });
     }
 
     this.start();
@@ -405,6 +415,8 @@ CloudWatch`
 
     /**
      * @description Options provided to the constructor
+     * The defaults in this object assume the following levels exist:
+     * error, warn, debug
      */
     const optionsObject = Joi.object({
       // Process-related meta
@@ -419,6 +431,9 @@ CloudWatch`
 
       // Colors
       levelColors: Joi.object().pattern(levelEnum, Joi.string().required()),
+
+      // Set the 'stack' meta with the current call stack
+      logStackLevels: Joi.array().items(defaultLevelEnum).default(['error']),
 
       // Meta keys
       metaKeys: Joi.object()
@@ -463,14 +478,14 @@ traverse.`
 
       // Turn console status messages on and off
       say: Joi.object({
-        banner: Joi.boolean().default(true),
+        ready: Joi.boolean().default(true),
         flushing: Joi.boolean().default(true),
         flushed: Joi.boolean().default(true),
         stopping: Joi.boolean().default(true),
         stopped: Joi.boolean().default(true),
         openCloudWatch: Joi.boolean().default(true),
       }).default({
-        banner: true,
+        ready: true,
         stopping: true,
         stopped: true,
         flushing: true,
@@ -575,10 +590,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.stopped = false;
 
-    // Create one logger for uncaught Promise rejection and exceptions. Winston transports have some magic to catch
-    // uncaught exceptions.
+    // Create one logger for uncaught exceptions and unhandled Promise rejections. Winston transports have some magic to
+    // catch uncaught exceptions.
     // process.on('uncaughtException') is dangerous and doesn't work for exceptions thrown in a function called by the
-    // event loop (e.g., setTimeout(...throw...)
+    // event loop -- e.g., setTimeout(() => {throw...})
     const unhandledLoggers = this.logger(logCategories.unhandled);
     // Create a Winston logger now to catch uncaught exceptions
     if (unhandledLoggers.isLevelEnabled('error')) {
@@ -590,13 +605,12 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.starting = false;
 
-    if (this.options.say.banner) this.log('info',
-      `Ready ${options.service} v${options.version} ${options.stage}`, null, logCategories.log);
+    if (this.options.say.ready)
+      this.log('info', `Ready: ${options.service} v${options.version} ${options.stage}`, null, logCategories.log);
   }
 
   /**
-   * @description Internal function called by methods that are named after
-   * levels. Allows tags to be provided.
+   * @description Internal function called by methods that are named after levels. Allows tags to be provided.
    * @param {Loggers|Logger} obj
    * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
@@ -786,10 +800,8 @@ ${directories.join('\n')}`);
    * @return {String}
    */
   static printf(info) {
-    /*
-    // Note: level is colorized. To get the level, do this:
-    const shouldLogError = info.level.indexOf('error') >= 0;
-    */
+    // info.level is colorized. To get the level, do this:
+    // const shouldLogError = info.level.indexOf('error') >= 0;
     return `[${info.level} ${info.category} ${info.ms}] ${info.message}`;
   }
 
@@ -860,8 +872,7 @@ ${directories.join('\n')}`);
   }
 
   /**
-   * @description Creates Winston logger for CloudWatch errors that logs to
-   * console and possibly file
+   * @description Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
    * @return {Object} logger
    */
   createCloudWatchErrorLoggers() {
@@ -927,8 +938,7 @@ ${error}`);
   }
 
   /**
-   * @description Flushes a CloudWatch transport
-   *  See https://github.com/lazywithclass/winston-cloudwatch/issues/128
+   * @description Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
    * @param {Object} transport
    * @param {Number} timeout
    * @return {Promise}
@@ -936,8 +946,8 @@ ${error}`);
   flushCloudWatchTransport(transport, timeout) {
     // @todo Fix this when WinstonCloudWatch makes flush timeout an option
     // https://github.com/lazywithclass/winston-cloudwatch/issues/129
-    // This ends up taking way too long if, say, the aws-sdk is not properly
-    // configured. Submit issue to winston-cloudwatch.
+    // This ends up taking way too long if, say, the aws-sdk is not properly configured. Submit issue to
+    // winston-cloudwatch.
     transport.flushTimeout = Date.now() + timeout;
     return new Promise((resolve) => {
       transport.kthxbye((error) => {
@@ -1300,9 +1310,8 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
         level = 'info';
       }
 
-      // Winston wants at least one transport (error file transport is
-      // intentionally ignored because it's only error) so console is always
-      // active
+      // Winston wants at least one transport (error file transport is intentionally ignored because it's only error) so
+      // console is always active
       if (!transports.length && level === 'off') level = 'error';
 
       if (level !== 'off') transports.push(this.createConsoleTransport(level, category === logCategories.unhandled));
@@ -1692,7 +1701,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
    * @param {*} context
    * @param {Number} depth When falsey, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
-   * 1. When the level is 'error', the stack is added when falsey
+   * 1. When the level is in this.props.logStackLevels, the stack is added when falsey
    * 2. The logStack and noLogStack meta tags are applied when falsey
    * @return {Object} A log entry
    */
@@ -1796,7 +1805,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
     if (state.contextData) entry.contextData = state.contextData;
 
     // Add stack trace?
-    let addStack = !depth && info.level === 'error';
+    let addStack = !depth && this.props.logStackLevels[info.level];
 
     // Turn tags into an array and put the level in the front without modifying
     // the object in entry.tags
@@ -2062,9 +2071,11 @@ ${new Error('Stopped').stack}`);
 Loggers.defaultMetaKeys = {};
 
 /**
- * @description These follow npm levels defined at
- *  https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
- *  than 'error' and 'more' which is between 'info' and 'verbose.'
+ * @description These follow npm levels wich are defined at
+ * https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
+ * than 'error' and 'more' which is between 'info' and 'verbose.' A different set of levels can be provided to the
+ * Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via
+ * the defaults) assumes the following levels exist: error, warn, debug.
  */
 Loggers.defaultLevels = {
   levels: {
@@ -2074,13 +2085,15 @@ Loggers.defaultLevels = {
     info: 40,
     more: 50,
     verbose: 60,
-    http: 70,
-    debug: 80,
-    silly: 90,
+    db: 70,
+    http: 80,
+    debug: 90,
+    silly: 100,
   },
   colors: {
     fail: 'red',
     more: 'cyan',
+    db: 'yellow',
   },
 };
 
@@ -2088,7 +2101,7 @@ Loggers.defaultLevels = {
  * @description This class manages a (tags, context, category) tuple. Its methods accept tags, context, and category,
  *  which, if provided, are combined with the object's corresponding properties. For example, if the object is created
  *  with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has level-specific logging
- *  methods such  as error().
+ *  methods such as error().
  *
  * Public Properties:
  *  {Object} tags

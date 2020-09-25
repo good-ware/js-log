@@ -8,7 +8,7 @@ const Loggers = require('../Loggers');
 let loggers;
 
 /**
- * @description Run the test
+ * @description Runs the test
  * @param {Boolean} colors
  * @return {Promise}
  */
@@ -45,19 +45,10 @@ async function go(colors) {
   };
 
   loggers = new Loggers(config.logging);
-  const hasCloudWatch = loggers.props.cloudWatch?1:0;
+  const hasCloudWatch = loggers.props.cloudWatch ? 1 : 0;
 
   const logger = loggers.logger();
   const { unitTest } = loggers;
-
-  // ====== Manual test to make sure files are flushed
-  // There is no easy automated way to check this
-  // logger.info('doctor');
-  // loggers.unitTest.flush = true;
-  // await logger.stop();
-
-  // @todo when in no-color mode check only 1 message is sent to console
-  // logger.error({message:'lksdjf', error: new Error('lksjadf')});
 
   // This is logged as info
   {
@@ -180,7 +171,7 @@ async function go(colors) {
   // Tag filtering
   // eslint-disable-next-line no-empty-pattern
   for (const i of [1, 2]) {
-    const extra = (hasCloudWatch && i == 1)?1:0; 
+    const extra = hasCloudWatch && i === 1 ? 1 : 0;
     // Repeat to test switch caching
     // Default category
     {
@@ -242,8 +233,8 @@ async function go(colors) {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
       loggers.log(['more', 'nurse'], 'Nurse more', null, 'nurse');
-      if (consoleEntries+extra !== unitTest.console.entries.length) throw new Error();
-      if (fileEntries+extra !== unitTest.file.entries.length) throw new Error();
+      if (consoleEntries + extra !== unitTest.console.entries.length) throw new Error();
+      if (fileEntries + extra !== unitTest.file.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -263,9 +254,9 @@ async function go(colors) {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
       logger.more(['doctor'], 'Doctor more', null, 'doctor');
-      if ((consoleEntries + extra) !== unitTest.console.entries.length) throw new Error();
+      if (consoleEntries + extra !== unitTest.console.entries.length) throw new Error();
       // Wrote to file because 'other' defined at category level
-      if ((fileEntries + extra) === unitTest.file.entries.length) throw new Error();
+      if (fileEntries + extra === unitTest.file.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -287,7 +278,7 @@ async function go(colors) {
   {
     const entries = unitTest.console.entries.length;
     logger.silly('a message', null, 'coordinator');
-    if (entries+hasCloudWatch !== unitTest.console.entries.length) throw new Error();
+    if (entries + hasCloudWatch !== unitTest.console.entries.length) throw new Error();
     logger.silly('coordinator', 'Silly changed to info', null, 'coordinator');
     if (entries === unitTest.console.entries.length) throw new Error();
   }
@@ -518,10 +509,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 127 + 10*hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 127 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 22+hasCloudWatch) throw new Error(len);
-    if (unitTest.dataCount !== 67 + 10*hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 22 + hasCloudWatch) throw new Error(len);
+    if (unitTest.dataCount !== 67 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

@@ -84,8 +84,8 @@ While a Loggers instance is active, uncaught exceptions and unhandled Promise re
 
 ## Adding stack traces
 
-When a log entry's level is 'error', the current stack trace is added to the to the 'stack' meta key. This
-behavior is disabled via the 'logStack' meta tag.
+When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key
+is set to the sjtack trace of the caller. This behavior is manually enabled and disabled via the 'logStack' meta tag.
 
 # Concepts
 
@@ -128,15 +128,19 @@ is provided when creating a Winston logger.
 By default, Loggers uses Winston's default levels (aka
 [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of two levels:
 
-1. 'more' is between 'info' and 'verbose' and has the color cyan
-2. 'db' is between 'verbose' and 'http' and has the color white
-3. Therefore, from highest to lowest severity, the levels are: error, warn, info, more, verbose, db, http, debug, and
+1. 'fail' is more severe than 'error' and has the color red
+2. 'more' is between 'info' and 'verbose' and has the color cyan
+3. 'db' is between 'verbose' and 'http' and has the color yellow
+4. Therefore, from highest to lowest severity, the levels are: faile, error, warn, info, more, verbose, db, http, debug,
    silly.
+
+A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is
+an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 
 ## default level
 
-When a level is not found in the provided tags, the default level, 'debug', is added to the tags.
-The default level is specified via the 'defaultLevel' options setting.
+When a level is not found in the provided tags, the default level, 'debug', is assumed. The default level is specified
+via the 'defaultLevel' options setting.
 
 ## level methods
 
@@ -372,3 +376,15 @@ The following classes are available:
   via events or iterators
 - MySqlLogger: For logging SQL statement execution via mysql2
 - RequestLogger: For logging http requests via request-promise
+
+# Maintainer Notes
+
+## Deployment
+
+First, push to git.
+
+1. Change the version number in package.json and package-lock.json
+2. npm run prepush
+3. Commit and push
+
+Then publish to npm: `npm run pub`
