@@ -557,8 +557,8 @@ async function test() {
   if (error) throw error;
 }
 
-// eslint-disable-next-line no-console
 test().catch((error) => {
+  // eslint-disable-next-line no-console
   console.error(error);
   process.exit(1);
 });

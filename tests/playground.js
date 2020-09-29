@@ -41,7 +41,6 @@ async function go(colors) {
   };
 
   const loggers = new Loggers(config.logging);
-  const logger = loggers.logger();
 
   // ====== Manual test to make sure files are flushed
   // There is no easy automated way to check this
@@ -52,8 +51,7 @@ async function go(colors) {
   // @todo when in no-color mode check only 1 message is sent to console
   // logger.error({message:'one', error: new Error('two')});
 
-  // This is logged as info
-  logger.error('Outer error', new Error('Inner error'));
+  loggers.log('error', 'Outer error', new Error('Inner error'));
 
   await loggers.stop();
 

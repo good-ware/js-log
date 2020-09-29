@@ -23,16 +23,9 @@ const banner = '[@log] ';
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
- * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
- * code changes.
+ * @description Removes internal functions from the stack trace
  */
-const stripLogStack = /^(.*\n){6}/;
-
-/**
- * @description Removes internal functions from the stack trace. This regular expression must be modified whenever this
- * code changes.
- */
-const stripInvalidCategoryStack = stripLogStack; // This is just a coincidence
+const stripStack = /^.*\n(\s+at .*[/|\\]Loggers.js:.*\n)*/g;
 
 /**
  * @description Used for tag filtering
@@ -678,7 +671,7 @@ ${directories.join('\n')}`);
       // Send error message to console with the immediate caller (from the call stack) in the same line for easier
       // identification. Log the full stack to a file.
       this.log('error', error, null, logCategories.log);
-      const stack = error.stack.replace(stripInvalidCategoryStack, '');
+      const stack = error.stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
       console.error(`${banner}${message}${stack}`);
       // Throw exception when unit testing
@@ -1834,7 +1827,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
     if (addStack) {
       // Set the stack meta
-      const stack = new Error().stack.replace(stripLogStack, '');
+      const stack = new Error().stack.replace(stripStack, '');
       entry.stack = `${entry.message}\n${stack}`;
     }
 

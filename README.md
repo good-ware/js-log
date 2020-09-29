@@ -384,7 +384,7 @@ The following classes are available:
 First, push to git.
 
 1. Change the version number in package.json and package-lock.json
-2. npm run prepush
+2. `npm run prepush`
 3. Commit and push
 
 Then publish to npm: `npm run pub`
