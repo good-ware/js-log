@@ -6,7 +6,7 @@ Better documentation is coming.
 
 - [npm](https://www.npmjs.com/package/@goodware/log)
 - [git](https://github.com/good-ware/js-log)
-- [API](https://good-ware.github.io/js-log/)
+- [API Docs](https://good-ware.github.io/js-log/)
 
 # Requirements
 
@@ -18,7 +18,7 @@ ECMAScript 2017
 
 # Features
 
-1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by on tags on a per-tranport basis.
+1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by tags on a per-transport basis.
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid

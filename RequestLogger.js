@@ -6,6 +6,10 @@ const TaskLogger = require('./TaskLogger');
 
 const protocolRegex = /^[^:]+:\/\//;
 
+/**
+ * @description Logs start and the completion or error of an http operation performed via request-promise
+ * @hideconstructor
+ */
 class RequestLogger {
   /**
    * @description Creates two log entries for an HTTP request using the request-promise package: 'begin' and either

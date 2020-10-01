@@ -1,6 +1,10 @@
 /* eslint-disable no-param-reassign */
 const { v1: uuidv1 } = require('uuid');
 
+/**
+ * @description Logs the start of a generator and returns an object for logging the progress, end, and error of it
+ * @hideconstructor
+ */
 class GeneratorLogger {
   /**
    * @description Similar to TaskLogger.execute() but is intended for generators. It creates one 'begin' log entry with:

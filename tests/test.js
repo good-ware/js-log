@@ -338,12 +338,12 @@ async function go(colors) {
   if (unitTest.entries[unitTest.entries.length - 1].message !== 'Cat logger') throw new Error();
 
   // Flush followed by logging works
-  await loggers.flushCloudWatch();
+  await loggers.flushCloudWatchTransports();
   logger.info('message2');
 
   // Flushing with nothing works
-  await loggers.flushCloudWatch();
-  await loggers.flushCloudWatch();
+  await loggers.flushCloudWatchTransports();
+  await loggers.flushCloudWatchTransports();
 
   // Test isLevelEnabled
   if (!loggers.child(null, null, 'foo').isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
@@ -524,8 +524,8 @@ async function go(colors) {
   await loggers.stop();
 
   loggers.start();
-  await loggers.flushCloudWatch();
-  await loggers.flushCloudWatch();
+  await loggers.flushCloudWatchTransports();
+  await loggers.flushCloudWatchTransports();
   await loggers.stop();
 
   loggers = undefined;

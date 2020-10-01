@@ -1,38 +1,84 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Loggers.js - Documentation</title>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> Loggers.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="./build/entry.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+  <link type="text/css" rel="stylesheet" href="">
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+  
 </head>
-<body>
 
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
 
-<label for="nav-trigger" class="overlay"></label>
 
-<nav>
-    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading">Classes</li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="LogEntry.html">LogEntry</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Logger.html">Logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#loggers">loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#parent">parent</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Loggers.html">Loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.context">context</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.contextToObject">contextToObject</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.defaultMeta">defaultMeta</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.hasKeys">hasKeys</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.levelLog">levelLog</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.now">now</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.pad">pad</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.printf">printf</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.tags">tags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#addLevelMethods">addLevelMethods</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#categoryOptions">categoryOptions</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#checkCategory">checkCategory</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#checkTags">checkTags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#close">close</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#cloudWatchError">cloudWatchError</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#copyData">copyData</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#createCloudWatchErrorLoggers">createCloudWatchErrorLoggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#createConsoleTransport">createConsoleTransport</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#createLogsDirectory">createLogsDirectory</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#createWinstonLoggers">createWinstonLoggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#default">default</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flushCloudWatch">flushCloudWatch</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flushCloudWatchTransport">flushCloudWatchTransport</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#format">format</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#formatter">formatter</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#initCloudWatch">initCloudWatch</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isReady">isReady</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#logEntry">logEntry</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#objectToString">objectToString</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#processCategoryTags">processCategoryTags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#send">send</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#start">start</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#stop">stop</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#transformLogArguments">transformLogArguments</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#validateOptions">validateOptions</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><a href="global.html">Globals</a></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#logCategories">logCategories</a></span></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#scalars">scalars</a></span></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#stripStack">stripStack</a></span></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#transportObj">transportObj</a></span></li>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">Loggers.js</h1>
+<body class="layout small-header">
+    <div id="stickyNavbarOverlay"></div>
     
 
-    
+<div class="top-nav">
+    <div class="inner">
+        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+        <div class="logo">
+            
+            
+        </div>
+        <div class="menu">
+            
+            <div class="navigation">
+                <a
+                    href="index.html"
+                    class="link"
+                >
+                    API Documentation
+                </a>
+                
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="main">
+        <div
+            class="sidebar "
+            id="sidebarNav"
+        >
+            
+            <nav>
+                
+                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Classes</h3><ul><li><a href="GeneratorLogger.html">GeneratorLogger</a></li><li><a href="Logger.html">Logger</a></li><li><a href="Loggers.html">Loggers</a></li><li><a href="MySqlLogger.html">MySqlLogger</a></li><li><a href="RequestLogger.html">RequestLogger</a></li><li><a href="TaskLogger.html">TaskLogger</a></li></ul></div>
+                
+            </nav>
+        </div>
+        <div class="core" id="main-content-wrapper">
+            <div class="content">
+                <header class="page-title">
+                    <p>Source</p>
+                    <h1>Loggers.js</h1>
+                </header>
+                
 
 
 
@@ -64,11 +110,13 @@ const banner = '[@log] ';
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
+ * @private
  * @description Removes internal functions from the stack trace
  */
 const stripStack = /^.*\n(\s+at .*[/|\\]Loggers.js:.*\n)*/g;
 
 /**
+ * @private
  * @description Used for tag filtering
  */
 const transportObj = {};
@@ -77,6 +125,7 @@ transportNames.forEach((transport) => {
 });
 
 /**
+ * @private
  * @description Which datatypes are scalars
  */
 const scalars = {
@@ -86,6 +135,7 @@ const scalars = {
 };
 
 /**
+ * @private
  * @description Category names for internal loggers
  */
 const logCategories = {
@@ -95,13 +145,13 @@ const logCategories = {
 };
 
 /**
- * @description Internal class for identifying log entries that are created by Loggers::logEntry
  * @private
+ * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
 class LogEntry {}
 
 /**
- * @description Manages loggers that can send log entries to the console, files, and AWS CloudWatch Logs.
+ * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
  */
 class Loggers {
   /**
@@ -165,6 +215,7 @@ class Loggers {
     // Copy environment variables to options (begin)
 
     /**
+     * @private
      * @description Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
      * @param {String} key 'data' or 'colors'
      */
@@ -265,8 +316,8 @@ class Loggers {
   }
 
   /**
-   * @description Converts a number to a string with leading zeroes
    * @private
+   * @description Converts a number to a string with leading zeroes
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
    * @return {String} num converted to a string with leading zeroes if necessary
@@ -278,8 +329,8 @@ class Loggers {
   }
 
   /**
-   * @description Returns local time in ISO8601 format with the local timezone offset
    * @private
+   * @description Returns local time in ISO8601 format with the local timezone offset
    * @return {String}
    */
   static now() {
@@ -344,8 +395,8 @@ class Loggers {
   }
 
   /**
-   * @description Converts an context value to an object
    * @private
+   * @description Converts an context value to an object
    * @param {*} [context]
    * @return {Object} If context is falsey, returns context. If context is a string, returns {logMessage: context}. If
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
@@ -383,9 +434,9 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
    *  See https://jsperf.com/testing-for-any-keys-in-js
-   * @private
    * @param {Object} object An object to test
    * @return {Boolean} true if object has properties (including inherited)
    */
@@ -396,6 +447,7 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Adds methods named after levels, such as error()
    * @param target The object to modify
    */
@@ -406,6 +458,7 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Processes options
    * @param {Object} options
    * @return {Object} options with defaults added
@@ -448,9 +501,9 @@ CloudWatch`
     });
 
     /**
+     * @private
      * @description Options provided to the constructor
-     * The defaults in this object assume the following levels exist:
-     * error, warn, debug
+     * The defaults in this object assume the following levels exist: error, warn, debug
      */
     const optionsObject = Joi.object({
       // Process-related meta
@@ -644,6 +697,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   }
 
   /**
+   * @private
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
    * @param {Loggers|Logger} obj
    * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
@@ -667,6 +721,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   }
 
   /**
+   * @private
    * @description Creates a directory for log files
    */
   createLogsDirectory() {
@@ -696,6 +751,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Checks whether the provided category value is a string or a falsey value
    * @param {*} category
    * @return {String} Returns the provided category if it is a truthy string; otherwise, returns the default category
@@ -723,6 +779,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Processes tag switches for one category specified in this.options
    * @param {String} category
    * @return {Boolean} true only if tag switches are defined for the category
@@ -754,6 +811,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Determines whether a log entry can be sent to a transport
    * @param {String} transportName
    * @param {Object} info Log entry
@@ -766,6 +824,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Returns default meta for log entries
    * @param {String} category
    * @return {Object}
@@ -779,6 +838,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Combines a custom Winston formatter with format.ms()
    * @return {Object} A Winston formatter
    */
@@ -787,6 +847,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Winston customer formatter
    *  1. Enforces log() is called to support uncaught exception logging
    *  2. Manages this.unitTest object for unit test validation
@@ -829,6 +890,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Console formatter for 'no data'
    * @param {Object} info A log entry
    * @return {String}
@@ -840,6 +902,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Creates a console transport
    * @param {String} level
    * @param {Boolean} handleExceptions
@@ -890,6 +953,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Sets this.props.cloudWatch
    */
   initCloudWatch() {
@@ -906,6 +970,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
    * @return {Object} logger
    */
@@ -958,6 +1023,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Handles errors from the CloudWatch transport
    * @param {Object} error
    */
@@ -972,6 +1038,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
    * @param {Object} transport
    * @param {Number} timeout
@@ -992,11 +1059,10 @@ ${error}`);
   }
 
   /**
-   * @description Flushes Cloudwatch transports. File transports can not be
-   * flushed.
+   * @description Flushes Cloudwatch transports
    * @return {Promise}
    */
-  async flushCloudWatch() {
+  async flushCloudWatchTransports() {
     if (!this.props.cloudWatch) return;
 
     const { flushTimeout } = this.options.cloudWatch;
@@ -1030,6 +1096,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Closes all loggers
    * @return {Promise}
    * @throws {None}
@@ -1050,7 +1117,7 @@ ${error}`);
       Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
 
-    await this.flushCloudWatch();
+    await this.flushCloudWatchTransports();
 
     // Close
     await Promise.all(
@@ -1077,7 +1144,7 @@ ${error}`);
     if (this.props.cloudWatch) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
-      await this.flushCloudWatch();
+      await this.flushCloudWatchTransports();
       delete this.props.cloudWatch;
 
       if (this.unitTest) {
@@ -1173,6 +1240,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Creates a Winston logger
    * @param {String} category
    * @return {Object} Winston logger
@@ -1407,6 +1475,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Accessor for the options provided for a category
    * @param {String} [category]
    * @return {Object} An object or undefined
@@ -1448,10 +1517,8 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
-   * @description States whether messages can be logged
-   * @return {Boolean}
-   *   false: Messages can not be logged because the logger is stopping or has
-   * stopped true: Messages can be logged
+   * @description Indicates whether this object and its child loggers are ready to log messages
+   * @return {Boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
    */
   isReady() {
     return !this.props.starting &amp;&amp; !this.props.stopped &amp;&amp; !this.props.stopping;
@@ -1665,6 +1732,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Converts an object to a string
    * @param {*} value It must be truthy
    * @return {String} or a falsy value
@@ -1691,6 +1759,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Does nothing if the provided key is redacted. Helper function to combine 'message' and 'context'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.contextData and then sets
    * state.currentData[key] to value.
@@ -1729,6 +1798,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Creates a log entry
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} message
@@ -1876,6 +1946,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Sends log entries to a Winston logger
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} [message]
@@ -2007,6 +2078,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
+   * @private
    * @description Tranforms arugments sent to the log method
    * @param {*} [tags] See description.
    * @param {*} [message]
@@ -2048,7 +2120,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
-   * @description Log using the default level
+   * @description Sends a log entry using the default level
    * @return {Loggers} this
    */
   default(...args) {
@@ -2056,7 +2128,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
-   * @description Sends log entries to a Winston logger
+   * @description Sends a log entry.
    * If tags is an Error object, error is used for tags and message is set as follows:
    *   1. If message is falsey, message = tags
    *   2. Otherwise, context = Loggers.context(context, {error: tags})
@@ -2204,6 +2276,13 @@ class Logger {
   }
 
   /**
+   * @return {Boolean}
+   */
+  isReady() {
+    return this.loggersObj.isReady();
+  }
+
+  /**
    * @param {String} [category]
    * @return {Loggers|Logger}
    */
@@ -2265,15 +2344,25 @@ module.exports = Loggers;
 
 
 
-</div>
+            </div>
+            
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a></p>
+                    <p class="sidebar-created-by">
+                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+                    </p>
+                </div>
+            </footer>
+            
+        </div>
+        <div id="side-nav" class="side-nav">
+        </div>
+    </div>
+<script src="scripts/app.min.js"></script>
+<script>PR.prettyPrint();</script>
+<script src="scripts/linenumber.js"> </script>
 
-<br class="clear">
-
-<footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Tue Sep 29 2020 08:43:50 GMT-0700 (Pacific Daylight Time) using the Minami theme.
-</footer>
-
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
 </body>
 </html>

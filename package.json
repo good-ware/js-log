@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
@@ -36,6 +36,7 @@
     "winston-daily-rotate-file": "^4.5.0"
   },
   "devDependencies": {
+    "better-docs": "^2.3.2",
     "deepmerge": "^4.2.2",
     "dotenv": "^8.2.0",
     "eslint": "^7.9.0",
@@ -43,7 +44,6 @@
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
     "jsdoc": "^3.6.6",
-    "minami": "^1.2.3",
     "prettier": "^2.1.2",
     "request-promise": "^4.2.6",
     "why-is-node-running": "^2.2.0"

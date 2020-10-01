@@ -23,11 +23,13 @@ const banner = '[@log] ';
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
+ * @private
  * @description Removes internal functions from the stack trace
  */
 const stripStack = /^.*\n(\s+at .*[/|\\]Loggers.js:.*\n)*/g;
 
 /**
+ * @private
  * @description Used for tag filtering
  */
 const transportObj = {};
@@ -36,6 +38,7 @@ transportNames.forEach((transport) => {
 });
 
 /**
+ * @private
  * @description Which datatypes are scalars
  */
 const scalars = {
@@ -45,6 +48,7 @@ const scalars = {
 };
 
 /**
+ * @private
  * @description Category names for internal loggers
  */
 const logCategories = {
@@ -54,13 +58,13 @@ const logCategories = {
 };
 
 /**
- * @description Internal class for identifying log entries that are created by Loggers::logEntry
  * @private
+ * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
 class LogEntry {}
 
 /**
- * @description Manages loggers that can send log entries to the console, files, and AWS CloudWatch Logs.
+ * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
  */
 class Loggers {
   /**
@@ -124,6 +128,7 @@ class Loggers {
     // Copy environment variables to options (begin)
 
     /**
+     * @private
      * @description Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
      * @param {String} key 'data' or 'colors'
      */
@@ -224,8 +229,8 @@ class Loggers {
   }
 
   /**
-   * @description Converts a number to a string with leading zeroes
    * @private
+   * @description Converts a number to a string with leading zeroes
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
    * @return {String} num converted to a string with leading zeroes if necessary
@@ -237,8 +242,8 @@ class Loggers {
   }
 
   /**
-   * @description Returns local time in ISO8601 format with the local timezone offset
    * @private
+   * @description Returns local time in ISO8601 format with the local timezone offset
    * @return {String}
    */
   static now() {
@@ -303,8 +308,8 @@ class Loggers {
   }
 
   /**
-   * @description Converts an context value to an object
    * @private
+   * @description Converts an context value to an object
    * @param {*} [context]
    * @return {Object} If context is falsey, returns context. If context is a string, returns {logMessage: context}. If
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
@@ -342,9 +347,9 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
    *  See https://jsperf.com/testing-for-any-keys-in-js
-   * @private
    * @param {Object} object An object to test
    * @return {Boolean} true if object has properties (including inherited)
    */
@@ -355,6 +360,7 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Adds methods named after levels, such as error()
    * @param target The object to modify
    */
@@ -365,6 +371,7 @@ class Loggers {
   }
 
   /**
+   * @private
    * @description Processes options
    * @param {Object} options
    * @return {Object} options with defaults added
@@ -407,9 +414,9 @@ CloudWatch`
     });
 
     /**
+     * @private
      * @description Options provided to the constructor
-     * The defaults in this object assume the following levels exist:
-     * error, warn, debug
+     * The defaults in this object assume the following levels exist: error, warn, debug
      */
     const optionsObject = Joi.object({
       // Process-related meta
@@ -603,6 +610,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   }
 
   /**
+   * @private
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
    * @param {Loggers|Logger} obj
    * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
@@ -626,6 +634,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   }
 
   /**
+   * @private
    * @description Creates a directory for log files
    */
   createLogsDirectory() {
@@ -655,6 +664,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Checks whether the provided category value is a string or a falsey value
    * @param {*} category
    * @return {String} Returns the provided category if it is a truthy string; otherwise, returns the default category
@@ -682,6 +692,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Processes tag switches for one category specified in this.options
    * @param {String} category
    * @return {Boolean} true only if tag switches are defined for the category
@@ -713,6 +724,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Determines whether a log entry can be sent to a transport
    * @param {String} transportName
    * @param {Object} info Log entry
@@ -725,6 +737,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Returns default meta for log entries
    * @param {String} category
    * @return {Object}
@@ -738,6 +751,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Combines a custom Winston formatter with format.ms()
    * @return {Object} A Winston formatter
    */
@@ -746,6 +760,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Winston customer formatter
    *  1. Enforces log() is called to support uncaught exception logging
    *  2. Manages this.unitTest object for unit test validation
@@ -788,6 +803,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Console formatter for 'no data'
    * @param {Object} info A log entry
    * @return {String}
@@ -799,6 +815,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Creates a console transport
    * @param {String} level
    * @param {Boolean} handleExceptions
@@ -849,6 +866,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Sets this.props.cloudWatch
    */
   initCloudWatch() {
@@ -865,6 +883,7 @@ ${directories.join('\n')}`);
   }
 
   /**
+   * @private
    * @description Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
    * @return {Object} logger
    */
@@ -917,6 +936,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Handles errors from the CloudWatch transport
    * @param {Object} error
    */
@@ -931,6 +951,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
    * @param {Object} transport
    * @param {Number} timeout
@@ -951,11 +972,10 @@ ${error}`);
   }
 
   /**
-   * @description Flushes Cloudwatch transports. File transports can not be
-   * flushed.
+   * @description Flushes Cloudwatch transports
    * @return {Promise}
    */
-  async flushCloudWatch() {
+  async flushCloudWatchTransports() {
     if (!this.props.cloudWatch) return;
 
     const { flushTimeout } = this.options.cloudWatch;
@@ -989,6 +1009,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Closes all loggers
    * @return {Promise}
    * @throws {None}
@@ -1009,7 +1030,7 @@ ${error}`);
       Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
 
-    await this.flushCloudWatch();
+    await this.flushCloudWatchTransports();
 
     // Close
     await Promise.all(
@@ -1036,7 +1057,7 @@ ${error}`);
     if (this.props.cloudWatch) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
-      await this.flushCloudWatch();
+      await this.flushCloudWatchTransports();
       delete this.props.cloudWatch;
 
       if (this.unitTest) {
@@ -1132,6 +1153,7 @@ ${error}`);
   }
 
   /**
+   * @private
    * @description Creates a Winston logger
    * @param {String} category
    * @return {Object} Winston logger
@@ -1366,6 +1388,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Accessor for the options provided for a category
    * @param {String} [category]
    * @return {Object} An object or undefined
@@ -1407,10 +1430,8 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
-   * @description States whether messages can be logged
-   * @return {Boolean}
-   *   false: Messages can not be logged because the logger is stopping or has
-   * stopped true: Messages can be logged
+   * @description Indicates whether this object and its child loggers are ready to log messages
+   * @return {Boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
    */
   isReady() {
     return !this.props.starting && !this.props.stopped && !this.props.stopping;
@@ -1624,6 +1645,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Converts an object to a string
    * @param {*} value It must be truthy
    * @return {String} or a falsy value
@@ -1650,6 +1672,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Does nothing if the provided key is redacted. Helper function to combine 'message' and 'context'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.contextData and then sets
    * state.currentData[key] to value.
@@ -1688,6 +1711,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Creates a log entry
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} message
@@ -1835,6 +1859,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
   }
 
   /**
+   * @private
    * @description Sends log entries to a Winston logger
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} [message]
@@ -1966,6 +1991,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
+   * @private
    * @description Tranforms arugments sent to the log method
    * @param {*} [tags] See description.
    * @param {*} [message]
@@ -2007,7 +2033,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
-   * @description Log using the default level
+   * @description Sends a log entry using the default level
    * @return {Loggers} this
    */
   default(...args) {
@@ -2015,7 +2041,7 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
-   * @description Sends log entries to a Winston logger
+   * @description Sends a log entry.
    * If tags is an Error object, error is used for tags and message is set as follows:
    *   1. If message is falsey, message = tags
    *   2. Otherwise, context = Loggers.context(context, {error: tags})
@@ -2160,6 +2186,13 @@ class Logger {
    */
   parent() {
     return this.parentObj;
+  }
+
+  /**
+   * @return {Boolean}
+   */
+  isReady() {
+    return this.loggersObj.isReady();
   }
 
   /**

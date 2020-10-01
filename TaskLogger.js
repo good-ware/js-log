@@ -1,5 +1,9 @@
 const { v1: uuidv1 } = require('uuid');
 
+/**
+ * @description Logs the start and the completion or error of a task whether synchronous or asynchronous
+ * @hideconstructor
+ */
 class TaskLogger {
   /**
    * @description Creates two log entries for the execution of a task: 'begin' and either 'end' or 'error.'
