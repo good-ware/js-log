@@ -23,8 +23,8 @@ ECMAScript 2017
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
-5. Reliable flushing (shut-down only)
-6. Doesn't interfere with other code that uses Winston
+5. Reliable flushing
+6. Does not interfere with other code that uses Winston
 7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
    to avoid creating expensive messages that won't be logged.
 
