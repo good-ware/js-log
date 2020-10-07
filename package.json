@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
@@ -23,7 +23,7 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "aws-sdk": "^2.768.0",
+    "aws-sdk": "^2.769.0",
     "hostid": "^1.0.23",
     "humanize-duration": "^3.24.0",
     "joi": "^17.2.1",

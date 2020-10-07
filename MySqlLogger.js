@@ -36,8 +36,9 @@ class MySqlLogger {
    * @param {String} sql A SQL statement to execute
    * @param {*} params Placeholder arguments for the sql statement
    * @param {Object} options Additional options to send to connection.query
-   * @return {Object[]} The first array entry is a stream object. The second entry is the object returned by
-   * GeneratorLogger.begin with the following additional properties:
+   * @return {Object} Returns an object with two properties:
+   * emitter: The return value of conection.connection.query(). It has on() methods.
+   * logger: The return value of GeneratorLogger.begin() with the following additional properties:
    * 1. {String} sql
    * 2. {*[]} params
    * 3. {String} summary: A summarized version of the sql argument
@@ -45,15 +46,15 @@ class MySqlLogger {
    */
   static stream(logger, connection, sql, params, options) {
     const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
-    const generator = connection.connection.query({ sql, params, ...options });
-    const logObj = GeneratorLogger.begin(
+    const emitter = connection.connection.query({ sql, params, ...options });
+    const logger = GeneratorLogger.begin(
       logger.child('mysql'),
       { sql, params, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
       `SQL:${summary}`
     );
-    Object.assign(logObj, { sql, params, summary });
-    return [generator, logObj];
+    Object.assign(streamLogger, { sql, params, summary });
+    return { emitter, logger };
   }
 }
 
