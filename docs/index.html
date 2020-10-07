@@ -119,10 +119,10 @@
 <li>Safely logs large objects and arrays - even those with circular references
 3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid</li>
 <li>Promotes object properties to a configurable subset of 'meta' properties</li>
-<li>Reliable flushing (shut-down only)</li>
-<li>Doesn't interfere with other code that uses Winston</li>
+<li>Reliable flushing</li>
+<li>Does not interfere with other code that uses Winston</li>
 <li>This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
-to avoid creating expensive messages that won't be logged.</li>
+to avoid creating expensive messages that won't be logged</li>
 </ol>
 <h1>Transports Supported</h1>
 <p>The following transports can be utilized. They are all optional.</p>

@@ -52,7 +52,7 @@ class MySqlLogger {
       `SQL End:${summary}`,
       `SQL:${summary}`
     );
-    logObj.assign(sql, params, summary);
+    Object.assign(logObj, { sql, params, summary });
     return [generator, logObj];
   }
 }

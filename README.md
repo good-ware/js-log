@@ -26,7 +26,7 @@ ECMAScript 2017
 5. Reliable flushing
 6. Does not interfere with other code that uses Winston
 7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
-   to avoid creating expensive messages that won't be logged.
+   to avoid creating expensive messages that won't be logged
 
 # Transports Supported
 
