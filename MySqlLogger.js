@@ -9,7 +9,7 @@ const GeneratorLogger = require('./GeneratorLogger');
 class MySqlLogger {
   /**
    * @description Creates two log entries for a Connection.query() execution: 'begin' and either 'end' or 'error.' See
-   *  TaskLogger.execute for more information. The sql and params arguments are logged.
+   * TaskLogger.execute for more information. The sql and params arguments are logged.
    * @param {Object} logger
    * @param {Connection} connection mysql2 Connection object
    * @param {String} sql SQL statement to execute
@@ -44,17 +44,17 @@ class MySqlLogger {
    * 3. {String} summary: A summarized version of the sql argument
    * See GeneratorLogger.begin() for more information.
    */
-  static stream(logger, connection, sql, params, options) {
+  static emitQuery(logger, connection, sql, params, options) {
     const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     const emitter = connection.connection.query({ sql, params, ...options });
-    const logger = GeneratorLogger.begin(
+    const logObj = GeneratorLogger.begin(
       logger.child('mysql'),
       { sql, params, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
       `SQL:${summary}`
     );
-    Object.assign(streamLogger, { sql, params, summary });
-    return { emitter, logger };
+    Object.assign(logObj, { sql, params, summary });
+    return { emitter, logger: logObj };
   }
 }
 

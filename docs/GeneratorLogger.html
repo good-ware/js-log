@@ -470,8 +470,8 @@ and it returns an object with logging-related methods</li>
     
     <div class='param-desc column is-7'><p>Returns an object with the following properties:</p>
 <ol>
-<li>{Object} logger</li>
-<li>{String} operationId
+<li>{Object} logger: A child logger of 'logger' with the uuid tag</li>
+<li>{String} uuid
 and the following methods:</li>
 <li>error({Error} error) Log the provided error with the tag 'error'</li>
 <li>end({*} message) Logs endMessage and message with:

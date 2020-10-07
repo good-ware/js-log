@@ -96,24 +96,25 @@ class TaskLogger {
    * @description Creates two log entries for the execution of a task: 'begin' and either 'end' or 'error.'
    *  1. Creates a log entry with:
    *     a) tag: 'begin'
-   *     b) beginMessage
-   *     c) operationId: a newly generated uuid
+   *     b) tag: a newly generated uuid
+   *     c) message = beginMessage
    *  2. await task() (Note: the task is not requred to return a Promise)
    *  3. If an exception is thrown in step 2:
    *     a) If errorHandler is provided, it is called. If it returns a falsey value, go to c). Otherwise, use the
    *        return value as errorMessage.
    *     b) Logs an error with:
    *        i. error
-   *        ii. errorMessage
-   *        iii. operationId
+   *        ii. tag: uuid
+   *        iii. message: errorMessage
    *     c) Throws the error (thus terminating this workflow)
    *  4. Creates a log entry with:
    *     a) tag: 'end'
-   *     b) endMessage
-   *     c) operationId
+   *     c) tag: uuid
+   *     c) message: endMessage
    *  5. Returns the value from step 2
    * @param {Object} logger
-   * @param {Function} task A function to invoke. The argument logger is passed as the only parameter.
+   * @param {Function} task A function to invoke. One argument is passed to this function: a child logger with the uuid
+   * tag.
    * @param {*} beginMessage A message to be logged before invoking the task
    * @param {*} endMessage A message to log when the task does not throw an exception
    * @param {*} [errorMessage] A message to log when the task throws an exception. errorMessage can be overridden by
@@ -129,7 +130,7 @@ class TaskLogger {
    */
   static async execute(logger, task, beginMessage, endMessage, errorMessage, errorHandler) {
     // eslint-disable-next-line no-param-reassign
-    logger = logger.child(null, { operationId: uuidv1() });
+    logger = logger.child(uuidv1());
     logger.log('begin', beginMessage);
 
     let result;
