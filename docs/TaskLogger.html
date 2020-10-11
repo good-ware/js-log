@@ -144,7 +144,7 @@
         <p class="tag-source">
             <a href="TaskLogger.js.html" class="button">View Source</a>
             <span>
-                <a href="TaskLogger.js.html">TaskLogger.js</a>, <a href="TaskLogger.js.html#line7">line 7</a>
+                <a href="TaskLogger.js.html">TaskLogger.js</a>, <a href="TaskLogger.js.html#line8">line 8</a>
             </span>
         </p>
     
@@ -224,7 +224,8 @@
 a) tag: 'begin'
 b) tag: a newly generated uuid
 c) message = beginMessage</li>
-<li>await task() (Note: the task is not requred to return a Promise)</li>
+<li>await task() (Note: the task is not required to return a Promise). The parameter passed is a object with
+the properties 'logger' and 'uuid.'</li>
 <li>If an exception is thrown in step 2:
 a) If errorHandler is provided, it is called. If it returns a falsey value, go to c). Otherwise, use the
 return value as errorMessage.
@@ -235,7 +236,7 @@ iii. message: errorMessage
 c) Throws the error (thus terminating this workflow)</li>
 <li>Creates a log entry with:
 a) tag: 'end'
-c) tag: uuid
+b) tag: uuid
 c) message: endMessage</li>
 <li>Returns the value from step 2</li>
 </ol>
@@ -335,8 +336,8 @@ c) message: endMessage</li>
 
   
 
-  <td class="description last"><p>A function to invoke. One argument is passed to this function: a child logger with the uuid
-tag.</p></td>
+  <td class="description last"><p>A function to invoke. One argument is passed to this function: an object with the properties
+'logger' and 'uuid.'</p></td>
 </tr>
 
 
@@ -437,8 +438,8 @@ tag.</p></td>
 
   
 
-  <td class="description last"><p>A message to log when the task throws an exception. errorMessage can be overridden by
-the provided errorHandler.</p></td>
+  <td class="description last"><p>A message to log when the task throws an exception. errorMessage can be overridden by the
+provided errorHandler.</p></td>
 </tr>
 
 
@@ -479,8 +480,8 @@ exception:</p>
 <li>{Error} The exception thrown by the task</li>
 <li>{Object} The logger argument</li>
 <li>{*} The errorMessage argument
-The function returns either the message to log or a falsey value indicating nothing should be logged. The
-exception is rethrown regardless of the return value.</li>
+The function returns either the message to log or a falsey value indicating nothing should be logged. The exception
+is rethrown regardless of the return value.</li>
 </ol></td>
 </tr>
 
@@ -529,7 +530,7 @@ exception is rethrown regardless of the return value.</li>
         <p class="tag-source">
             <a href="TaskLogger.js.html" class="button">View Source</a>
             <span>
-                <a href="TaskLogger.js.html">TaskLogger.js</a>, <a href="TaskLogger.js.html#line44">line 44</a>
+                <a href="TaskLogger.js.html">TaskLogger.js</a>, <a href="TaskLogger.js.html#line46">line 46</a>
             </span>
         </p>
     

@@ -18,7 +18,7 @@ class MySqlLogger {
    * @return {Promise} Returns the return value of connection.query(sql, params, ...options)
    */
   static query(logger, connection, sql, params, options) {
-    const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
+    const summary = ` ${sql}`.replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     return TaskLogger.execute(
       logger.child('mysql'),
       () => connection.query({ sql, params, ...options }),
@@ -45,7 +45,7 @@ class MySqlLogger {
    * See GeneratorLogger.begin() for more information.
    */
   static emitQuery(logger, connection, sql, params, options) {
-    const summary = ` ${sql}`.substr(0, 200).replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
+    const summary = ` ${sql}`.replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
     const emitter = connection.connection.query({ sql, params, ...options });
     const logObj = GeneratorLogger.begin(
       logger.child('mysql'),

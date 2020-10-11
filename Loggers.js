@@ -18,7 +18,7 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 
 const { format } = winston;
 
-const banner = '[@log] ';
+const banner = '[@goodware/log] ';
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 

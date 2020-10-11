@@ -33,7 +33,7 @@ class GeneratorLogger {
     return {
       logger,
       uuid,
-      end: (message) => logger.log('end', endMessage, message),
+      end: (message) => logger.log('end', endMessage || beginMessage, message),
       error: (error) => logger.log('error', errorMessage, { error }),
     };
   }
