@@ -377,6 +377,24 @@ The following classes are available:
 - MySqlLogger: For logging SQL statement execution via mysql2
 - RequestLogger: For logging http requests via request-promise
 
+## TaskLogger
+
+### Example
+
+The following example sets result to 'Some data.'
+
+```js
+TaskLogger = require('@goodware/log/TaskLogger');
+Loggers = require('@goodware/log');
+
+const logger = new Loggers({ defaultLevel: 'info' });
+
+let result;
+TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => {
+  result = value;
+});
+```
+
 # Maintainer Notes
 
 ## Deployment

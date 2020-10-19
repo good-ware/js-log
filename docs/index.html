@@ -381,6 +381,19 @@ via events or iterators</li>
 <li>MySqlLogger: For logging SQL statement execution via mysql2</li>
 <li>RequestLogger: For logging http requests via request-promise</li>
 </ul>
+<h2>TaskLogger</h2>
+<h3>Example</h3>
+<p>The following example sets result to 'Some data.'</p>
+<pre class="prettyprint source lang-js"><code>TaskLogger = require('@goodware/log/TaskLogger');
+Loggers = require('@goodware/log');
+
+const logger = new Loggers({ defaultLevel: 'info' });
+
+let result;
+TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => {
+  result = value;
+});
+</code></pre>
 <h1>Maintainer Notes</h1>
 <h2>Deployment</h2>
 <p>First, push to git.</p>
