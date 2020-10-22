@@ -708,15 +708,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @return {Object} Returns obj
    */
   static levelLog(obj, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
-    if (
-      messageOrContext !== undefined &amp;&amp;
-      (tagsOrMessage instanceof Array ||
-        (typeof tagsOrMessage === 'string' &amp;&amp;
-          tagsOrMessage.length > 0 &amp;&amp;
-          tagsOrMessage.indexOf(' ') === -1 &amp;&amp;
-          tagsOrMessage[0].toLowerCase() === tagsOrMessage[0]))
-    ) {
-      // tagsOrMessage has tags
+    // tagsOrMessage has tags if it's an array
+    if (messageOrContext !== undefined &amp;&amp; tagsOrMessage instanceof Array) {
       return obj.log(Loggers.tags(levelObj, tagsOrMessage), messageOrContext, contextOrCategory, category);
     }
 

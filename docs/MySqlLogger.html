@@ -207,7 +207,7 @@
         
         <span class="code-name">
             
-                emitQuery<span class="signature">(logger, connection, sql, params, options)</span><span class="type-signature"> &rarr; {Object}</span>
+                emitQuery<span class="signature">(logger, connection, sql, params)</span><span class="type-signature"> &rarr; {Object}</span>
             
         </span>
     </h4>
@@ -351,31 +351,6 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
 
 
         
-
-            
-<tr class="deep-level-0">
-  
-      <td class="name"><code>options</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-
-  
-
-  <td class="description last"><p>Additional options to send to connection.query</p></td>
-</tr>
-
-
-        
         </tbody>
     </table>
 </div>
@@ -419,7 +394,7 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
         <p class="tag-source">
             <a href="MySqlLogger.js.html" class="button">View Source</a>
             <span>
-                <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line47">line 47</a>
+                <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line45">line 45</a>
             </span>
         </p>
     
@@ -493,7 +468,7 @@ See GeneratorLogger.begin() for more information.</li>
         
         <span class="code-name">
             
-                query<span class="signature">(logger, connection, sql, params, options)</span><span class="type-signature"> &rarr; {Promise}</span>
+                query<span class="signature">(logger, connection, sql, params)</span><span class="type-signature"> &rarr; {Promise}</span>
             
         </span>
     </h4>
@@ -637,31 +612,6 @@ TaskLogger.execute for more information. The sql and params arguments are logged
 
 
         
-
-            
-<tr class="deep-level-0">
-  
-      <td class="name"><code>options</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-
-  
-
-  <td class="description last"><p>Additional options to send to connection.query()</p></td>
-</tr>
-
-
-        
         </tbody>
     </table>
 </div>
@@ -705,7 +655,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
         <p class="tag-source">
             <a href="MySqlLogger.js.html" class="button">View Source</a>
             <span>
-                <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line20">line 20</a>
+                <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line19">line 19</a>
             </span>
         </p>
     
@@ -736,7 +686,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
 
 <div class="columns">
     
-    <div class='param-desc column is-7'><p>Returns the return value of connection.query(sql, params, ...options)</p></div>
+    <div class='param-desc column is-7'><p>Returns the return value of connection.query(sql, params)</p></div>
     
     
     <div class='column is-5 has-text-left'>

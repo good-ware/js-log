@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
