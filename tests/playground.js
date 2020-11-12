@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 // const why = require('why-is-node-running');
-const Loggers = require('../Loggers');
+const Loggers = require('../index');
 
 // For debugging info, run with:
 // WINSTON_CLOUDWATCH_DEBUG=true node logger.js
