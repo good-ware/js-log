@@ -42,20 +42,18 @@ async function go(colors) {
 
   const loggers = new Loggers(config.logging);
 
-  // ====== Manual test to make sure files are flushed
-  // There is no easy automated way to check this
-  // logger.info('doctor');
-  // loggers.unitTest.flush = true;
-  // await logger.stop();
-
-  // @todo when in no-color mode check only 1 message is sent to console
-  // logger.error({message:'one', error: new Error('two')});
-
+  // This outputs two log, for outer and inner
   loggers.log('error', 'Outer error', new Error('Inner error'));
+
+  // This also outputs two log entries because the child logger and the err object both have 'a' keys
+  const err = new Error('an error');
+  err.a = 1;
+
+  loggers.child(null, { a: 2 }).error(err);
 
   await loggers.stop();
 
-  // Uncomment if the process is hanging to investigate
+  // Uncomment this line if the process is hanging to investigate
   // why();
 }
 

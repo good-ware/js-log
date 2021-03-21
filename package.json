@@ -1,12 +1,12 @@
 {
   "name": "@goodware/log",
-  "version": "1.2.2",
-  "description": "Winston3-based logging to console, file, and/or AWS CloudWatch Logs",
+  "version": "1.2.3",
+  "description": "Winston3-based loggger that outputs to the console, files, and AWS CloudWatch Logs",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
     "lint": "eslint . --fix",
     "playground": "node tests/playground.js",
-    "prettier": "prettier . --write",
+    "format": "prettier . --write",
     "prepub": "npm test && npm upgrade && npm run prettier && npm run lint && npm run docs",
     "pub": "npm publish --access=public",
     "test": "node tests/test.js"
@@ -23,29 +23,29 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "aws-sdk": "^2.790.0",
-    "hostid": "^1.0.23",
-    "humanize-duration": "^3.24.0",
-    "joi": "^17.3.0",
-    "json-prune": "^1.1.0",
-    "mkdirp-sync": "0.0.3",
-    "uuid": "^8.3.1",
-    "winston": "^3.3.3",
-    "winston-cloudwatch": "^2.3.2",
-    "winston-console-format": "^1.0.5",
-    "winston-daily-rotate-file": "^4.5.0"
+    "aws-sdk": "^2.0.0",
+    "hostid": "^1.0.0",
+    "humanize-duration": "^3.0.0",
+    "joi": "^17.0.0",
+    "json-prune": "^1.0.0",
+    "mkdirp-sync": "^0.0.3",
+    "uuid": "^8.0.0",
+    "winston": "^3.0.0",
+    "winston-cloudwatch": "^2.0.0",
+    "winston-console-format": "^1.0.0",
+    "winston-daily-rotate-file": "^4.0.0"
   },
   "devDependencies": {
-    "better-docs": "^2.3.2",
-    "deepmerge": "^4.2.2",
-    "dotenv": "^8.2.0",
-    "eslint": "^7.13.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-import": "^2.22.1",
-    "jsdoc": "^3.6.6",
-    "prettier": "^2.1.2",
-    "request-promise": "^4.2.6",
-    "why-is-node-running": "^2.2.0"
+    "better-docs": "^2.0.0",
+    "deepmerge": "^4.0.0",
+    "dotenv": "^8.0.0",
+    "eslint": "^7.0.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-import": "^2.0.0",
+    "jsdoc": "^3.0.0",
+    "prettier": "^2.0.0",
+    "request-promise": "^4.0.0",
+    "why-is-node-running": "^2.0.0"
   }
 }
