@@ -1,4 +1,4 @@
-## 1.3.2 2021-03-22
+## 1.3.3 2021-03-22
 
 - Add logging level methods to Loggers (e.g., error) (API change)
 - Documentation (hide more with @ignore)

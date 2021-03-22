@@ -104,16 +104,14 @@ class Loggers {
    *  2. The output of Object.keys and Object.entries should be cached for static objects
    *
    * @todo
-   * 1. When console data is requested but colors are disabled, output data without colors using a
-   *    new formatter.
+   * 1. When console data is requested but colors are disabled, output data without colors using a new formatter
    * 2. Add a new data prop to output to the plain console
-   * 3. Document transactionId and operationId
-   * 4. Document level-named methods take a tag name as a string if the first argument has no space
-   * 5. Document defaultTagAllowLevel
-   * 6. Document custom levels and colors
-   * 7. Test redaction
-   * 8. Document redaction
-   * 9. Move Logger to another module - see
+   * 3. Document level-named methods take a tag name as a string if the first argument has no space
+   * 4. Document defaultTagAllowLevel
+   * 5. Document custom levels and colors
+   * 6. Test redaction
+   * 7. Document redaction
+   * 8. Move Logger to another module - see
    *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
    */
   /**
@@ -503,20 +501,13 @@ traverse.`
 
       // Turn console status messages on and off
       say: Joi.object({
-        ready: Joi.boolean().default(true),
-        flushing: Joi.boolean().default(true),
         flushed: Joi.boolean().default(true),
+        flushing: Joi.boolean().default(true),
+        ready: Joi.boolean().default(true),
         stopping: Joi.boolean().default(true),
         stopped: Joi.boolean().default(true),
         openCloudWatch: Joi.boolean().default(true),
-      }).default({
-        ready: true,
-        stopping: true,
-        stopped: true,
-        flushing: true,
-        flushed: true,
-        openCloudWatch: true,
-      }),
+      }).default({}),
 
       // Transport configuration
       cloudWatch: cloudWatchObject,
@@ -535,11 +526,7 @@ traverse.`
           .description('Use empty array for read-only filesystems'),
         maxSize: Joi.string().default('20m'),
         maxAge: Joi.string().default('14d'),
-      }).default({
-        directories: ['logs', '/tmp/logs'],
-        maxSize: '20m',
-        maxAge: '14d',
-      }),
+      }).default({}),
 
       // Category configuration
       categories: Joi.object()
@@ -576,12 +563,11 @@ Enable the tag for log entries with severity levels equal to or greater than the
     }).label('Loggers options');
     // ==== Joi model for options (end)
 
-    // Looping twice assigns keys to objects that are defaulted as {}
-    for (let i = 0; i < 2; ++i) {
-      const validation = optionsObject.validate(options);
-      if (validation.error) throw new Error(validation.error.message);
-      options = validation.value;
-    }
+    let validation = optionsObject.validate(options);
+    if (validation.error) throw new Error(validation.error.message);
+    // Add defaults to default empty objects
+    validation = optionsObject.validate(validation.value);
+    options = validation.value;
 
     this.options = options;
     return options;
@@ -630,8 +616,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.starting = false;
 
-    if (this.options.say.ready)
+    if (this.options.say.ready) {
       this.log('info', `Ready: ${options.service} v${options.version} ${options.stage}`, null, logCategories.log);
+    }
   }
 
   /**
@@ -978,7 +965,7 @@ ${error}`);
   cloudWatchError(error) {
     if (error.code === 'ThrottlingException') return;
     if (error.code === 'DataAlreadyAcceptedException') return;
-    // @todo Submit feature request. See cwTransportShortCircuit
+    // TODO: Submit feature request. See cwTransportShortCircuit
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     if (error.code === 'InvalidParameterException') return;
@@ -994,7 +981,7 @@ ${error}`);
    * @return {Promise}
    */
   flushCloudWatchTransport(transport, timeout) {
-    // @todo Fix this when WinstonCloudWatch makes flush timeout an option
+    // TODO: Fix this when WinstonCloudWatch makes flush timeout an option
     // https://github.com/lazywithclass/winston-cloudwatch/issues/129
     // This ends up taking way too long if, say, the aws-sdk is not properly configured. Submit issue to
     // winston-cloudwatch.
@@ -1115,7 +1102,7 @@ ${error}`);
         errorLogger.close();
       } else {
         // For testing
-        // @todo finish doesn't fire and this terminates the process
+        // TODO: finish doesn't fire and this terminates the process
         // The only downside is the CloudWatch error log might not get flushed
         await new Promise((resolve, reject) => {
           errorLogger
@@ -1334,12 +1321,12 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
           awsOptions = { region: awsOptions.region };
 
           const checkTags = (info) => {
-            // @todo Submit feature request. See cwTransportShortCircuit
+            // TODO: Submit feature request. See cwTransportShortCircuit
             if (!this.checkTags('cloudWatch', info)) return '';
             return JSON.stringify(info);
           };
 
-          // @todo add more options supported by winston-cloudwatch
+          // TODO: add more options supported by winston-cloudwatch
           const transport = new WinstonCloudWatch({
             messageFormatter: checkTags,
             logStreamName: this.props.cloudWatch.streamName,
@@ -1543,9 +1530,8 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
     if (tagNames) {
       // Look for a blocked tag
-      // @todo Defaults should be specified at the category level
-      // @todo Cache results for tags for the category that aren't yet defined
-      // in config
+      // TODO: Defaults should be specified at the category level
+      // TODO: Cache results for tags for the category that aren't yet defined in config
       const categoryTags = this.props.categoryTags[category];
       const defaultTags = this.props.categoryTags.default;
       let nextLevel = level;
@@ -1575,18 +1561,18 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
             if (defaultTransports) {
               const { allowLevel } = defaultTransports;
               if (allowLevel) {
-                // @todo cache this
+                // TODO: cache this
                 if (this.props.levelSeverity[level] <= this.props.levelSeverity[allowLevel]) return true;
               } else if (
                 this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]
               ) {
                 // Defaults to warn (severity 1)
-                // @todo Cache this
+                // TODO: Cache this
                 return true;
               }
             } else if (this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]) {
               // Defaults to warn (severity 1)
-              // @todo Cache this
+              // TODO: Cache this
               return true;
             }
           }
@@ -1608,7 +1594,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
             if (lvl) {
               if (lvl === 'default') lvl = this.options.defaultLevel;
               if (this.props.levelSeverity[lvl] < this.props.levelSeverity[nextLevel]) {
-                // @todo Exit early if isLevelEnabled(lvl) is false
+                // TODO: Exit early if isLevelEnabled(lvl) is false
                 nextLevel = lvl;
               }
             }

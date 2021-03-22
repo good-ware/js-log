@@ -10,7 +10,6 @@ dotenv.config({ path: `.env-${env}` });
 // Default configuration
 let config = {
   env,
-  name: pack.name,
   version: pack.version,
   service: pack.name,
   logging: {
