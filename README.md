@@ -2,21 +2,22 @@
 
 Better documentation is coming.
 
-# Links
+## Links
 
 - [npm](https://www.npmjs.com/package/@goodware/log)
 - [git](https://github.com/good-ware/js-log)
 - [API Docs](https://good-ware.github.io/js-log/)
+- [RunKit Example](https://runkit.com/dev-guy/goodware-log-example)
 
-# Requirements
+## Requirements
 
 ECMAScript 2017
 
-# Installation
+## Installation
 
 `npm i --save @goodware/log`
 
-# Features
+## Features
 
 1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by tags on a per-transport basis.
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
@@ -28,7 +29,7 @@ ECMAScript 2017
 7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
    to avoid creating expensive messages that won't be logged
 
-# Transports Supported
+## Transports Supported
 
 The following transports can be utilized. They are all optional.
 
@@ -37,11 +38,11 @@ The following transports can be utilized. They are all optional.
 - File via [winston-daily-rotate-file](https://www.npmjs.com/package/winston-daily-rotate-file)
 - AWS CloudWatch Logs via [winston-cloudwatch](https://www.npmjs.com/package/winston-console-format)
 
-# What's Missing
+## What's Missing
 
 The ability to add additional transports
 
-# Usage
+## Usage
 
 The Loggers class is a container that manages logger instances that have unique category names. Each logger has its
 own settings, such as logging levels and transports.
@@ -77,47 +78,47 @@ public but are rarely needed externally.
 
 Finally, logger instances have the properties tags, context, and category.
 
-## Unhandled exceptions and Promise rejections
+### Unhandled exceptions and Promise rejections
 
 While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category
 @log/unhandled. The process is not terminated after logging uncaught exceptions.
 
-## Adding stack traces
+### Adding stack traces
 
 When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key
 is set to the sjtack trace of the caller. This behavior is manually enabled and disabled via the 'logStack' meta tag.
 
-# Concepts
+## Concepts
 
-## options
+### options
 
 An object provided to the constructor. Options are described by optionsObject.
 
-## logger
+### logger
 
 A logger sends log entries to transports.
 
-## category
+### category
 
 The name of a logger. The default category is specified via the 'defaultCategory' options setting and defaults to
 'general.' Transport filtering (based on tags) is specified on a per-category basis.
 
-## log entry
+### log entry
 
 An object that is sent to a transport. A log entry consists of meta and data.
 
-## meta
+### meta
 
 The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
 Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logGroupId, logDepth,
 hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys,
 optionally renaming them, via the 'metaKeys' options setting.
 
-## data
+### data
 
 The keys remaining in 'both' after meta keys are removed (see 'both' below)
 
-## level (severity)
+### level (severity)
 
 Levels are associated with natural numbers. Per Winston's convention, a lower value indicates greater severity.
 Therefore, 0 represents the highest severity.
@@ -137,51 +138,51 @@ By default, Loggers uses Winston's default levels (aka
 A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is
 an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 
-## default level
+### default level
 
 When a level is not found in the provided tags, the default level, 'debug', is assumed. The default level is specified
 via the 'defaultLevel' options setting.
 
-## level methods
+### level methods
 
 Methods that are named after levels, such as error(). The method log(tags, message, context, category)
 is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level
 method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context,
 category).
 
-## level filtering
+### level filtering
 
 A log entry is sent to a transport only when its severity level is equal to or greater than the transport's level.
 
-## tag
+### tag
 
 Tags are logged as an array of strings. Tags are specified via a single string, an array of strings, or an
 object in which each key value is evaluated for truthiness. Tags are combined via the static method tags(a, b) where
 b's tags override a's tags.
 
-### tag and level
+#### tag and level
 
 Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest
 severity. Level methods override this behavior such that the level associated with the method is chosen.
 The level can be specified via the logLevel meta tag. The level can also be modified via tag configuration.
 
-## meta tag
+### meta tag
 
 Some tags alter logging behavior. A tag's value (tags can be specified as an object) enables and disables
 the feature, based on their truthiness. Meta tags are not logged. Meta tag names start with 'log' and
 'noLog.' Meta tags tags that start with noLog negate their corresponding meta tags. For example,
 {logStack: true} is identical to 'logStack'. {logStack: false} is identical to 'noLogStack.' Meta tag names are:
 
-### logLevel
+#### logLevel
 
 Use the meta tag's value as a log entry's logging level
 
-### logStack
+#### logStack
 
 Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when
 the log entry's level is 'error.'
 
-## tag filtering
+### tag filtering
 
 Tags can be used for additional filtering on a per-transport basis. Tags that are named after
 severity levels do not participate in tag filtering. All tags are enabled by default. When a log entry's level is
@@ -223,31 +224,31 @@ all transports.
   }
 ```
 
-## host id
+### host id
 
 Uniquely identifies the system that is running node
 
-## stage
+### stage
 
 Identifies the environment in which node is running, such as 'dev' or 'prod'
 
-## context
+### context
 
 An optional string, array, or object to log with message. Two 'context' objects are combined via the static
 method context(a, b) in which b's keys override a's keys if they overlap.
 
-## message
+### message
 
 A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and
 other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaKeys' options
 setting. Properties are copied to meta if their values are scalar and their names are specified in metaKeys.
 
-## both
+### both
 
 message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap
 with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta value.
 
-## Errors
+### Errors
 
 If both.error is truthy and both.message is falsey, both.message is set to `both.error.asString()`.
 
@@ -272,7 +273,7 @@ error2.error = error3;
 logger.log('error', error);
 ```
 
-## transport
+### transport
 
 A transport sends log entries to one of the following destinations:
 
@@ -294,7 +295,7 @@ A transport sends log entries to one of the following destinations:
 
   Writes log entries to the process's STDOUT filehandle
 
-### transport level
+#### transport level
 
 Use the 'categories' options setting to configure transports. It is not necessary to specify every category that is
 actually used. The 'default' category specifies the base configuration for all categories. For example:
@@ -315,7 +316,7 @@ Each transport type treats 'on' slightly differently:
 - cloudWatch: on -> warn
 - console: on -> info, off -> warn if file and cloudWatch are both off
 
-### console
+#### console
 
 The behavior of console transports is altered via the 'console' options setting.
 
@@ -337,7 +338,7 @@ CONSOLE_DATA
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-### file and errorFile
+#### file and errorFile
 
 Log entries are written to files as JSON strings to a directory specified via the 'file' options setting. If no
 directory in the provided array does not exist and can be created, the file-related transports are disabled. File
@@ -347,7 +348,7 @@ error log files, '-error' is appended to the category. Files have the extension 
 general-error-2020-07-18-18.log. Files are rotated and zipped on an hourly basis. The maximum number of archived log
 files defaults to 14 days and can be specified via the 'file' options setting.
 
-### cloudWatch
+#### cloudWatch
 
 CloudWatch transports are configured with a log group name and an optional AWS region. Log entries are sent to
 CloudWatch as JSON strings. One Loggers instance uses the same stream name for all cloudWatch transports. The
@@ -362,7 +363,7 @@ If an AWS region is not specified, the environment variables are used in the fol
 2. AWS_CLOUDWATCH_REGION
 3. AWS_DEFAULT_REGION
 
-# Begin/End/Error Utility Classes
+## Begin/End/Error Utility Classes
 
 Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin
 log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is added to both
@@ -377,9 +378,9 @@ The following classes are available:
 - MySqlLogger: For logging SQL statement execution via mysql2
 - RequestLogger: For logging http requests via request-promise
 
-## TaskLogger
+### TaskLogger
 
-### Example
+#### Example
 
 The following example sets result to 'Some data.'
 
@@ -395,9 +396,9 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
 });
 ```
 
-# Maintainer Notes
+## Maintainer Notes
 
-## Deployment
+### Deployment
 
 First, push to git.
 

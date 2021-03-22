@@ -42,11 +42,11 @@ async function go(colors) {
 
   const loggers = new Loggers(config.logging);
 
-  // This outputs two log entries: outer and inner
-  loggers.log('error', 'Outer error', new Error('Inner error'));
+  // This outputs two log entries: one for Message and one for the Error
+  loggers.log('error', 'Message', new Error('Inner error'));
 
   // This also outputs two log entries because the child logger and the err object both have 'a' keys
-  const err = new Error('an error');
+  const err = new Error();
   err.a = 1;
 
   loggers.child(null, { a: 2 }).error(err);

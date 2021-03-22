@@ -124,6 +124,11 @@ class Loggers {
    *  https://www.npmjs.com/package/winston#using-custom-logging-levels
    */
   constructor(options, levels = Loggers.defaultLevels) {
+    /**
+     * @private
+     * @ignore
+     * @description Internal properties
+     */
     this.props = {};
     this.props.stopped = true;
 
@@ -170,6 +175,10 @@ class Loggers {
       winston.addColors(colors);
     }
 
+    /**
+     * @type {Object}
+     * @description Maps level names to integers where lower values have higher severity
+     */
     this.winstonLevels = levels.levels;
 
     // Level severity
@@ -230,6 +239,9 @@ class Loggers {
         obj[level] = true;
       });
     }
+
+    // Dynamic logging-level methods
+    this.addLevelMethods(this);
 
     this.start();
   }
@@ -2197,7 +2209,7 @@ class Logger {
       category,
     });
 
-    // Dynamic methods
+    // Dynamic logging-level methods
     this.loggersObj.addLevelMethods(this);
   }
 

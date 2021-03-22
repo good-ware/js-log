@@ -102,17 +102,18 @@
     <section>
         <article><h1>@goodware/log: Winston3-based logging to console, file, and/or AWS CloudWatch Logs</h1>
 <p>Better documentation is coming.</p>
-<h1>Links</h1>
+<h2>Links</h2>
 <ul>
 <li><a href="https://www.npmjs.com/package/@goodware/log">npm</a></li>
 <li><a href="https://github.com/good-ware/js-log">git</a></li>
 <li><a href="https://good-ware.github.io/js-log/">API Docs</a></li>
+<li><a href="https://runkit.com/dev-guy/goodware-log-example">RunKit Example</a></li>
 </ul>
-<h1>Requirements</h1>
+<h2>Requirements</h2>
 <p>ECMAScript 2017</p>
-<h1>Installation</h1>
+<h2>Installation</h2>
 <p><code>npm i --save @goodware/log</code></p>
-<h1>Features</h1>
+<h2>Features</h2>
 <ol>
 <li>Brings HAPI-style logging via tags to Winston. Log entries can be filtered by tags on a per-transport basis.</li>
 <li>Redaction of specific object keys. Redaction can be enabled and disabled via tags.</li>
@@ -124,7 +125,7 @@
 <li>This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it)
 to avoid creating expensive messages that won't be logged</li>
 </ol>
-<h1>Transports Supported</h1>
+<h2>Transports Supported</h2>
 <p>The following transports can be utilized. They are all optional.</p>
 <ul>
 <li>Console via <a href="https://www.npmjs.com/package/winston-console-format">winston-console-format</a> and 'plain' console output
@@ -132,9 +133,9 @@ which is more appropriate for production deployment</li>
 <li>File via <a href="https://www.npmjs.com/package/winston-daily-rotate-file">winston-daily-rotate-file</a></li>
 <li>AWS CloudWatch Logs via <a href="https://www.npmjs.com/package/winston-console-format">winston-cloudwatch</a></li>
 </ul>
-<h1>What's Missing</h1>
+<h2>What's Missing</h2>
 <p>The ability to add additional transports</p>
-<h1>Usage</h1>
+<h2>Usage</h2>
 <p>The Loggers class is a container that manages logger instances that have unique category names. Each logger has its
 own settings, such as logging levels and transports.</p>
 <p>Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this
@@ -159,30 +160,30 @@ described below.</p>
 <p>The Loggers class has static methods tags() and context() for merging multiple objects into a single object. These are
 public but are rarely needed externally.</p>
 <p>Finally, logger instances have the properties tags, context, and category.</p>
-<h2>Unhandled exceptions and Promise rejections</h2>
+<h3>Unhandled exceptions and Promise rejections</h3>
 <p>While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category
 @log/unhandled. The process is not terminated after logging uncaught exceptions.</p>
-<h2>Adding stack traces</h2>
+<h3>Adding stack traces</h3>
 <p>When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key
 is set to the sjtack trace of the caller. This behavior is manually enabled and disabled via the 'logStack' meta tag.</p>
-<h1>Concepts</h1>
-<h2>options</h2>
+<h2>Concepts</h2>
+<h3>options</h3>
 <p>An object provided to the constructor. Options are described by optionsObject.</p>
-<h2>logger</h2>
+<h3>logger</h3>
 <p>A logger sends log entries to transports.</p>
-<h2>category</h2>
+<h3>category</h3>
 <p>The name of a logger. The default category is specified via the 'defaultCategory' options setting and defaults to
 'general.' Transport filtering (based on tags) is specified on a per-category basis.</p>
-<h2>log entry</h2>
+<h3>log entry</h3>
 <p>An object that is sent to a transport. A log entry consists of meta and data.</p>
-<h2>meta</h2>
+<h3>meta</h3>
 <p>The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays.
 Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logGroupId, logDepth,
 hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys,
 optionally renaming them, via the 'metaKeys' options setting.</p>
-<h2>data</h2>
+<h3>data</h3>
 <p>The keys remaining in 'both' after meta keys are removed (see 'both' below)</p>
-<h2>level (severity)</h2>
+<h3>level (severity)</h3>
 <p>Levels are associated with natural numbers. Per Winston's convention, a lower value indicates greater severity.
 Therefore, 0 represents the highest severity.</p>
 <p>Levels and their colors can be specified via the second argument provided to the constructor using the same object that
@@ -198,35 +199,35 @@ silly.</li>
 </ol>
 <p>A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is
 an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.</p>
-<h2>default level</h2>
+<h3>default level</h3>
 <p>When a level is not found in the provided tags, the default level, 'debug', is assumed. The default level is specified
 via the 'defaultLevel' options setting.</p>
-<h2>level methods</h2>
+<h3>level methods</h3>
 <p>Methods that are named after levels, such as error(). The method log(tags, message, context, category)
 is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level
 method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context,
 category).</p>
-<h2>level filtering</h2>
+<h3>level filtering</h3>
 <p>A log entry is sent to a transport only when its severity level is equal to or greater than the transport's level.</p>
-<h2>tag</h2>
+<h3>tag</h3>
 <p>Tags are logged as an array of strings. Tags are specified via a single string, an array of strings, or an
 object in which each key value is evaluated for truthiness. Tags are combined via the static method tags(a, b) where
 b's tags override a's tags.</p>
-<h3>tag and level</h3>
+<h4>tag and level</h4>
 <p>Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest
 severity. Level methods override this behavior such that the level associated with the method is chosen.
 The level can be specified via the logLevel meta tag. The level can also be modified via tag configuration.</p>
-<h2>meta tag</h2>
+<h3>meta tag</h3>
 <p>Some tags alter logging behavior. A tag's value (tags can be specified as an object) enables and disables
 the feature, based on their truthiness. Meta tags are not logged. Meta tag names start with 'log' and
 'noLog.' Meta tags tags that start with noLog negate their corresponding meta tags. For example,
 {logStack: true} is identical to 'logStack'. {logStack: false} is identical to 'noLogStack.' Meta tag names are:</p>
-<h3>logLevel</h3>
+<h4>logLevel</h4>
 <p>Use the meta tag's value as a log entry's logging level</p>
-<h3>logStack</h3>
+<h4>logStack</h4>
 <p>Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when
 the log entry's level is 'error.'</p>
-<h2>tag filtering</h2>
+<h3>tag filtering</h3>
 <p>Tags can be used for additional filtering on a per-transport basis. Tags that are named after
 severity levels do not participate in tag filtering. All tags are enabled by default. When a log entry's level is
 'warn' or 'error', tags are enabled. This behavior can be overidden by the 'allowLevel' setting. Tags are enabled and
@@ -263,21 +264,21 @@ all transports.</p>
     },
   }
 </code></pre>
-<h2>host id</h2>
+<h3>host id</h3>
 <p>Uniquely identifies the system that is running node</p>
-<h2>stage</h2>
+<h3>stage</h3>
 <p>Identifies the environment in which node is running, such as 'dev' or 'prod'</p>
-<h2>context</h2>
+<h3>context</h3>
 <p>An optional string, array, or object to log with message. Two 'context' objects are combined via the static
 method context(a, b) in which b's keys override a's keys if they overlap.</p>
-<h2>message</h2>
+<h3>message</h3>
 <p>A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and
 other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaKeys' options
 setting. Properties are copied to meta if their values are scalar and their names are specified in metaKeys.</p>
-<h2>both</h2>
+<h3>both</h3>
 <p>message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap
 with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta value.</p>
-<h2>Errors</h2>
+<h3>Errors</h3>
 <p>If both.error is truthy and both.message is falsey, both.message is set to <code>both.error.asString()</code>.</p>
 <p>Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and
 recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable
@@ -296,7 +297,7 @@ error1.cause = error2;
 error2.error = error3;
 logger.log('error', error);
 </code></pre>
-<h2>transport</h2>
+<h3>transport</h3>
 <p>A transport sends log entries to one of the following destinations:</p>
 <ul>
 <li>
@@ -318,7 +319,7 @@ file named category-error-timestamp.log. Log entries are also sent to the file t
 <p>Writes log entries to the process's STDOUT filehandle</p>
 </li>
 </ul>
-<h3>transport level</h3>
+<h4>transport level</h4>
 <p>Use the 'categories' options setting to configure transports. It is not necessary to specify every category that is
 actually used. The 'default' category specifies the base configuration for all categories. For example:</p>
 <pre class="prettyprint source lang-js"><code>categories: {
@@ -335,7 +336,7 @@ Each transport type treats 'on' slightly differently:</p>
 <li>cloudWatch: on -&gt; warn</li>
 <li>console: on -&gt; info, off -&gt; warn if file and cloudWatch are both off</li>
 </ul>
-<h3>console</h3>
+<h4>console</h4>
 <p>The behavior of console transports is altered via the 'console' options setting.</p>
 <p>When 'colors' is true, log entries sent to the console are colorized. To override the provided value, set the</p>
 <pre class="prettyprint source lang-shell"><code>CONSOLE_COLORS
@@ -347,7 +348,7 @@ console with a log entry's message. To override the value for 'data', set the</p
 <pre class="prettyprint source lang-shell"><code>CONSOLE_DATA
 </code></pre>
 <p>environment variable such that blank, 0, and 'false' are false and all other values are true.</p>
-<h3>file and errorFile</h3>
+<h4>file and errorFile</h4>
 <p>Log entries are written to files as JSON strings to a directory specified via the 'file' options setting. If no
 directory in the provided array does not exist and can be created, the file-related transports are disabled. File
 names contain the category and the date and hour of the local time when this object was instantiated. Category names
@@ -355,7 +356,7 @@ may contain operating-system directory separators and must conform to the filesy
 error log files, '-error' is appended to the category. Files have the extension .log. An example file name is:
 general-error-2020-07-18-18.log. Files are rotated and zipped on an hourly basis. The maximum number of archived log
 files defaults to 14 days and can be specified via the 'file' options setting.</p>
-<h3>cloudWatch</h3>
+<h4>cloudWatch</h4>
 <p>CloudWatch transports are configured with a log group name and an optional AWS region. Log entries are sent to
 CloudWatch as JSON strings. One Loggers instance uses the same stream name for all cloudWatch transports. The
 log group, on the other hand, can be specified on a per-category basis. The log stream name contains the date and
@@ -368,7 +369,7 @@ file directory is specified.</p>
 <li>AWS_CLOUDWATCH_REGION</li>
 <li>AWS_DEFAULT_REGION</li>
 </ol>
-<h1>Begin/End/Error Utility Classes</h1>
+<h2>Begin/End/Error Utility Classes</h2>
 <p>Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin
 log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is added to both
 log entries with the same uuid generated for the operation. If an exception is thrown, an error is logged. These
@@ -381,8 +382,8 @@ via events or iterators</li>
 <li>MySqlLogger: For logging SQL statement execution via mysql2</li>
 <li>RequestLogger: For logging http requests via request-promise</li>
 </ul>
-<h2>TaskLogger</h2>
-<h3>Example</h3>
+<h3>TaskLogger</h3>
+<h4>Example</h4>
 <p>The following example sets result to 'Some data.'</p>
 <pre class="prettyprint source lang-js"><code>TaskLogger = require('@goodware/log/TaskLogger');
 Loggers = require('@goodware/log');
@@ -394,8 +395,8 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
   result = value;
 });
 </code></pre>
-<h1>Maintainer Notes</h1>
-<h2>Deployment</h2>
+<h2>Maintainer Notes</h2>
+<h3>Deployment</h3>
 <p>First, push to git.</p>
 <ol>
 <li>Change the version number in package.json and package-lock.json</li>
