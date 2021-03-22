@@ -27,7 +27,7 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
  * @ignore
  * @description Removes internal functions from the stack trace
  */
-const stripStack = /^.*\n(\s+at .*[/|\\]@goodware[/|\\].*\.js:.*\n)*/g;
+const stripStack = /^.*\n(\s+at .*[/|\\]@goodware[/|\\]log[/|\\].*\.js:.*\n)*/g;
 
 /**
  * @private
