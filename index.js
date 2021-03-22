@@ -24,12 +24,14 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 /**
  * @private
+ * @ignore
  * @description Removes internal functions from the stack trace
  */
-const stripStack = /^.*\n(\s+at .*[/|\\]Loggers.js:.*\n)*/g;
+const stripStack = /^.*\n(\s+at .*[/|\\]@goodware[/|\\].*\.js:.*\n)*/g;
 
 /**
  * @private
+ * @ignore
  * @description Used for tag filtering
  */
 const transportObj = {};
@@ -39,6 +41,7 @@ transportNames.forEach((transport) => {
 
 /**
  * @private
+ * @ignore
  * @description Which datatypes are scalars
  */
 const scalars = {
@@ -49,6 +52,7 @@ const scalars = {
 
 /**
  * @private
+ * @ignore
  * @description Category names for internal loggers
  */
 const logCategories = {
@@ -59,6 +63,7 @@ const logCategories = {
 
 /**
  * @private
+ * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
 class LogEntry {}
@@ -129,6 +134,7 @@ class Loggers {
 
     /**
      * @private
+     * @ignore
      * @description Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
      * @param {String} key 'data' or 'colors'
      */
@@ -230,6 +236,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Converts a number to a string with leading zeroes
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
@@ -243,6 +250,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Returns local time in ISO8601 format with the local timezone offset
    * @return {String}
    */
@@ -309,6 +317,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Converts an context value to an object
    * @param {*} [context]
    * @return {Object} If context is falsey, returns context. If context is a string, returns {logMessage: context}. If
@@ -348,6 +357,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
    *  See https://jsperf.com/testing-for-any-keys-in-js
    * @param {Object} object An object to test
@@ -361,6 +371,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Adds methods named after levels, such as error()
    * @param target The object to modify
    */
@@ -372,6 +383,7 @@ class Loggers {
 
   /**
    * @private
+   * @ignore
    * @description Processes options
    * @param {Object} options
    * @return {Object} options with defaults added
@@ -415,6 +427,7 @@ CloudWatch`
 
     /**
      * @private
+     * @ignore
      * @description Options provided to the constructor
      * The defaults in this object assume the following levels exist: error, warn, debug
      */
@@ -611,6 +624,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
   /**
    * @private
+   * @ignore
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
    * @param {Loggers|Logger} obj
    * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
@@ -632,6 +646,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
   /**
    * @private
+   * @ignore
    * @description Creates a directory for log files
    */
   createLogsDirectory() {
@@ -662,6 +677,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Checks whether the provided category value is a string or a falsey value
    * @param {*} category
    * @return {String} Returns the provided category if it is a truthy string; otherwise, returns the default category
@@ -722,6 +738,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Determines whether a log entry can be sent to a transport
    * @param {String} transportName
    * @param {Object} info Log entry
@@ -735,6 +752,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Returns default meta for log entries
    * @param {String} category
    * @return {Object}
@@ -749,6 +767,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Combines a custom Winston formatter with format.ms()
    * @return {Object} A Winston formatter
    */
@@ -758,6 +777,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Winston customer formatter
    *  1. Enforces log() is called to support uncaught exception logging
    *  2. Manages this.unitTest object for unit test validation
@@ -801,6 +821,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Console formatter for 'no data'
    * @param {Object} info A log entry
    * @return {String}
@@ -813,6 +834,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Creates a console transport
    * @param {String} level
    * @param {Boolean} handleExceptions
@@ -864,6 +886,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Sets this.props.cloudWatch
    */
   initCloudWatch() {
@@ -881,6 +904,7 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
    * @return {Object} logger
    */
@@ -912,6 +936,7 @@ ${error}`);
             filename,
             extension: '.log',
             datePattern: 'YYYY-MM-DD-HH',
+            utc: true,
             zippedArchive: true,
             maxSize: this.options.file.maxSize,
             maxFiles: this.options.file.maxAge,
@@ -934,6 +959,7 @@ ${error}`);
 
   /**
    * @private
+   * @ignore
    * @description Handles errors from the CloudWatch transport
    * @param {Object} error
    */
@@ -949,6 +975,7 @@ ${error}`);
 
   /**
    * @private
+   * @ignore
    * @description Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
    * @param {Object} transport
    * @param {Number} timeout
@@ -1007,6 +1034,7 @@ ${error}`);
 
   /**
    * @private
+   * @ignore
    * @description Closes all loggers
    * @return {Promise}
    * @throws {None}
@@ -1151,6 +1179,7 @@ ${error}`);
 
   /**
    * @private
+   * @ignore
    * @description Creates a Winston logger
    * @param {String} category
    * @return {Object} Winston logger
@@ -1182,6 +1211,7 @@ ${error}`);
       const transports = [];
       let level;
 
+      // ///////////////////////////////////
       // File
       level = settings.file || 'off';
       if (level === 'default') {
@@ -1213,6 +1243,7 @@ ${error}`);
               filename,
               extension: '.log',
               datePattern: 'YYYY-MM-DD-HH',
+              utc: true,
               zippedArchive: true,
               maxSize: this.options.file.maxSize,
               maxFiles: this.options.file.maxAge,
@@ -1226,6 +1257,7 @@ ${error}`);
         }
       }
 
+      // ///////////////////////////////////
       // CloudWatch
       let awsOptions = { ...this.options.cloudWatch };
       level = settings.cloudWatch || 'off';
@@ -1314,6 +1346,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
         }
       }
 
+      // ///////////////////////////////////
       // Console
       level = settings.console || 'info';
       if (level === 'default') {
@@ -1386,6 +1419,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
   /**
    * @private
+   * @ignore
    * @description Accessor for the options provided for a category
    * @param {String} [category]
    * @return {Object} An object or undefined
@@ -1643,6 +1677,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
   /**
    * @private
+   * @ignore
    * @description Converts an object to a string
    * @param {*} value It must be truthy
    * @return {String} or a falsy value
@@ -1670,6 +1705,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
   /**
    * @private
+   * @ignore
    * @description Does nothing if the provided key is redacted. Helper function to combine 'message' and 'context'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.contextData and then sets
    * state.currentData[key] to value.
@@ -1709,6 +1745,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
   /**
    * @private
+   * @ignore
    * @description Creates a log entry
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} message
@@ -1857,6 +1894,7 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
 
   /**
    * @private
+   * @ignore
    * @description Sends log entries to a Winston logger
    * @param {Object} info A value returned by isLevelEnabled()
    * @param {*} [message]
@@ -1989,6 +2027,7 @@ ${new Error('Stopping').stack}`);
 
   /**
    * @private
+   * @ignore
    * @description Tranforms arugments sent to the log method
    * @param {*} [tags] See description.
    * @param {*} [message]

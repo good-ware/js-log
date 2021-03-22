@@ -42,7 +42,7 @@ async function go(colors) {
 
   const loggers = new Loggers(config.logging);
 
-  // This outputs two log, for outer and inner
+  // This outputs two log entries: outer and inner
   loggers.log('error', 'Outer error', new Error('Inner error'));
 
   // This also outputs two log entries because the child logger and the err object both have 'a' keys
@@ -59,3 +59,4 @@ async function go(colors) {
 
 // eslint-disable-next-line no-console
 go(true).catch(console.error);
+

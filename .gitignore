@@ -1,9 +1,11 @@
 .DS_Store
 .idea
 .vscode
+vscode
 *~
 *.orig
 *.sw*
+package-lock.json
 npm-debug.log
 coverage/
 logs/
