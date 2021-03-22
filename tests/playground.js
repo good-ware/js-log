@@ -59,4 +59,3 @@ async function go(colors) {
 
 // eslint-disable-next-line no-console
 go(true).catch(console.error);
-

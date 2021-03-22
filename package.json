@@ -1,13 +1,13 @@
 {
   "name": "@goodware/log",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Winston3-based loggger that outputs to the console, files, and AWS CloudWatch Logs",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
     "lint": "eslint . --fix",
     "playground": "node tests/playground.js",
     "format": "prettier . --write",
-    "publish": "npm publish --access=public",
+    "pub2": "npm publish --access=public",
     "prepub": "npm test && npm upgrade && npm run format && npm run lint && npm run docs",
     "test": "node tests/test.js"
   },
