@@ -402,8 +402,7 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
 
 First, push to git.
 
-1. Change the version number in package.json and package-lock.json
-2. `npm run prepush`
+1. Change the version number in package.json
+2. `npm run prepub`
 3. Commit and push
-
-Then publish to npm: `npm run pub`
+4. Publish to npm: `npm run pub2`

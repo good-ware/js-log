@@ -27,7 +27,7 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
  * @ignore
  * @description Removes internal functions from the stack trace
  */
-const stripStack = /\n +at [^(]+\(.*[/|\\]node_modules[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
+const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
 
 /**
  * @private
@@ -1895,12 +1895,8 @@ ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at leve
       entry.tags = [level];
     }
 
-    if (addStack) {
-      // Set the stack meta
-      const stack = new Error().stack.replace(stripStack, '');
-      entry.stack = `${entry.message}\n${stack}`;
-    }
-
+    // Set the stack meta
+    if (addStack) entry.stack = new Error(entry.message).stack.replace('Error: ', '').replace(stripStack, '');
     return entry;
   }
 
