@@ -479,8 +479,6 @@ class Loggers {
   }
 
   /**
-   * @private
-   * @ignore
    * @description Processes options
    * @param {Object} options
    * @return {Object} options with defaults added
@@ -504,7 +502,7 @@ class Loggers {
         .min(1)
         .default(2000)
         .description(
-          'Controls the frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'
+          'The frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'
         ),
     });
 
@@ -522,13 +520,9 @@ CloudWatch`
       level: onOffDefaultLevelEnum,
     });
 
-    /**
-     * @private
-     * @ignore
-     * @description Options provided to the constructor
-     * The defaults in this object assume the following levels exist: error, warn, debug
-     */
-    const optionsObject = Joi.object({
+    //  Options provided to the constructor. The defaults in this object assume the following levels exist:
+    // error, warn, debug
+    const optionsSchema = Joi.object({
       // Process-related meta
       stage: Joi.string(),
       service: Joi.string(),
@@ -536,7 +530,7 @@ CloudWatch`
 
       // Defaults
       defaultCategory: Joi.string().default('general'),
-      defaultLevel: levelEnum.default('debug').description('Level to use when a level is not found in tags'),
+      defaultLevel: levelEnum.default('debug').description('Which level to use when a level is not found in tags'),
       defaultTagAllowLevel: offDefaultLevelEnum.default('warn'),
 
       // Colors
@@ -579,12 +573,12 @@ traverse.`
         .integer()
         .min(1)
         .default(10)
-        .description('Maximum number of elements to process when converting an array to a string'),
+        .description('The maximum number of elements to process when converting an array to a string'),
       maxDepth: Joi.number()
         .integer()
         .min(1)
         .default(10)
-        .description('Maximum depth to traverse when converting an object to a string'),
+        .description('The maximum depth to traverse when converting an object to a string'),
 
       // Turn console status messages on and off
       say: Joi.object({
@@ -610,7 +604,7 @@ traverse.`
         directories: Joi.array()
           .items(Joi.string())
           .default(['logs', '/tmp/logs'])
-          .description('Use empty array for read-only filesystems'),
+          .description('Use an empty array for read-only filesystems'),
         maxSize: Joi.string().default('20m'),
         maxAge: Joi.string().default('14d'),
       }).default({}),
@@ -629,7 +623,7 @@ traverse.`
                   allowLevel: offDefaultLevelEnum.description(`\
 Enable the tag for log entries with severity levels equal to or greater than the provided value`),
                   level: defaultLevelEnum,
-                  other: onOffDefaultLevelEnum.description('Value to use for transports not listed'),
+                  other: onOffDefaultLevelEnum.description('Which value to use for transports not listed'),
                   file: onOffDefaultLevelEnum,
                   console: onOffDefaultLevelEnum,
                   errorFile: onOffDefaultLevelEnum,
@@ -650,10 +644,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
     }).label('Loggers options');
     // ==== Joi model for options (end)
 
-    let validation = optionsObject.validate(options);
+    let validation = optionsSchema.validate(options);
     if (validation.error) throw new Error(validation.error.message);
     // Add defaults to default empty objects
-    validation = optionsObject.validate(validation.value);
+    validation = optionsSchema.validate(validation.value);
     options = validation.value;
 
     this.options = options;

@@ -11,7 +11,7 @@ Better documentation is coming.
 
 ## Requirements
 
-ECMAScript 2017
+- NodeJS 8 and higher
 
 ## Installation
 
