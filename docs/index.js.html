@@ -501,9 +501,7 @@ class Loggers {
         .integer()
         .min(1)
         .default(2000)
-        .description(
-          'The frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'
-        ),
+        .description('The frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'),
     });
 
     const cloudWatchObject = cloudWatchLogObject
@@ -697,8 +695,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.starting = false;
 
-    if (this.options.say.ready) {
-      this.log('info', `Ready: ${options.service} v${options.version} ${options.stage}`, null, logCategories.log);
+    if (options.say.ready) {
+      const { service, stage, version } = options;
+      this.log(null, `Ready: ${service} v${version} ${stage}`, null, logCategories.log);
     }
   }
 
@@ -768,7 +767,7 @@ ${directories.join('\n')}`);
       const type = typeof category;
       if (type === 'string') return category;
 
-      const message = `Invalid datatype for category ${type}`;
+      const message = `Invalid datatype for category argument (${type})`;
       const error = Error(message);
 
       // Send error message to console with the immediate caller (from the call stack) in the same line for easier
@@ -1120,9 +1119,6 @@ ${error}`);
    * @throws {None}
    */
   async close() {
-    // eslint-disable-next-line no-console
-    if (this.options.say.stopping) console.log(`${banner}Stopping`);
-
     if (this.unitTest &amp;&amp; !this.unitTest.flush) {
       // Test uncaught exception
       setTimeout(() => {
@@ -1215,8 +1211,11 @@ ${error}`);
     this.props.stopping = false;
     this.props.stopped = true;
 
-    // eslint-disable-next-line no-console
-    if (this.options.say.stopped) console.log(`${banner}Stopped`);
+    if (this.options.say.stopped) {
+      const { service, stage, version } = this.options;
+      // eslint-disable-next-line no-console
+      console.log(`${banner}Stopped: ${service} v${version} ${stage}`);
+    }
   }
 
   /**
@@ -1239,6 +1238,11 @@ ${error}`);
       });
 
       return;
+    }
+
+    if (this.options.say.stopping) {
+      const { service, stage, version } = this.options;
+      this.log(null, `Stopping: ${service} v${version} ${stage}`, null, logCategories.log);
     }
 
     this.props.stopping = true;
@@ -1380,12 +1384,13 @@ ${error}`);
             if (category === logCategories.log) {
               // eslint-disable-next-line no-console
               console.log(`[${category}] Opening AWS CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level ${level}`);
+${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level '${level}'`);
             } else {
               this.log(
                 'info',
                 `Opening AWS CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level ${level} for category ${category}`,
+${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} \
+at level '${level}' for category '${category}'`,
                 {
                   category,
                   logGroup: logGroupName,
