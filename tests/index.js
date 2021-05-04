@@ -199,7 +199,6 @@ async function go(colors) {
   }
 
   // Tag filtering
-  // eslint-disable-next-line no-empty-pattern
   for (const i of [1, 2]) {
     const extra = hasCloudWatch && i === 1 ? 1 : 0;
     // Repeat to test switch caching
@@ -426,7 +425,7 @@ async function go(colors) {
   {
     const oldLen = unitTest.entries.length;
     loggers.log('info', { message: 'With extra array' }, ['extra', 'is', 'array']);
-    if (unitTest.entries.length - oldLen !== 2) throw new Error();
+    if (unitTest.entries.length - oldLen !== 1) throw new Error();
   }
 
   loggers.log('warn', 'This is your final warning');
@@ -511,7 +510,6 @@ async function go(colors) {
   // Test unhandled promise rejection
   {
     const len = Object.keys(unitTest.logGroupIds).length;
-    // eslint-disable-next-line no-unused-vars
     Promise.reject(new Error('Rejected promise'));
     await new Promise((resolve) => setTimeout(resolve, 1));
 
@@ -537,15 +535,14 @@ async function go(colors) {
 
   if (loggers.isReady()) throw new Error('ready failed');
 
-  // eslint-disable-next-line quotes
   logger.info(`I've stopped and I can't get up`);
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 135 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 133 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 25) throw new Error(len);
-    if (unitTest.dataCount !== 77 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 23) throw new Error(len);
+    if (unitTest.dataCount !== 99 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

@@ -1,10 +1,10 @@
 {
   "name": "@goodware/log",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
-    "lint": "eslint . --fix",
+    "lint": "eslint  . --fix --report-unused-disable-directives",
     "playground": "node tests/playground.js",
     "format": "prettier . --write",
     "pub2": "npm publish --access=public",
@@ -23,29 +23,29 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "aws-sdk": "^2.898.0",
+    "aws-sdk": "^2.0.0",
     "hostid": "^1.0.0",
-    "humanize-duration": "^3.25.2",
-    "joi": "^17.0.0",
+    "humanize-duration": "^3.0.0",
+    "joi": "^17.2.0",
     "json-prune": "^1.0.0",
     "mkdirp-sync": "^0.0.3",
     "uuid": "^8.0.0",
     "winston": "^3.0.0",
     "winston-cloudwatch": "^2.5.2",
     "winston-console-format": "^1.0.0",
-    "winston-daily-rotate-file": "^4.5.3"
+    "winston-daily-rotate-file": "^4.0.0"
   },
   "devDependencies": {
-    "deepmerge": "^4.0.0",
-    "dotenv": "^8.0.0",
-    "eslint": "^7.25.0",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-import": "^2.0.0",
-    "jsdoc": "^3.0.0",
-    "minami": "^1.2.3",
-    "prettier": "^2.0.0",
-    "request-promise": "^4.0.0",
-    "why-is-node-running": "^2.0.0"
+    "deepmerge": "*",
+    "dotenv": "*",
+    "eslint": "*",
+    "eslint-config-airbnb-base": "*",
+    "eslint-config-prettier": "*",
+    "eslint-plugin-import": "*",
+    "jsdoc": "*",
+    "minami": "*",
+    "prettier": "*",
+    "request-promise": "*",
+    "why-is-node-running": "*"
   }
 }

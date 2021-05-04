@@ -379,12 +379,12 @@ class Loggers {
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
    */
   static contextToObject(context) {
-    if (!context) return context;
-    if (typeof context === 'object') {
+    if (context === undefined) return undefined;
+    if (context &amp;&amp; typeof context === 'object') {
       if (context instanceof Error) return { error: context };
       if (!(context instanceof Array)) return context;
     }
-    return { message: context };
+    return { context };
   }
 
   /**
@@ -464,7 +464,6 @@ class Loggers {
 
     const cloudWatchObject = cloudWatchLogObject
       .keys({
-        // eslint-disable-next-line quotes
         flushTimeout: Joi.number().integer().min(1).default(90000).description(
           `The maximum number of milliseconds to wait when sending the current batch of log entries to \
 CloudWatch`
@@ -518,7 +517,6 @@ CloudWatch`
         .min(1)
         .default(25)
         .description('Errors reference other errors. This is the maximum number of errors to log.'),
-      // eslint-disable-next-line quotes
       maxErrorDepth: Joi.number().integer().min(1).default(5).description(
         `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
 traverse.`
@@ -575,7 +573,6 @@ traverse.`
               Joi.alternatives(
                 onOffDefaultLevelEnum,
                 Joi.object({
-                  // eslint-disable-next-line quotes
                   allowLevel: offDefaultLevelEnum.description(`\
 Enable the tag for log entries with severity levels equal to or greater than the provided value`),
                   level: defaultLevelEnum,
@@ -1085,7 +1082,7 @@ ${error}`);
    * @throws {None}
    */
   async close() {
-    if (false &amp;&amp; this.unitTest &amp;&amp; !this.unitTest.flush) {
+    if (this.unitTest &amp;&amp; !this.unitTest.flush) {
       // Test uncaught exception
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
@@ -1112,7 +1109,6 @@ ${error}`);
               .on('close', resolve)
               .on('finish', () => setImmediate(() => logger.close()))
               .end();
-            // eslint-disable-next-line no-console
           })
             // eslint-disable-next-line no-console
             .catch((error) => console.error(`[${category}]`, error))
@@ -2116,28 +2112,7 @@ ${new Error('Stopping').stack}`);
       (tags.tags || tags.message || tags.context || tags.category)
     ) {
       transformed = true;
-      // The first argument 'tags' is a single argument to use as all the other arguments
-      if (tags.context &amp;&amp; typeof tags.context === 'object') {
-        context = Loggers.context(context, tags.context);
-      }
-      if (tags.category &amp;&amp; typeof tags.category === 'string') {
-        category = tags.category;
-      }
-      if (tags.message) {
-        message = tags.message;
-      }
-      if (tags.tags) {
-        tags = tags.tags;
-      } else {
-        tags = undefined;
-      }
-    } else if (
-      message &amp;&amp;
-      typeof message === 'object' &amp;&amp;
-      !(message instanceof Array) &amp;&amp;
-      (message.tags || message.message || message.context || message.category)
-    ) {
-      transformed = true;
+      message = tags;
       let messageCopied;
       const { message: hasMessage } = message;
       if (message.tags) {
@@ -2145,10 +2120,12 @@ ${new Error('Stopping').stack}`);
           message = { ...message };
           messageCopied = true;
         }
-        tags = Loggers.tags(tags, message.tags);
+        tags = message.tags;
         if (!hasMessage) delete message.tags;
+      } else {
+        tags = undefined;
       }
-      if (message.context &amp;&amp; typeof message.context === 'object') {
+      if (message.context /* &amp;&amp; typeof message.context === 'object' */) {
         if (!hasMessage &amp;&amp; !messageCopied) {
           message = { ...message };
           messageCopied = true;
@@ -2163,6 +2140,33 @@ ${new Error('Stopping').stack}`);
         }
         category = message.category;
         if (!hasMessage) delete message.category;
+      }
+      message = hasMessage;
+      // if (hasMessage &amp;&amp; Object.keys(message).length === 1) message = hasMessage;
+    } else if (
+      message &amp;&amp;
+      typeof message === 'object' &amp;&amp;
+      !(message instanceof Array) &amp;&amp;
+      (message.tags || message.message || message.context) /* typeof(message.context) === 'object' */
+    ) {
+      transformed = true;
+      let messageCopied;
+      const { message: hasMessage } = message;
+      if (message.tags) {
+        if (!hasMessage) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = Loggers.tags(tags, message.tags);
+        if (!hasMessage) delete message.tags;
+      }
+      if (message.context /* &amp;&amp; typeof message.context === 'object' */) {
+        if (!hasMessage &amp;&amp; !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = Loggers.context(context, message.context);
+        if (!hasMessage) delete message.context;
       }
       // message = hasMessage;
       if (hasMessage &amp;&amp; Object.keys(message).length === 1) message = hasMessage;
@@ -2297,7 +2301,6 @@ class Logger {
       if (!(logger instanceof Loggers)) {
         throw new Error('logger must be an instance of Loggers or Logger');
       }
-      // eslint-disable-next-line no-multi-assign
       this.loggersObj = this.parentObj = logger;
     }
 
@@ -2422,7 +2425,7 @@ module.exports = Loggers;
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Tue May 04 2021 00:50:12 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Tue May 04 2021 08:59:11 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>
