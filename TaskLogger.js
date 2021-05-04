@@ -44,7 +44,6 @@ class TaskLogger {
    * @return {Promise} Resolves to the value returned or the exception thrown by the task
    */
   static async execute(logger, task, beginMessage, endMessage, errorMessage, errorHandler) {
-    // eslint-disable-next-line no-param-reassign
     const uuid = uuidv1();
     logger = logger.child(uuid);
     logger.log('begin', beginMessage);

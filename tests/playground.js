@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax */
 // const why = require('why-is-node-running');
 const Loggers = require('../index');
 

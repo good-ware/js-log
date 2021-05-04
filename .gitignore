@@ -4,6 +4,7 @@
 vscode
 *~
 *.orig
+*.out
 *.sw*
 package-lock.json
 npm-debug.log

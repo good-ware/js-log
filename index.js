@@ -337,12 +337,12 @@ class Loggers {
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
    */
   static contextToObject(context) {
-    if (!context) return context;
+    if (context === undefined || context === null) return undefined;
     if (typeof context === 'object') {
       if (context instanceof Error) return { error: context };
       if (!(context instanceof Array)) return context;
     }
-    return { message: context };
+    return { context };
   }
 
   /**
@@ -422,7 +422,6 @@ class Loggers {
 
     const cloudWatchObject = cloudWatchLogObject
       .keys({
-        // eslint-disable-next-line quotes
         flushTimeout: Joi.number().integer().min(1).default(90000).description(
           `The maximum number of milliseconds to wait when sending the current batch of log entries to \
 CloudWatch`
@@ -476,7 +475,6 @@ CloudWatch`
         .min(1)
         .default(25)
         .description('Errors reference other errors. This is the maximum number of errors to log.'),
-      // eslint-disable-next-line quotes
       maxErrorDepth: Joi.number().integer().min(1).default(5).description(
         `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
 traverse.`
@@ -533,7 +531,6 @@ traverse.`
               Joi.alternatives(
                 onOffDefaultLevelEnum,
                 Joi.object({
-                  // eslint-disable-next-line quotes
                   allowLevel: offDefaultLevelEnum.description(`\
 Enable the tag for log entries with severity levels equal to or greater than the provided value`),
                   level: defaultLevelEnum,
@@ -1070,7 +1067,6 @@ ${error}`);
               .on('close', resolve)
               .on('finish', () => setImmediate(() => logger.close()))
               .end();
-            // eslint-disable-next-line no-console
           })
             // eslint-disable-next-line no-console
             .catch((error) => console.error(`[${category}]`, error))
@@ -2029,7 +2025,7 @@ ${new Error('Stopping').stack}`);
 
     logger.log(level, entry);
 
-    if (contextData) this.send(info, contextData, null, errors, depth + 1, logGroupId);
+    if (contextData) this.send(info, contextData, undefined, errors, depth + 1, logGroupId);
 
     if (contextMessages)
       contextMessages.forEach((contextMessage) => {
@@ -2074,28 +2070,7 @@ ${new Error('Stopping').stack}`);
       (tags.tags || tags.message || tags.context || tags.category)
     ) {
       transformed = true;
-      // The first argument 'tags' is a single argument to use as all the other arguments
-      if (tags.context && typeof tags.context === 'object') {
-        context = Loggers.context(context, tags.context);
-      }
-      if (tags.category && typeof tags.category === 'string') {
-        category = tags.category;
-      }
-      if (tags.message) {
-        message = tags.message;
-      }
-      if (tags.tags) {
-        tags = tags.tags;
-      } else {
-        tags = undefined;
-      }
-    } else if (
-      message &&
-      typeof message === 'object' &&
-      !(message instanceof Array) &&
-      (message.tags || message.message || message.context || message.category)
-    ) {
-      transformed = true;
+      message = tags;
       let messageCopied;
       const { message: hasMessage } = message;
       if (message.tags) {
@@ -2103,10 +2078,12 @@ ${new Error('Stopping').stack}`);
           message = { ...message };
           messageCopied = true;
         }
-        tags = Loggers.tags(tags, message.tags);
+        tags = message.tags;
         if (!hasMessage) delete message.tags;
+      } else {
+        tags = undefined;
       }
-      if (message.context && typeof message.context === 'object') {
+      if (message.context /* && typeof message.context === 'object' */) {
         if (!hasMessage && !messageCopied) {
           message = { ...message };
           messageCopied = true;
@@ -2121,6 +2098,33 @@ ${new Error('Stopping').stack}`);
         }
         category = message.category;
         if (!hasMessage) delete message.category;
+      }
+      message = hasMessage;
+      // if (hasMessage && Object.keys(message).length === 1) message = hasMessage;
+    } else if (
+      message &&
+      typeof message === 'object' &&
+      !(message instanceof Array) &&
+      (message.tags || message.message || message.context) /* typeof(message.context) === 'object' */
+    ) {
+      transformed = true;
+      let messageCopied;
+      const { message: hasMessage } = message;
+      if (message.tags) {
+        if (!hasMessage) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = Loggers.tags(tags, message.tags);
+        if (!hasMessage) delete message.tags;
+      }
+      if (message.context /* && typeof message.context === 'object' */) {
+        if (!hasMessage && !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = Loggers.context(context, message.context);
+        if (!hasMessage) delete message.context;
       }
       // message = hasMessage;
       if (hasMessage && Object.keys(message).length === 1) message = hasMessage;
@@ -2255,7 +2259,6 @@ class Logger {
       if (!(logger instanceof Loggers)) {
         throw new Error('logger must be an instance of Loggers or Logger');
       }
-      // eslint-disable-next-line no-multi-assign
       this.loggersObj = this.parentObj = logger;
     }
 
