@@ -4,6 +4,7 @@
 vscode
 *~
 *.orig
+*.out
 *.sw*
 package-lock.json
 npm-debug.log
@@ -12,4 +13,3 @@ logs/
 node_modules/
 workspace/
 
-1.4.1.out
