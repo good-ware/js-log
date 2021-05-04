@@ -70,7 +70,7 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -274,9 +274,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -338,8 +337,8 @@ class Loggers {
    *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
    */
   static contextToObject(context) {
-    if (context === undefined) return undefined;
-    if (context && typeof context === 'object') {
+    if (context === undefined || context === null) return undefined;
+    if (typeof context === 'object') {
       if (context instanceof Error) return { error: context };
       if (!(context instanceof Array)) return context;
     }
@@ -2026,7 +2025,7 @@ ${new Error('Stopping').stack}`);
 
     logger.log(level, entry);
 
-    if (contextData) this.send(info, contextData, null, errors, depth + 1, logGroupId);
+    if (contextData) this.send(info, contextData, undefined, errors, depth + 1, logGroupId);
 
     if (contextMessages)
       contextMessages.forEach((contextMessage) => {
@@ -2176,11 +2175,11 @@ ${new Error('Stopping').stack}`);
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
