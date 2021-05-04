@@ -44,6 +44,7 @@ async function go(colors) {
     tags: { coordinator: { level: 'info' }, tag2: { level: 'error' } },
   };
 
+  config.logging.console.data = true;
   loggers = new Loggers(config.logging);
   const hasCloudWatch = loggers.props.cloudWatch ? 1 : 0;
 
@@ -55,6 +56,35 @@ async function go(colors) {
     loggers.child('error').info('Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'info') throw new Error();
+  }
+
+  // message is an object 1
+  {
+    logger.info(['c'], { message: { a: 1, b: 2 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.tags.includes('c')) throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // message is an object with tags
+  {
+    logger.info([], { message: { a: 1, b: 2 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.data.b) throw new Error();
+  }
+
+  // message is an object with context
+  {
+    logger.info({ message: { tags: ['d'], a: 1, b: 2, context: { d: 5 } } }, { f: 1 });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.data.b) throw new Error();
+  }
+
+  // Child props are passed to logger()
+  {
+    loggers.child(['a'], { b: 5 }).logger('alogger').info('hi');
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.data.b) throw new Error();
   }
 
   // This is logged as debug
@@ -294,11 +324,14 @@ async function go(colors) {
 
   // circular test 1
   {
+    const before = unitTest.entries.length;
     const err = new Error('error 1');
     const err2 = new Error('error 2');
     err.error = err2;
     err2.cause = err;
     logger.error(err);
+    const after = unitTest.entries.length;
+    if (after - before !== 2) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
     if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
   }
@@ -509,10 +542,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 131 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 135 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 25) throw new Error(len);
-    if (unitTest.dataCount !== 71 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 77 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

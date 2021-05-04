@@ -1,84 +1,38 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> index.js</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>index.js - Documentation</title>
 
-  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="./build/entry.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-  <![endif]-->
-  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
-  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
-  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
-  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
-  <link type="text/css" rel="stylesheet" href="">
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
-
-  
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
+<body>
 
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
 
+<label for="nav-trigger" class="overlay"></label>
 
-<body class="layout small-header">
-    <div id="stickyNavbarOverlay"></div>
+<nav>
+    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading">Tutorials</li><li class="nav-item"><a href="tutorial-releases.html">releases</a></li><li class="nav-heading">Classes</li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="GeneratorLogger.html">GeneratorLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="GeneratorLogger.html#.begin">begin</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Logger.html">Logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#flush">flush</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#flushCloudWatchTransports">flushCloudWatchTransports</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#loggers">loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#parent">parent</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#stop">stop</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Logger.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Loggers.html">Loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.context">context</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#.tags">tags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#default">default</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flush">flush</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flushCloudWatchTransports">flushCloudWatchTransports</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isReady">isReady</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#processCategoryTags">processCategoryTags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#start">start</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#stop">stop</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#validateOptions">validateOptions</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="MySqlLogger.html">MySqlLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.emitQuery">emitQuery</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.query">query</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="RequestLogger.html">RequestLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="RequestLogger.html#.request">request</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="TaskLogger.html">TaskLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="TaskLogger.html#.execute">execute</a></span></li>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">index.js</h1>
     
 
-<div class="top-nav">
-    <div class="inner">
-        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>
-        <div class="logo">
-            
-            
-        </div>
-        <div class="menu">
-            
-            <div class="navigation">
-                <a
-                    href="index.html"
-                    class="link"
-                >
-                    API Documentation
-                </a>
-                
-                
-                
-            </div>
-        </div>
-    </div>
-</div>
-    <div id="main">
-        <div
-            class="sidebar "
-            id="sidebarNav"
-        >
-            
-            <nav>
-                
-                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Classes</h3><ul><li><a href="GeneratorLogger.html">GeneratorLogger</a></li><li><a href="Logger.html">Logger</a></li><li><a href="Loggers.html">Loggers</a></li><li><a href="MySqlLogger.html">MySqlLogger</a></li><li><a href="RequestLogger.html">RequestLogger</a></li><li><a href="TaskLogger.html">TaskLogger</a></li></ul></div>
-                
-            </nav>
-        </div>
-        <div class="core" id="main-content-wrapper">
-            <div class="content">
-                <header class="page-title">
-                    <p>Source</p>
-                    <h1>index.js</h1>
-                </header>
-                
+    
 
 
 
@@ -102,6 +56,10 @@ const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
+
+// =============================
+// Notes
+// typeof(null) === 'object'
 
 const { format } = winston;
 
@@ -716,11 +674,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
   static levelLog(obj, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (messageOrContext !== undefined &amp;&amp; tagsOrMessage instanceof Array) {
-      return obj.log(Loggers.tags(levelObj, tagsOrMessage), messageOrContext, contextOrCategory, category);
+      const tags = Loggers.tags(levelObj, tagsOrMessage);
+      return obj.log(tags, messageOrContext, contextOrCategory, category);
     }
-
-    // tagsOrMessage has a message
-    return obj.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory);
+    return obj.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
 
   /**
@@ -745,8 +702,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
           return true; // Next iteration
         }
       })
-    )
+    ) {
       return;
+    }
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
@@ -1112,6 +1070,14 @@ ${error}`);
   }
 
   /**
+   * @description Flushes transports that suppot flushing. Currently only CloudWatch.
+   * @return {Promise}
+   */
+  flush() {
+    return this.flushCloudWatchTransports();
+  }
+
+  /**
    * @private
    * @ignore
    * @description Closes all loggers
@@ -1119,7 +1085,7 @@ ${error}`);
    * @throws {None}
    */
   async close() {
-    if (this.unitTest &amp;&amp; !this.unitTest.flush) {
+    if (false &amp;&amp; this.unitTest &amp;&amp; !this.unitTest.flush) {
       // Test uncaught exception
       setTimeout(() => {
         throw new Error('Expected error: Uncaught exception while stopping');
@@ -1295,7 +1261,7 @@ ${error}`);
       const transports = [];
       let level;
 
-      // ///////////////////////////////////
+      // ====
       // File
       level = settings.file || 'off';
       if (level === 'default') {
@@ -1341,7 +1307,7 @@ ${error}`);
         }
       }
 
-      // ///////////////////////////////////
+      // ==========
       // CloudWatch
       let awsOptions = { ...this.options.cloudWatch };
       level = settings.cloudWatch || 'off';
@@ -1431,7 +1397,7 @@ at level '${level}' for category '${category}'`,
         }
       }
 
-      // ///////////////////////////////////
+      // =======
       // Console
       level = settings.console || 'info';
       if (level === 'default') {
@@ -1820,10 +1786,11 @@ at level '${level}' for category '${category}'`,
     if (!state.currentData) {
       state.currentData = state.data = {};
     } else if (state.currentData === state.data &amp;&amp; key in state.data &amp;&amp; value !== state.data[key]) {
-      // message and context overlap
+      // message and context overlap; their values differ
       if (!value) return;
       state.currentData = state.contextData = {};
     }
+
     state.currentData[key] = value;
   }
 
@@ -1899,6 +1866,7 @@ at level '${level}' for category '${category}'`,
 
           // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
           const msg = this.objectToString(item);
+
           if (msg) this.copyData(level, tags, state, 'message', msg);
         }
       } else {
@@ -1929,6 +1897,9 @@ at level '${level}' for category '${category}'`,
 
       if (Loggers.hasKeys(data)) entry.data = data;
     }
+
+    // Transports don't like empty messages
+    if (entry.message === null || entry.message === undefined) entry.message = '';
 
     // Remove meta keys that have undefined values
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
@@ -1969,6 +1940,7 @@ at level '${level}' for category '${category}'`,
 
     // Set the stack meta
     if (addStack) entry.stack = new Error(entry.message).stack.replace('Error: ', '').replace(stripStack, '');
+
     return entry;
   }
 
@@ -2025,10 +1997,12 @@ at level '${level}' for category '${category}'`,
     const { data } = entry;
     if (data) {
       if (addContext) {
+        // ==========================
         // Add Errors to errors array
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in data) {
           const value = data[key];
+
           // eslint-disable-next-line no-continue
           if (!(value instanceof Error)) continue;
 
@@ -2064,7 +2038,7 @@ at level '${level}' for category '${category}'`,
 
       // The default message is data.error if it exists
       if (!entry.message &amp;&amp; scalars[typeof data.error]) entry.message = data.error;
-
+      // TODO: This is dropping undefined values
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
@@ -2113,32 +2087,88 @@ ${new Error('Stopping').stack}`);
    * @param {*} [message]
    * @param {*} [context]
    * @param {String} [category]
-   * @return {Object} false or an argument containing new values for tags,
-   *     message, context, and category
+   * @return {Object} false or an argument containing new values for tags, message, context, and category
    */
   transformLogArguments(tags, message, context, category) {
+    let transformed;
+
+    // console.log({ tags, message, context, category });
+
     // First argument is an Error object?
     if (tags instanceof Error) {
+      transformed = true;
       if (!message) {
         message = tags;
       } else {
         context = Loggers.context(context, tags);
       }
       tags = this.props.logLevel.error;
+    } else if (message instanceof Error) {
+      if (!tags) {
+        tags = this.props.logLevel.error;
+        transformed = true;
+      }
     } else if (
       tags &amp;&amp;
+      !message &amp;&amp;
       typeof tags === 'object' &amp;&amp;
       !(tags instanceof Array) &amp;&amp;
-      (tags.tags || tags.level || tags.message || tags.context)
+      (tags.tags || tags.message || tags.context || tags.category)
     ) {
-      // The first argument is a single argument to use as all the other arguments
-      if (tags.message) message = tags.message;
-      context = Loggers.context(context, tags.context);
-      if (tags.category) category = tags.category;
-      tags = Loggers.tags(tags.level, tags.tags);
-    } else {
-      return false;
+      transformed = true;
+      // The first argument 'tags' is a single argument to use as all the other arguments
+      if (tags.context &amp;&amp; typeof tags.context === 'object') {
+        context = Loggers.context(context, tags.context);
+      }
+      if (tags.category &amp;&amp; typeof tags.category === 'string') {
+        category = tags.category;
+      }
+      if (tags.message) {
+        message = tags.message;
+      }
+      if (tags.tags) {
+        tags = tags.tags;
+      } else {
+        tags = undefined;
+      }
+    } else if (
+      message &amp;&amp;
+      typeof message === 'object' &amp;&amp;
+      !(message instanceof Array) &amp;&amp;
+      (message.tags || message.message || message.context || message.category)
+    ) {
+      transformed = true;
+      let messageCopied;
+      const { message: hasMessage } = message;
+      if (message.tags) {
+        if (!hasMessage) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = Loggers.tags(tags, message.tags);
+        if (!hasMessage) delete message.tags;
+      }
+      if (message.context &amp;&amp; typeof message.context === 'object') {
+        if (!hasMessage &amp;&amp; !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = Loggers.context(context, message.context);
+        if (!hasMessage) delete message.context;
+      }
+      if (message.category &amp;&amp; typeof message.category === 'string') {
+        if (!hasMessage &amp;&amp; !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        category = message.category;
+        if (!hasMessage) delete message.category;
+      }
+      // message = hasMessage;
+      if (hasMessage &amp;&amp; Object.keys(message).length === 1) message = hasMessage;
     }
+
+    if (!transformed) return false;
 
     return {
       tags,
@@ -2305,10 +2335,24 @@ class Logger {
   }
 
   /**
-   * @return {Boolean}
+   * @return {Promise}
    */
-  isReady() {
-    return this.loggersObj.isReady();
+  stop() {
+    return this.loggersObj.stop();
+  }
+
+  /**
+   * @return {Promise}
+   */
+  flushCloudWatchTransports() {
+    return this.loggersObj.flushCloudWatchTransports();
+  }
+
+  /**
+   * @return {Promise}
+   */
+  flush() {
+    return this.loggersObj.flush();
   }
 
   /**
@@ -2316,7 +2360,7 @@ class Logger {
    * @return {Loggers|Logger}
    */
   logger(category) {
-    return this.loggersObj.logger(category || this.category);
+    return new Logger(this, this.tags, this.context, category || this.category);
   }
 
   /**
@@ -2373,25 +2417,15 @@ module.exports = Loggers;
 
 
 
-            </div>
-            
-            <footer class="footer">
-                <div class="content has-text-centered">
-                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a></p>
-                    <p class="sidebar-created-by">
-                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
-                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
-                    </p>
-                </div>
-            </footer>
-            
-        </div>
-        <div id="side-nav" class="side-nav">
-        </div>
-    </div>
-<script src="scripts/app.min.js"></script>
-<script>PR.prettyPrint();</script>
-<script src="scripts/linenumber.js"> </script>
+</div>
 
+<br class="clear">
+
+<footer>
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Tue May 04 2021 00:50:12 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
 </body>
 </html>
