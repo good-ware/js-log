@@ -16,6 +16,10 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
+// =============================
+// Notes
+// typeof(null) === 'object'
+
 const { format } = winston;
 
 const banner = '[@goodware/log] ';
@@ -66,7 +70,7 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -270,9 +274,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -629,11 +632,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
   static levelLog(obj, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (messageOrContext !== undefined && tagsOrMessage instanceof Array) {
-      return obj.log(Loggers.tags(levelObj, tagsOrMessage), messageOrContext, contextOrCategory, category);
+      const tags = Loggers.tags(levelObj, tagsOrMessage);
+      return obj.log(tags, messageOrContext, contextOrCategory, category);
     }
-
-    // tagsOrMessage has a message
-    return obj.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory);
+    return obj.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
 
   /**
@@ -658,8 +660,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
           return true; // Next iteration
         }
       })
-    )
+    ) {
       return;
+    }
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
@@ -1025,6 +1028,14 @@ ${error}`);
   }
 
   /**
+   * @description Flushes transports that suppot flushing. Currently only CloudWatch.
+   * @return {Promise}
+   */
+  flush() {
+    return this.flushCloudWatchTransports();
+  }
+
+  /**
    * @private
    * @ignore
    * @description Closes all loggers
@@ -1208,7 +1219,7 @@ ${error}`);
       const transports = [];
       let level;
 
-      // ///////////////////////////////////
+      // ====
       // File
       level = settings.file || 'off';
       if (level === 'default') {
@@ -1254,7 +1265,7 @@ ${error}`);
         }
       }
 
-      // ///////////////////////////////////
+      // ==========
       // CloudWatch
       let awsOptions = { ...this.options.cloudWatch };
       level = settings.cloudWatch || 'off';
@@ -1344,7 +1355,7 @@ at level '${level}' for category '${category}'`,
         }
       }
 
-      // ///////////////////////////////////
+      // =======
       // Console
       level = settings.console || 'info';
       if (level === 'default') {
@@ -1733,10 +1744,11 @@ at level '${level}' for category '${category}'`,
     if (!state.currentData) {
       state.currentData = state.data = {};
     } else if (state.currentData === state.data && key in state.data && value !== state.data[key]) {
-      // message and context overlap
+      // message and context overlap; their values differ
       if (!value) return;
       state.currentData = state.contextData = {};
     }
+
     state.currentData[key] = value;
   }
 
@@ -1812,6 +1824,7 @@ at level '${level}' for category '${category}'`,
 
           // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
           const msg = this.objectToString(item);
+
           if (msg) this.copyData(level, tags, state, 'message', msg);
         }
       } else {
@@ -1842,6 +1855,9 @@ at level '${level}' for category '${category}'`,
 
       if (Loggers.hasKeys(data)) entry.data = data;
     }
+
+    // Transports don't like empty messages
+    if (entry.message === null || entry.message === undefined) entry.message = '';
 
     // Remove meta keys that have undefined values
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
@@ -1882,6 +1898,7 @@ at level '${level}' for category '${category}'`,
 
     // Set the stack meta
     if (addStack) entry.stack = new Error(entry.message).stack.replace('Error: ', '').replace(stripStack, '');
+
     return entry;
   }
 
@@ -1938,10 +1955,12 @@ at level '${level}' for category '${category}'`,
     const { data } = entry;
     if (data) {
       if (addContext) {
+        // ==========================
         // Add Errors to errors array
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in data) {
           const value = data[key];
+
           // eslint-disable-next-line no-continue
           if (!(value instanceof Error)) continue;
 
@@ -1977,7 +1996,7 @@ at level '${level}' for category '${category}'`,
 
       // The default message is data.error if it exists
       if (!entry.message && scalars[typeof data.error]) entry.message = data.error;
-
+      // TODO: This is dropping undefined values
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
@@ -2026,32 +2045,88 @@ ${new Error('Stopping').stack}`);
    * @param {*} [message]
    * @param {*} [context]
    * @param {String} [category]
-   * @return {Object} false or an argument containing new values for tags,
-   *     message, context, and category
+   * @return {Object} false or an argument containing new values for tags, message, context, and category
    */
   transformLogArguments(tags, message, context, category) {
+    let transformed;
+
+    // console.log({ tags, message, context, category });
+
     // First argument is an Error object?
     if (tags instanceof Error) {
+      transformed = true;
       if (!message) {
         message = tags;
       } else {
         context = Loggers.context(context, tags);
       }
       tags = this.props.logLevel.error;
+    } else if (message instanceof Error) {
+      if (!tags) {
+        tags = this.props.logLevel.error;
+        transformed = true;
+      }
     } else if (
       tags &&
+      !message &&
       typeof tags === 'object' &&
       !(tags instanceof Array) &&
-      (tags.tags || tags.level || tags.message || tags.context)
+      (tags.tags || tags.message || tags.context || tags.category)
     ) {
-      // The first argument is a single argument to use as all the other arguments
-      if (tags.message) message = tags.message;
-      context = Loggers.context(context, tags.context);
-      if (tags.category) category = tags.category;
-      tags = Loggers.tags(tags.level, tags.tags);
-    } else {
-      return false;
+      transformed = true;
+      // The first argument 'tags' is a single argument to use as all the other arguments
+      if (tags.context && typeof tags.context === 'object') {
+        context = Loggers.context(context, tags.context);
+      }
+      if (tags.category && typeof tags.category === 'string') {
+        category = tags.category;
+      }
+      if (tags.message) {
+        message = tags.message;
+      }
+      if (tags.tags) {
+        tags = tags.tags;
+      } else {
+        tags = undefined;
+      }
+    } else if (
+      message &&
+      typeof message === 'object' &&
+      !(message instanceof Array) &&
+      (message.tags || message.message || message.context || message.category)
+    ) {
+      transformed = true;
+      let messageCopied;
+      const { message: hasMessage } = message;
+      if (message.tags) {
+        if (!hasMessage) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = Loggers.tags(tags, message.tags);
+        if (!hasMessage) delete message.tags;
+      }
+      if (message.context && typeof message.context === 'object') {
+        if (!hasMessage && !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = Loggers.context(context, message.context);
+        if (!hasMessage) delete message.context;
+      }
+      if (message.category && typeof message.category === 'string') {
+        if (!hasMessage && !messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        category = message.category;
+        if (!hasMessage) delete message.category;
+      }
+      // message = hasMessage;
+      if (hasMessage && Object.keys(message).length === 1) message = hasMessage;
     }
+
+    if (!transformed) return false;
 
     return {
       tags,
@@ -2096,11 +2171,11 @@ ${new Error('Stopping').stack}`);
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2218,10 +2293,24 @@ class Logger {
   }
 
   /**
-   * @return {Boolean}
+   * @return {Promise}
    */
-  isReady() {
-    return this.loggersObj.isReady();
+  stop() {
+    return this.loggersObj.stop();
+  }
+
+  /**
+   * @return {Promise}
+   */
+  flushCloudWatchTransports() {
+    return this.loggersObj.flushCloudWatchTransports();
+  }
+
+  /**
+   * @return {Promise}
+   */
+  flush() {
+    return this.loggersObj.flush();
   }
 
   /**
@@ -2229,7 +2318,7 @@ class Logger {
    * @return {Loggers|Logger}
    */
   logger(category) {
-    return this.loggersObj.logger(category || this.category);
+    return new Logger(this, this.tags, this.context, category || this.category);
   }
 
   /**
