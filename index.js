@@ -423,10 +423,14 @@ class Loggers {
 
     const cloudWatchObject = cloudWatchLogObject
       .keys({
-        flushTimeout: Joi.number().integer().min(1).default(90000).description(
-          `The maximum number of milliseconds to wait when sending the current batch of log entries to \
+        flushTimeout: Joi.number()
+          .integer()
+          .min(1)
+          .default(90000)
+          .description(
+            `The maximum number of milliseconds to wait when sending the current batch of log entries to \
 CloudWatch`
-        ),
+          ),
       })
       .default({});
 
@@ -476,10 +480,14 @@ CloudWatch`
         .min(1)
         .default(25)
         .description('Errors reference other errors. This is the maximum number of errors to log.'),
-      maxErrorDepth: Joi.number().integer().min(1).default(5).description(
-        `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
+      maxErrorDepth: Joi.number()
+        .integer()
+        .min(1)
+        .default(5)
+        .description(
+          `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
 traverse.`
-      ),
+        ),
 
       // Converting objects to strings
       maxArrayLength: Joi.number()
@@ -1460,6 +1468,10 @@ at level '${level}' for category '${category}'`,
    * @return {Logger}
    */
   child(tags, context, category) {
+    const args = this.transformLogArguments(tags, null, context, category);
+    if (args) {
+      ({ tags, context, category } = args);
+    }
     const logger = this.logger(category);
     if (!tags && !context) return logger;
     // eslint-disable-next-line no-use-before-define

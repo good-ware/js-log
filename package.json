@@ -1,10 +1,10 @@
 {
   "name": "@goodware/log",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
-    "lint": "eslint  . --fix --report-unused-disable-directives",
+    "lint": "eslint  . --report-unused-disable-directives",
     "playground": "node tests/playground.js",
     "format": "prettier . --write",
     "pub2": "npm publish --access=public",
@@ -26,14 +26,14 @@
     "aws-sdk": "^2.0.0",
     "hostid": "^1.0.0",
     "humanize-duration": "^3.0.0",
-    "joi": "^17.2.0",
+    "joi": "^17.4.0",
     "json-prune": "^1.0.0",
     "mkdirp-sync": "^0.0.3",
     "uuid": "^8.0.0",
     "winston": "^3.0.0",
     "winston-cloudwatch": "^2.5.2",
     "winston-console-format": "^1.0.0",
-    "winston-daily-rotate-file": "^4.0.0"
+    "winston-daily-rotate-file": "^4.5.5"
   },
   "devDependencies": {
     "deepmerge": "*",

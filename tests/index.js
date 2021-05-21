@@ -58,6 +58,15 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
   }
 
+  // Pass an object to child()
+  {
+    loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
+    const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
+    const { data, level } = obj;
+    if (level !== 'info') throw new Error();
+    if (data.context !== 'doo') throw new Error();
+  }
+
   // message is an object 1
   {
     logger.info(['c'], { message: { a: 1, b: 2 } });
@@ -88,7 +97,6 @@ async function go(colors) {
   }
 
   // This is logged as debug
-  // @todo test this
   {
     loggers.child('error').log(Loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
@@ -539,10 +547,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 133 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 134 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 79 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 80 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
