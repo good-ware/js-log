@@ -58,6 +58,16 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
   }
 
+  // Pass an object to child()
+  {
+    // logging-level methods override tags
+    loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
+    const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
+    const { data, level } = obj;
+    if (level !== 'info') throw new Error();
+    if (data.context !== 'doo') throw new Error();
+  }
+
   // message is an object 1
   {
     logger.info(['c'], { message: { a: 1, b: 2 } });
@@ -80,15 +90,15 @@ async function go(colors) {
     if (!entry.data.b) throw new Error();
   }
 
-  // Child props are passed to logger()
+  // Child context is passed to logger()
   {
-    loggers.child(['a'], { b: 5 }).logger('alogger').info('hi');
+    loggers.logger('a').child(null, { b: 5 }).child(null, { a: 1 }).logger('b').info('hi');
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
   }
 
   // This is logged as debug
-  // @todo test this
   {
     loggers.child('error').log(Loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
