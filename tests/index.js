@@ -60,6 +60,7 @@ async function go(colors) {
 
   // Pass an object to child()
   {
+    // logging-level methods override tags
     loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
     const { data, level } = obj;
@@ -89,10 +90,11 @@ async function go(colors) {
     if (!entry.data.b) throw new Error();
   }
 
-  // Child props are passed to logger()
+  // Child context is passed to logger()
   {
-    loggers.child(['a'], { b: 5 }).logger('alogger').info('hi');
+    loggers.logger('a').child(null, { b: 5 }).child(null, { a: 1 }).logger('b').info('hi');
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
   }
 
@@ -547,10 +549,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 134 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 133 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 80 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 79 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
