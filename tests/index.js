@@ -23,6 +23,8 @@ async function go(colors) {
   config.logging.version = config.version;
   config.logging.unitTest = true;
 
+  // =========================================================
+  // Configuration for tags that affect logging levels - begin
   config.logging.categories.default.tags = {
     sql: 'off',
     barber: {
@@ -43,13 +45,28 @@ async function go(colors) {
     console: 'info',
     tags: { coordinator: { level: 'info' }, tag2: { level: 'error' } },
   };
+  // Configuration for tags that affect logging levels - end
+  // =========================================================
 
   config.logging.console.data = true;
+
+  // =============================
+  // Create the 'loggers' instance
   loggers = new Loggers(config.logging);
+
   const hasCloudWatch = loggers.props.cloudWatch ? 1 : 0;
 
+  // ============================
+  // Create the 'logger' instance
   const logger = loggers.logger();
   const { unitTest } = loggers;
+
+  {
+    logger.info(['extra'], null, null, 'dragon');
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.category === 'dragon') throw new Error();
+    if (!entry.tags.includes('extra')) throw new Error();
+  }
 
   // This is logged as info
   {
@@ -58,7 +75,53 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
   }
 
-  // Pass an object to child()
+  // Error + message, call logLevel method on logger
+  {
+    logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    if (!entry.data.error) throw new Error();
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // Error + message, call logLevel method on child
+  {
+    logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    if (!entry.data.error) throw new Error();
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // Error + message + tag
+  {
+    logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    if (!entry.tags.includes('info')) throw new Error();
+    if (!entry.data.error) throw new Error();
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // Error + message, call log() on logger
+  {
+    logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    if (!entry.data.error) throw new Error();
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // Error + message, call log() on child
+  {
+    logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    if (!entry.data.error) throw new Error();
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
+
+  // Pass an object to child(). context is a string.
   {
     // logging-level methods override tags
     loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
@@ -74,20 +137,26 @@ async function go(colors) {
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     if (!entry.data.a) throw new Error();
-  }
-
-  // message is an object with tags
-  {
-    logger.info([], { message: { a: 1, b: 2 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.data.b) throw new Error();
   }
 
-  // message is an object with context
+  // message is an object 1
   {
-    logger.info({ message: { tags: ['d'], a: 1, b: 2, context: { d: 5 } } }, { f: 1 });
+    logger.child().info(['c'], { message: { a: 1, b: 2 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.tags.includes('c')) throw new Error();
+    if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
+  }
+
+  // log level method with context and tags
+  {
+    logger.error({ tags: ['d'], a: 1, b: 2, context: { d: 5 } });
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.tags.includes('d')) throw new Error();
+    if (!entry.data.a) throw new Error();
+    if (!entry.data.b) throw new Error();
+    if (!entry.data.d) throw new Error();
   }
 
   // Child context is passed to logger()
@@ -191,15 +260,6 @@ async function go(colors) {
     if (!failed) throw new Error('Should have failed');
   }
 
-  // Nonoverlap
-  /*
-  {
-    const entry = loggers.logEntry('info', {}, 'extraMessage');
-    if (entry.message !== 'extraMessage') throw new Error(`Should be
-  'extraMessage', is ${entry.message}`);
-  }
-  */
-
   // Test passing tags as first parameter to level names
   {
     const entries = unitTest.entries.length;
@@ -292,9 +352,10 @@ async function go(colors) {
     {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
+      // Do not log to console
       logger.more(['doctor'], 'Doctor more', null, 'doctor');
       if (consoleEntries + extra !== unitTest.console.entries.length) throw new Error();
-      // Wrote to file because 'other' defined at category level
+      // Log to file because 'other' defined at category level
       if (fileEntries + extra === unitTest.file.entries.length) throw new Error();
     }
     {
@@ -340,9 +401,9 @@ async function go(colors) {
     err2.cause = err;
     logger.error(err);
     const after = unitTest.entries.length;
-    if (after - before !== 2) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+    if (after - before !== 3) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 2].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 2
@@ -517,7 +578,8 @@ async function go(colors) {
   logger.error(err, err);
   logger.error({ message: 'another shared error', error: err }, err);
 
-  // Test unhandled promise rejection
+  // ===========================
+  // Unhandled promise rejection
   {
     const len = Object.keys(unitTest.logGroupIds).length;
     Promise.reject(new Error('Rejected promise'));
@@ -527,7 +589,8 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
-  // Test unhandled exception
+  // ===================
+  // Unhandled exception
   {
     const len = Object.keys(unitTest.logGroupIds).length;
 
@@ -540,6 +603,7 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
+  // ===============
   // Stop the logger
   await new Promise((resolve) => setTimeout(() => loggers.stop().then(resolve), 100));
 
@@ -549,10 +613,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 133 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 146 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 23) throw new Error(len);
-    if (unitTest.dataCount !== 79 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 26) throw new Error(len);
+    if (unitTest.dataCount !== 92 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

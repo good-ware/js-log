@@ -31,7 +31,8 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 /**
  * @private
  * @ignore
- * @description Removes internal functions from the stack trace
+ * @description Removes internal functions from the stack trace. This only works for code that uses this module. It
+ * doesn't work for unit tests.
  */
 const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
 
@@ -72,7 +73,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
+
+/**
+ * @private
+ * @ignore
+ * @description Internal class for identifying the output of transformArgs()
+ */
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -276,8 +284,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -405,14 +414,24 @@ class Loggers {
   validateOptions(options) {
     if (!options) options = {};
 
-    // ==== Joi model for options (begin)
+    // =============================
+    // Joi model for options (begin)
     const levelEnum = Joi.string().valid(...this.props.levels);
     const defaultLevelEnum = Joi.alternatives(levelEnum, Joi.string().valid('default'));
     const offDefaultLevelEnum = Joi.alternatives(defaultLevelEnum, Joi.string().valid('off'));
     const onOffDefaultLevelEnum = Joi.alternatives(offDefaultLevelEnum, Joi.string().valid('on'));
 
-    // Region and logGroup are required by winston-cloudwatch but they can be
-    // provided under categories
+    // Console settings
+    const consoleLogObject = Joi.object({
+      colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
+      data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
+    });
+
+    const consoleCategoryObject = consoleLogObject.keys({
+      level: onOffDefaultLevelEnum,
+    });
+
+    // Region and logGroup are required by winston-cloudwatch but they can be provided under categories
     const cloudWatchLogObject = Joi.object({
       region: Joi.string(),
       logGroup: Joi.string(),
@@ -430,8 +449,7 @@ class Loggers {
           .min(1)
           .default(90000)
           .description(
-            `The maximum number of milliseconds to wait when sending the current batch of log entries to \
-CloudWatch`
+            `The maximum number of milliseconds to wait when sending the current batch of log entries to CloudWatch`
           ),
       })
       .default({});
@@ -487,8 +505,7 @@ CloudWatch`
         .min(1)
         .default(5)
         .description(
-          `Errors reference other errors, creating a graph. This is the maximum error graph depth to \
-traverse.`
+          `Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.`
         ),
 
       // Converting objects to strings
@@ -517,10 +534,7 @@ traverse.`
       cloudWatch: cloudWatchObject,
 
       // Console settings
-      console: Joi.object({
-        colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
-        data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
-      }).default({}),
+      console: consoleLogObject.default({}),
 
       // File settings
       file: Joi.object({
@@ -529,7 +543,9 @@ traverse.`
           .default(['logs', '/tmp/logs'])
           .description('Use an empty array for read-only filesystems'),
         maxSize: Joi.string().default('20m'),
-        maxAge: Joi.string().default('14d'),
+        maxFiles: Joi.alternatives(Joi.number(), Joi.string()).default('14d')
+          .description(`If a number, it is the maximum number of files to keep. If a string, it is the maximum \
+age of files to keep in days, followed by the chracter 'd'.`),
       }).default({}),
 
       // Category configuration
@@ -554,7 +570,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
               )
             ),
             file: onOffDefaultLevelEnum,
-            console: onOffDefaultLevelEnum,
+            console: Joi.alternatives(consoleCategoryObject, onOffDefaultLevelEnum),
             errorFile: onOffDefaultLevelEnum,
             cloudWatch: Joi.alternatives(cloudWatchCategoryObject, onOffDefaultLevelEnum),
           })
@@ -841,12 +857,14 @@ ${directories.join('\n')}`);
    * @description Creates a console transport
    * @param {String} level
    * @param {Boolean} handleExceptions
+   * @param {Object} settings
    * @returns {Object} A new console transport
    */
-  createConsoleTransport(level, handleExceptions) {
-    const { colors } = this.options.console;
+  createConsoleTransport(level, handleExceptions, settings) {
+    if (!settings) settings = this.options.console;
+    const { colors, data } = settings;
 
-    if (this.options.console.data) {
+    if (data) {
       // Fancy console
       const consoleFormat = WinstonConsoleFormat({
         showMeta: true,
@@ -942,7 +960,7 @@ ${error}`);
             utc: true,
             zippedArchive: true,
             maxSize: this.options.file.maxSize,
-            maxFiles: this.options.file.maxAge,
+            maxFiles: this.options.file.maxFiles,
             format: format.json(),
             level: 'error',
             handleExceptions: false,
@@ -1195,7 +1213,7 @@ ${error}`);
   /**
    * @private
    * @ignore
-   * @description Creates a Winston logger
+   * @description Creates a Winston logger for a category
    * @param {String} category
    * @returns {Object} Winston logger
    */
@@ -1254,14 +1272,15 @@ ${error}`);
 
           if (filename) {
             const checkTags = winston.format((info) => this.checkTags('file', info))();
+            const { maxSize, maxFiles } = this.options.file;
             const transport = new winston.transports.DailyRotateFile({
               filename,
               extension: '.log',
               datePattern: 'YYYY-MM-DD-HH',
               utc: true,
               zippedArchive: true,
-              maxSize: this.options.file.maxSize,
-              maxFiles: this.options.file.maxAge,
+              maxSize,
+              maxFiles,
               format: format.combine(checkTags, format.json()),
               level,
               handleExceptions: category === logCategories.unhandled,
@@ -1364,7 +1383,14 @@ at level '${level}' for category '${category}'`,
 
       // =======
       // Console
+      const consoleOptions = { ...this.options.console };
       level = settings.console || 'info';
+
+      if (typeof level === 'object') {
+        Object.assign(consoleOptions, level);
+        level = consoleOptions.level || 'off';
+      }
+
       if (level === 'default') {
         level = this.options.defaultLevel;
       } else if (level === 'on') {
@@ -1375,7 +1401,8 @@ at level '${level}' for category '${category}'`,
       // console is always active
       if (!transports.length && level === 'off') level = 'error';
 
-      if (level !== 'off') transports.push(this.createConsoleTransport(level, category === logCategories.unhandled));
+      if (level !== 'off')
+        transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
 
       // Error file
       level = settings.errorFile || 'off';
@@ -1497,7 +1524,7 @@ at level '${level}' for category '${category}'`,
       return false;
     }
 
-    const args = this.transformLogArguments(tags, undefined, undefined, category);
+    const args = this.transformArgs(tags, undefined, undefined, category);
     if (args) ({ tags, category } = args);
 
     tags = Loggers.tags(tags);
@@ -1569,7 +1596,6 @@ at level '${level}' for category '${category}'`,
           if (categoryTags) categoryTransports = categoryTags[tag];
 
           let checkDefault = true;
-
           // Check allowLevel
           if (categoryTransports) {
             const { allowLevel } = categoryTransports;
@@ -1783,8 +1809,18 @@ at level '${level}' for category '${category}'`,
     const entry = new LogEntry();
     const { level } = info;
 
-    // undefined values are placeholders for ordering and are deleted at the end
-    // of this method
+    if (message && typeof message === 'object' && !(message instanceof Array) && !(message instanceof Error)) {
+      // message = {message: 'Foo', error: {} }
+      const realMessage = message.message;
+      if (realMessage) {
+        const copy = { ...message };
+        delete copy.message;
+        context = Loggers.context(context, copy);
+        message = realMessage;
+      }
+    }
+
+    // undefined values are placeholders for ordering and are deleted at the end of this method
     Object.assign(entry, {
       message: undefined,
       level,
@@ -2054,17 +2090,17 @@ ${new Error('Stopping').stack}`);
   /**
    * @private
    * @ignore
-   * @description Tranforms arugments sent to the log method
+   * @description Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
    * @param {*} [tags] See description.
    * @param {*} [message]
    * @param {*} [context]
    * @param {String} [category]
    * @returns {Object} false or an argument containing new values for tags, message, context, and category
    */
-  transformLogArguments(tags, message, context, category) {
-    let transformed;
+  transformArgs(tags, message, context, category) {
+    if (tags instanceof LogArgs) return tags;
 
-    // console.log({ tags, message, context, category });
+    let transformed;
 
     // First argument is an Error object?
     if (tags instanceof Error) {
@@ -2083,79 +2119,85 @@ ${new Error('Stopping').stack}`);
     } else if (
       tags &&
       !message &&
+      !context &&
+      !category &&
       typeof tags === 'object' &&
       !(tags instanceof Array) &&
-      (tags.tags || tags.message || tags.context || tags.category)
+      (tags.tags || tags.message || tags.context || tags.category || (tags.error && typeof tags.error === 'object'))
     ) {
       transformed = true;
       message = tags;
       let messageCopied;
-      const { message: hasMessage } = message;
-      if (message.tags) {
-        if (!hasMessage) {
+      if ('tags' in message) {
+        if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
         tags = message.tags;
-        if (!hasMessage) delete message.tags;
+        delete message.tags;
       } else {
         tags = undefined;
       }
-      if (message.context /* && typeof message.context === 'object' */) {
-        if (!hasMessage && !messageCopied) {
+      if ('context' in message) {
+        if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
-        context = Loggers.context(context, message.context);
-        if (!hasMessage) delete message.context;
+        context = message.context;
+        delete message.context;
       }
-      if (message.category && typeof message.category === 'string') {
-        if (!hasMessage && !messageCopied) {
+      if ('category' in message) {
+        if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
-        category = message.category;
-        if (!hasMessage) delete message.category;
+        if (typeof message.category === 'string') category = message.category;
+        delete message.category;
       }
-      message = hasMessage;
-      // if (hasMessage && Object.keys(message).length === 1) message = hasMessage;
     } else if (
+      !context &&
+      !category &&
       message &&
       typeof message === 'object' &&
       !(message instanceof Array) &&
-      (message.tags || message.message || message.context) /* typeof(message.context) === 'object' */
+      (message.tags || message.message || message.context || message.error)
     ) {
       transformed = true;
       let messageCopied;
-      const { message: hasMessage } = message;
-      if (message.tags) {
-        if (!hasMessage) {
+      if ('tags' in message) {
+        if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
         tags = Loggers.tags(tags, message.tags);
-        if (!hasMessage) delete message.tags;
+        delete message.tags;
       }
-      if (message.context /* && typeof message.context === 'object' */) {
-        if (!hasMessage && !messageCopied) {
+      if ('context' in message) {
+        if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
-        context = Loggers.context(context, message.context);
-        if (!hasMessage) delete message.context;
+        context = message.context;
+        delete message.context;
       }
-      // message = hasMessage;
-      if (hasMessage && Object.keys(message).length === 1) message = hasMessage;
+      if ('category' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        if (typeof message.category === 'string') category = message.category;
+        delete message.category;
+      }
     }
 
     if (!transformed) return false;
 
-    return {
+    return Object.assign(new LogArgs(), {
       tags,
       message,
       context,
       category,
-    };
+    });
   }
 
   /**
@@ -2184,7 +2226,7 @@ ${new Error('Stopping').stack}`);
    * @returns {Object} this
    */
   log(tags, message, context, category) {
-    const args = this.transformLogArguments(tags, message, context, category);
+    const args = this.transformArgs(tags, message, context, category);
     if (args) {
       ({ tags, message, context, category } = args);
     }
@@ -2193,11 +2235,11 @@ ${new Error('Stopping').stack}`);
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2261,6 +2303,7 @@ class Logger {
    */
   /**
    * @private
+   * @ignore
    * @constructor
    * @param {Loggers|Logger} logger
    * @param {*} [tags]
@@ -2276,7 +2319,7 @@ class Logger {
       this.loggersObj = this.parentObj = logger;
     }
 
-    const results = logger.transformLogArguments(tags, undefined, context, category);
+    const results = logger.transformArgs(tags, undefined, context, category);
     if (results) ({ tags, context, category } = results);
 
     category = this.loggersObj.checkCategory(category);
@@ -2289,17 +2332,16 @@ class Logger {
   /**
    * @private
    * @ignore
+   * @description Tranforms arguments sent to log methods, child(), and isLoggerEnabled(). Mixes in the tags, context,
+   * and category properties.
    */
-  transformLogArguments(tags, message, context, category) {
-    const args = this.loggersObj.transformLogArguments(tags, message, context, category);
-    if (args) {
-      ({ tags, message, context, category } = args);
-    }
-
+  transformArgs(tags, message, context, category) {
+    const args = this.loggersObj.transformArgs(tags, message, context, category);
+    if (args) ({ tags, message, context, category } = args);
     if (this.tags) tags = Loggers.tags(this.tags, tags);
     if (this.context) context = Loggers.context(this.context, context);
     if (!category) category = this.category;
-
+    if (args) return { ...message, tags, context, category };
     return { tags, message, context, category };
   }
 
@@ -2371,7 +2413,7 @@ class Logger {
    * @returns {Boolean}
    */
   isLevelEnabled(tags, category) {
-    return this.loggersObj.isLevelEnabled(this.transformLogArguments(tags, undefined, undefined, category));
+    return this.loggersObj.isLevelEnabled(this.transformArgs(tags, undefined, undefined, category));
   }
 
   /**
@@ -2382,7 +2424,7 @@ class Logger {
    * @returns {Object}
    */
   log(tags, message, context, category) {
-    return this.loggersObj.log(this.transformLogArguments(tags, message, context, category));
+    return this.loggersObj.log(this.transformArgs(tags, message, context, category));
   }
 }
 
