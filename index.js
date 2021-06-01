@@ -458,7 +458,7 @@ class Loggers {
       level: onOffDefaultLevelEnum,
     });
 
-    //  Options provided to the constructor. The defaults in this object assume the following levels exist:
+    // Options provided to the constructor. The defaults in this object assume the following levels exist:
     // error, warn, debug
     const optionsSchema = Joi.object({
       // Process-related meta
@@ -1244,7 +1244,7 @@ ${error}`);
       const transports = [];
       let level;
 
-      // ======
+      // ====
       // File
       level = settings.file || 'off';
       if (level === 'default') {
@@ -1404,6 +1404,7 @@ at level '${level}' for category '${category}'`,
       if (level !== 'off')
         transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
 
+      // ==========
       // Error file
       level = settings.errorFile || 'off';
       if (level === 'default') {
@@ -1507,6 +1508,123 @@ at level '${level}' for category '${category}'`,
    */
   isReady() {
     return !this.props.starting && !this.props.stopped && !this.props.stopping;
+  }
+
+  /**
+   * @private
+   * @ignore
+   * @description Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
+   * @param {*} [tags] See description.
+   * @param {*} [message]
+   * @param {*} [context]
+   * @param {String} [category]
+   * @returns {Object} false or an argument containing new values for tags, message, context, and category
+   */
+  transformArgs(tags, message, context, category) {
+    if (tags instanceof LogArgs) return tags;
+
+    let transformed;
+
+    // First argument is an Error object?
+    if (tags instanceof Error) {
+      transformed = true;
+      if (!message) {
+        message = tags;
+      } else {
+        context = Loggers.context(context, tags);
+      }
+      tags = this.props.logLevel.error;
+    } else if (message instanceof Error) {
+      if (!tags) {
+        tags = this.props.logLevel.error;
+        transformed = true;
+      }
+    }
+    // log() called?
+    else if (
+      tags &&
+      !message &&
+      !context &&
+      !category &&
+      typeof tags === 'object' &&
+      !(tags instanceof Array) &&
+      (tags.tags || tags.message || tags.context || tags.category || (tags.error && typeof tags.error === 'object'))
+    ) {
+      transformed = true;
+      message = tags;
+      let messageCopied;
+      if ('tags' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = message.tags;
+        delete message.tags;
+      } else {
+        tags = undefined;
+      }
+      if ('context' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = message.context;
+        delete message.context;
+      }
+      if ('category' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        if (typeof message.category === 'string') category = message.category;
+        delete message.category;
+      }
+    }
+    // logLevel() called?
+    else if (
+      !context &&
+      !category &&
+      message &&
+      typeof message === 'object' &&
+      !(message instanceof Array) &&
+      (message.tags || message.message || message.context || message.error)
+    ) {
+      transformed = true;
+      let messageCopied;
+      if ('tags' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        tags = Loggers.tags(tags, message.tags);
+        delete message.tags;
+      }
+      if ('context' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        context = message.context;
+        delete message.context;
+      }
+      if ('category' in message) {
+        if (!messageCopied) {
+          message = { ...message };
+          messageCopied = true;
+        }
+        if (typeof message.category === 'string') category = message.category;
+        delete message.category;
+      }
+    }
+
+    if (!transformed) return false;
+
+    return Object.assign(new LogArgs(), {
+      tags,
+      message,
+      context,
+      category,
+    });
   }
 
   /**
@@ -1809,9 +1927,9 @@ at level '${level}' for category '${category}'`,
     const entry = new LogEntry();
     const { level } = info;
 
-    if (message && typeof message === 'object' && !(message instanceof Array) && !(message instanceof Error)) {
-      // message = {message: 'Foo', error: {} }
-      const realMessage = message.message;
+    // Check for message returned by transformArgs as: { message: 'Foo', error: {} }
+    if (message && typeof message === 'object' && !(message instanceof Error) && !(message instanceof Array)) {
+      const { message: realMessage } = message;
       if (realMessage) {
         const copy = { ...message };
         delete copy.message;
@@ -1963,23 +2081,23 @@ at level '${level}' for category '${category}'`,
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [logGroupId]
    */
-  send(info, message, context, errors, depth = 0, logGroupId) {
+  send(info, message, context, errors = [], depth = 0, logGroupId) {
     const { category, logger, level } = info;
-
     const entry = this.logEntry(info, message, context, depth);
 
-    let contextMessages;
+    // =============================================================================================================
+    // Process the provided context. Call send() recursively when there are properties that contain Error instances.
+
+    // If message is an Error, don't log it again
+    if (message instanceof Error && !errors.includes(message)) errors.push(message);
+
+    /**
+     * Objects added to contextMesages are sent to this method
+     */
+    const contextMessages = [];
     let contextCopied;
 
     const addContext = depth < this.options.maxErrorDepth;
-
-    if (message instanceof Error) {
-      if (!errors) {
-        errors = [message];
-      } else if (!errors.includes(message)) {
-        errors.push(message);
-      }
-    }
 
     let { contextData } = entry;
     if (contextData) {
@@ -1991,13 +2109,7 @@ at level '${level}' for category '${category}'`,
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in contextData) {
           const value = contextData[key];
-          if (value instanceof Error) {
-            if (!errors) {
-              errors = [value];
-            } else if (!errors.includes(value)) {
-              errors.push(value);
-            }
-          }
+          if (value instanceof Error && !errors.includes(value)) errors.push(value);
         }
       }
     }
@@ -2014,24 +2126,14 @@ at level '${level}' for category '${category}'`,
           // eslint-disable-next-line no-continue
           if (!(value instanceof Error)) continue;
 
-          let addIt = true;
-
           // Check for circular references
-          if (!errors) {
-            errors = [value];
-          } else if (errors.length < this.options.maxErrors && !errors.includes(value)) {
+          if (errors.length < this.options.maxErrors && !errors.includes(value)) {
             errors.push(value);
-          } else {
-            addIt = false;
+            contextMessages.push(value);
           }
 
-          if (addIt) {
-            if (!contextMessages) contextMessages = [value];
-            else contextMessages.push(value);
-          }
-
+          // Remove the key from the context data. Otherwise the error will reappear in the next call to send()
           if (context && key in context) {
-            // Otherwise it will reappear in the next call to log()
             if (!contextCopied) {
               context = { ...context };
               contextCopied = true;
@@ -2044,23 +2146,29 @@ at level '${level}' for category '${category}'`,
         }
       }
 
-      // The default message is data.error if it exists
+      // ===============================================
+      // If the entry's message is empty, use data.error
       if (!entry.message && scalars[typeof data.error]) entry.message = data.error;
-      // TODO: This is dropping undefined values
+
+      // =================================================================
+      // Convert data to JSON. It removes keys that have undefined values.
       entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
     }
 
+    // ====================================================================
     // Remove falsey values from entry that were set to false by logEntry()
     if (!entry.stack) delete entry.stack;
 
+    // ===================
     // Set logGroupId meta
-    if ((contextData || contextMessages) && !logGroupId) logGroupId = uuidv1();
+    if ((contextData || contextMessages.length) && !logGroupId) logGroupId = uuidv1();
     if (logGroupId) {
       entry.logGroupId = logGroupId;
     } else {
       delete entry.logGroupId;
     }
 
+    // =================
     // Set logDepth meta
     if (depth) {
       entry.logDepth = depth;
@@ -2068,6 +2176,7 @@ at level '${level}' for category '${category}'`,
       delete entry.logDepth;
     }
 
+    // =========================================================
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== logCategories.cloudWatch) {
       // eslint-disable-next-line no-console
@@ -2081,122 +2190,8 @@ ${new Error('Stopping').stack}`);
 
     if (contextData) this.send(info, contextData, undefined, errors, depth + 1, logGroupId);
 
-    if (contextMessages)
-      contextMessages.forEach((contextMessage) => {
-        this.send(info, contextMessage, context, errors, depth + 1, logGroupId);
-      });
-  }
-
-  /**
-   * @private
-   * @ignore
-   * @description Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
-   * @param {*} [tags] See description.
-   * @param {*} [message]
-   * @param {*} [context]
-   * @param {String} [category]
-   * @returns {Object} false or an argument containing new values for tags, message, context, and category
-   */
-  transformArgs(tags, message, context, category) {
-    if (tags instanceof LogArgs) return tags;
-
-    let transformed;
-
-    // First argument is an Error object?
-    if (tags instanceof Error) {
-      transformed = true;
-      if (!message) {
-        message = tags;
-      } else {
-        context = Loggers.context(context, tags);
-      }
-      tags = this.props.logLevel.error;
-    } else if (message instanceof Error) {
-      if (!tags) {
-        tags = this.props.logLevel.error;
-        transformed = true;
-      }
-    } else if (
-      tags &&
-      !message &&
-      !context &&
-      !category &&
-      typeof tags === 'object' &&
-      !(tags instanceof Array) &&
-      (tags.tags || tags.message || tags.context || tags.category || (tags.error && typeof tags.error === 'object'))
-    ) {
-      transformed = true;
-      message = tags;
-      let messageCopied;
-      if ('tags' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        tags = message.tags;
-        delete message.tags;
-      } else {
-        tags = undefined;
-      }
-      if ('context' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        context = message.context;
-        delete message.context;
-      }
-      if ('category' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        if (typeof message.category === 'string') category = message.category;
-        delete message.category;
-      }
-    } else if (
-      !context &&
-      !category &&
-      message &&
-      typeof message === 'object' &&
-      !(message instanceof Array) &&
-      (message.tags || message.message || message.context || message.error)
-    ) {
-      transformed = true;
-      let messageCopied;
-      if ('tags' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        tags = Loggers.tags(tags, message.tags);
-        delete message.tags;
-      }
-      if ('context' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        context = message.context;
-        delete message.context;
-      }
-      if ('category' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        if (typeof message.category === 'string') category = message.category;
-        delete message.category;
-      }
-    }
-
-    if (!transformed) return false;
-
-    return Object.assign(new LogArgs(), {
-      tags,
-      message,
-      context,
-      category,
+    contextMessages.forEach((contextMessage) => {
+      this.send(info, contextMessage, context, errors, depth + 1, logGroupId);
     });
   }
 
@@ -2336,13 +2331,20 @@ class Logger {
    * and category properties.
    */
   transformArgs(tags, message, context, category) {
+    if (tags instanceof LogArgs) return tags;
+
     const args = this.loggersObj.transformArgs(tags, message, context, category);
     if (args) ({ tags, message, context, category } = args);
     if (this.tags) tags = Loggers.tags(this.tags, tags);
     if (this.context) context = Loggers.context(this.context, context);
     if (!category) category = this.category;
-    if (args) return { ...message, tags, context, category };
-    return { tags, message, context, category };
+
+    return Object.assign(new LogArgs(), {
+      tags,
+      message,
+      context,
+      category,
+    });
   }
 
   /**

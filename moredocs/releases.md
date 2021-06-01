@@ -1,5 +1,9 @@
 # Release History
 
+## 1.5.3 2020-06-01
+
+- Bug fix: Logging the same error object twice when there are circular references
+
 ## 1.5.2 2020-05-31
 
 - console: allows an object that accepts data and color so that different categories can have different console transports

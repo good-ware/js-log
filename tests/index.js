@@ -61,8 +61,19 @@ async function go(colors) {
   const logger = loggers.logger();
   const { unitTest } = loggers;
 
+  // =================
+  // Ready for testing
+
+  // Test passing category to logLevel
   {
     logger.info(['extra'], null, null, 'dragon');
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.category === 'dragon') throw new Error();
+    if (!entry.tags.includes('extra')) throw new Error();
+  }
+
+  {
+    logger.info({ tags: ['extra'], category: 'dragon' });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
@@ -75,7 +86,7 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
   }
 
-  // Error + message, call logLevel method on logger
+  // Error + message, call logLevel method on logger. Check console output.
   {
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
@@ -84,7 +95,7 @@ async function go(colors) {
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call logLevel method on child
+  // Error + message, call logLevel method on child. Check console output.
   {
     logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
@@ -93,7 +104,7 @@ async function go(colors) {
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message + tag
+  // Error + message + tag. Check console output.
   {
     logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
@@ -103,7 +114,7 @@ async function go(colors) {
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call log() on logger
+  // Error + message, call log() on logger. Check console output.
   {
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
@@ -112,7 +123,7 @@ async function go(colors) {
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call log() on child
+  // Error + message, call log() on child. Check console output.
   {
     logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
@@ -401,12 +412,27 @@ async function go(colors) {
     err2.cause = err;
     logger.error(err);
     const after = unitTest.entries.length;
-    if (after - before !== 3) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 2].message !== 'Error: error 2') throw new Error();
+    if (after - before !== 2) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 2
+  {
+    const before = unitTest.entries.length;
+    const err = new Error('error 1');
+    const err2 = new Error('error 2');
+    err.error = err2;
+    err2.cause = err;
+    logger.error('hey', err);
+    const after = unitTest.entries.length;
+    if (after - before !== 3) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 3].message.startsWith('hey')) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+  }
+
+  // circular test 3
   {
     const err = new Error('error 1');
     const err2 = new Error('error 2');
@@ -616,7 +642,7 @@ async function go(colors) {
     if (unitTest.entries.length !== 146 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 26) throw new Error(len);
-    if (unitTest.dataCount !== 92 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 91 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
