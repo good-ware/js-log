@@ -1,5 +1,20 @@
 # Release History
 
+## 1.6.0 2020-06-03
+
+### Breaking Changes
+
+- Logger methods tag(), context(), and category(), are no longer 'get' properties and are now methods that accept arguments.
+- Loggers.tags() and Loggers.context() are no longer static methods
+
+### Bug Fixes
+
+#25: These now have the same output:
+- loggers.log(new Error(), 'Foo')
+- loggers.error(new Error(), 'Foo')
+- loggers.child().log(new Error(), 'Foo')
+- loggers.child().error(new Error(), 'Foo')
+
 ## 1.5.3 2020-06-01
 
 - Bug fix: Logging the same error object twice when there are circular references

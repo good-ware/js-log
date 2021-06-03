@@ -22,7 +22,8 @@ Better documentation is coming.
 1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by tags on a per-transport basis.
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
-   3.1. Embedded 'cause' error objects are logged separately, grouping multiple log entries via uuid
+   3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple
+        log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Reliable flushing
 6. Does not interfere with other code that uses Winston
@@ -46,23 +47,35 @@ The Loggers class is a container that manages logger instances that have unique 
 
 Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents assigning different colors to the same level.
 
-Loggers instances can also log messages via the methods log() and default(). Winston's splat formatter is not supported. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
+Log messages via the log(), default(), and methods that are named after logging levels, such as info() (aka `levelName()`). Logging levels and their severities (and console colors) are provided to Loggers' constructor. This package makes no assumptions about logging levels.
 
-Loggers are flushed via the asynchronous stop() method. Because of Winston's limitations, except for CloudWatch Logs, transports are flushed by stopping them. Therefore, when a Loggers instance is stopped, it can not be used to log messages until stop() completes and its start() method is later invoked. The asynchronous flushCloudWatch() method flushes all active CloudWatch Logs transports.
+Winston's splat formatter is not supported. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
 
-The logger() and child() methods return logger instances. Logger instances have methods named after logging levels, such as error(). Logging levels and their severities (and console colors) are provided to Loggers' constructor. This package makes no assumptions about logging levels.
+Loggers are flushed via the asynchronous flush() and stop() methods. Because of Winston's limitations, only CloudWatch Logs transports can be flushed without stopping them. stop() is a heavyweight operation that can be reversed via the asynchronous start() method.
 
-A Loggers instance is not a Winston logger. The logger() and child() methods also do not return Winston loggers. If Winston-specific functionality is needed, the winstonLogger() method returns Winston loggers.
+The logger() and child() methods return Logger instances. Logger and Loggers classes have nearly identical interfaces.
 
-Loggers and logger instances have the methods logger(), child(), winstonLogger(), isLevelEnabled(), log(), and default(). Logger instances also have the methods loggers(), parent(), and level-specific methods.
+If Winston-specific functionality is needed, use the winstonLogger() method.
 
-log(), <levelName>(), child(), and isLevelEnabled() optionally accept a single object with the following optional properties: tags, message, context, and category.
+Loggers and logger instances have the methods loggers(), logger(), child(), parent(), winstonLogger(), isLevelEnabled() (aka levelEnabled), log(), and default(). Logger instances also have the methods loggers(), parent(), and methods.
 
 Methods such as log() and info() that log messages accept four optional parameters: tags, message, context, and category. They are described below.
 
-The Loggers class has static methods Loggers.tags() and Loggers.context() for merging multiple objects into a single object. These are public but are rarely needed externally.
+The Loggers class has methods tags() and context() for merging multiple objects into a single object. These are public but are rarely needed externally.
 
-Finally, logger instances (aka child loggers) have read/write properties: tags, context, and category.
+Logger instances (aka child loggers) have read/write properties: tags, context, and category.
+
+child() and isLevelEnabled() optionally accept a single object with the following optional properties: tags, context, and category.
+
+`levelName()` methods (e.g. info()), optionally accept an array as the first parameter which is used as tags, followed by message, context, and category.
+
+log() and `levelName()` optionally accept:
+
+1. An Error object as the first parameter, followed by message, context, and category. For log(), ['error'] is used as the tags.
+
+Or:
+
+2. A single object with the following optional properties: tags, message, context, and category.
 
 ### Unhandled exceptions and Promise rejections
 
@@ -280,6 +293,8 @@ CONSOLE_DATA
 ```
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
+
+Inside the categories: property, the console propery can contain a string or an object containing the data and colors keys that override the 'console' options settings.
 
 #### file and errorFile
 
