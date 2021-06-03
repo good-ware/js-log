@@ -1,7 +1,5 @@
 # @goodware/log: Winston3-based logging to console, file, and/or AWS CloudWatch Logs
 
-Better documentation is coming.
-
 ## Links
 
 - [npm](https://www.npmjs.com/package/@goodware/log)
@@ -43,39 +41,45 @@ The ability to add additional transports
 
 ## Usage
 
+### Loggers
+
 The Loggers class is a container that manages logger instances that have unique category names. Each logger has its own settings, such as logging levels and transports.
 
 Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents assigning different colors to the same level.
 
-Log messages via the log(), default(), and methods that are named after logging levels, such as info() (aka `levelName()`). Logging levels and their severities (and console colors) are provided to Loggers' constructor. This package makes no assumptions about logging levels.
+### Logging
 
-Winston's splat formatter is not supported. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
+Log messages via the `log()`, `default()`, and methods that are named after logging levels (aka `<level>()`), such as info(). The list of available logging levels and the console color for each level can be provided via options.
+
+Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object (for named parameters). tags() and context() merge two objects into a single object. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
+
+Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
+
+The concept of tags was borrowed from the @hapi project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.
+
+`<level>()` (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+
+The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.
+
+log() and `<level>()` optionally accept an Error object as the first parameter, followed by message, context, and category.
+
+When an Error instance is provided to `log()` and `<level>()`, 'error' is automatically added to the tags; however, 'level' for `<level>()` methods takes precdence. For example, `info(new Error('An error'))` is logged at the info level.
+
+### Logger (flyweight)
+
+The logger() and child() methods create Logger objects that track the following: tags, context, and category. The Loggers and Logger classes have identical public interfaces but Logger is not meant to be instantiated.
 
 Loggers are flushed via the asynchronous flush() and stop() methods. Because of Winston's limitations, only CloudWatch Logs transports can be flushed without stopping them. stop() is a heavyweight operation that can be reversed via the asynchronous start() method.
 
-The logger() and child() methods return Logger instances. Logger and Loggers classes have nearly identical interfaces.
+Neither Loggers nor Logger objects are Winston loggers and are therefore lightweight. Use winstonLogger() to retrieve a Winston logger for unusual use cases that require the Winston logger API.
 
-If Winston-specific functionality is needed, use the winstonLogger() method.
-
-Loggers and logger instances have the methods loggers(), logger(), child(), parent(), winstonLogger(), isLevelEnabled() (aka levelEnabled), log(), and default(). Logger instances also have the methods loggers(), parent(), and methods.
+Loggers and Logger instances have the methods loggers(), logger(), child(), parent(), winstonLogger(), isLevelEnabled() (aka levelEnabled), log(), and default().
 
 Methods such as log() and info() that log messages accept four optional parameters: tags, message, context, and category. They are described below.
-
-The Loggers class has methods tags() and context() for merging multiple objects into a single object. These are public but are rarely needed externally.
 
 Logger instances (aka child loggers) have read/write properties: tags, context, and category.
 
 child() and isLevelEnabled() optionally accept a single object with the following optional properties: tags, context, and category.
-
-`levelName()` methods (e.g. info()), optionally accept an array as the first parameter which is used as tags, followed by message, context, and category.
-
-log() and `levelName()` optionally accept:
-
-1. An Error object as the first parameter, followed by message, context, and category. For log(), ['error'] is used as the tags.
-
-Or:
-
-2. A single object with the following optional properties: tags, message, context, and category.
 
 ### Unhandled exceptions and Promise rejections
 
@@ -89,11 +93,26 @@ When a log entry's level is one of the values specified in the 'logStackLevels' 
 
 ### options
 
-An object provided to the constructor. Options are described by optionsObject.
+An object provided to Loggers' constructor. Options are described by optionsObject.
 
 ### logger
 
-A logger sends log entries to transports.
+A logger sends log entries to transports. Two classes, Loggers and Logger, implement the logger interface that includes:
+
+- log()
+- default()
+- <level>() Where level is a logging level name. Example: info()
+- child()
+- logger(category) Is an alias for child({category})
+- parent()
+- loggers()
+- tags(), for combining tags
+- context(), for combining context objects
+- category() (mostly useful for retrieving the category assigned to Logger objects)
+- flush() (only works with Cloudwatch Logs transports)
+- ready
+- start()
+- stop()
 
 ### category
 
@@ -132,7 +151,7 @@ When a level is not found in the provided tags, the default level, 'debug', is a
 
 ### level methods
 
-Methods that are named after levels, such as error(). The method log(tags, message, context, category) is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context, category).
+Methods that are named after logging levels, such as error(). log(tags, message, context, category) is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context, category).
 
 ### level filtering
 

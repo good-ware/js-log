@@ -64,7 +64,31 @@ async function go(colors) {
   // =================
   // Ready for testing
 
-  // Test (Error, '')
+  // log({message: { error: Error })
+  {
+    logger.log({ message: { error: new Error('err') } });
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({message: Error})
+  {
+    logger.log({ message: new Error('err') });
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({error: Error})
+  {
+    logger.log({ error: new Error('err') });
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error)
+  {
+    logger.log(new Error('err'));
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error, 'message')
   {
     logger.log(new Error('err'), 'message');
     const entry = unitTest.entries[unitTest.console.entries.length - 2];
@@ -120,7 +144,7 @@ async function go(colors) {
   {
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
-    if (entry.level !== 'error') throw new Error();
+    if (!colors && entry.level !== 'error') throw new Error();
     if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
@@ -670,10 +694,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 153 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 159 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 30) throw new Error(len);
-    if (unitTest.dataCount !== 98 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 32) throw new Error(len);
+    if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
