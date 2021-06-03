@@ -677,7 +677,7 @@ async function go(colors) {
 
     setTimeout(() => {
       throw new Error('Unhandled exception');
-    }, .1);
+    }, 0.1);
     await new Promise((resolve) => setTimeout(resolve, 1));
 
     const len2 = Object.keys(unitTest.logGroupIds).length;

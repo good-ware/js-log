@@ -21,7 +21,7 @@
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple
-        log entries via uuid
+   log entries via uuid
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Reliable flushing
 6. Does not interfere with other code that uses Winston

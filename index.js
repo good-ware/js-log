@@ -73,14 +73,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs { }
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -284,8 +284,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -506,7 +507,8 @@ class Loggers {
           .min(1)
           .default(25)
           .description(
-            'Errors reference other errors. This is the maximum number of errors to log when logging one message.'),
+            'Errors reference other errors. This is the maximum number of errors to log when logging one message.'
+          ),
       }).default({}),
 
       message: Joi.object({
@@ -1562,7 +1564,7 @@ at level '${level}' for category '${category}'`,
       !category &&
       tags instanceof Object &&
       !(tags instanceof Array) &&
-      (tags.tags || tags.message || tags.context || tags.category || (tags.error instanceof Object))
+      (tags.tags || tags.message || tags.context || tags.category || tags.error instanceof Object)
     ) {
       message = tags;
       let messageCopied;
@@ -1597,7 +1599,7 @@ at level '${level}' for category '${category}'`,
     else if (
       !context &&
       !category &&
-      (message instanceof Object) &&
+      message instanceof Object &&
       !(message instanceof Array) &&
       (message.tags || message.message || message.context || message.error)
     ) {
@@ -1629,7 +1631,7 @@ at level '${level}' for category '${category}'`,
     }
 
     // info(new Error(), 'Message') is the same as info('Message', new Error())
-    if (typeof context === 'string' && (message instanceof Error)) {
+    if (typeof context === 'string' && message instanceof Error) {
       // swap message, context
       const x = context;
       context = message;
@@ -1644,12 +1646,12 @@ at level '${level}' for category '${category}'`,
       let addError;
 
       if (message instanceof Object) {
-        addError = (message instanceof Error) || (message.error instanceof Error);
+        addError = message instanceof Error || message.error instanceof Error;
         if (!addError) addError = message.message instanceof Error;
-        if (!addError && (message.message instanceof Object)) addError = message.message.error instanceof Error;
+        if (!addError && message.message instanceof Object) addError = message.message.error instanceof Error;
       }
-      if (!addError && (context instanceof Object)) {
-        addError = (context instanceof Error) || (context.error instanceof Error);
+      if (!addError && context instanceof Object) {
+        addError = context instanceof Error || context.error instanceof Error;
       }
       if (addError) tags.error = true;
     }
@@ -1968,7 +1970,7 @@ at level '${level}' for category '${category}'`,
     const { level } = info;
 
     // Check for message returned by transformArgs as: { message: 'Foo', error: {} }
-    if ((message instanceof Object) && !(message instanceof Error) && !(message instanceof Array)) {
+    if (message instanceof Object && !(message instanceof Error) && !(message instanceof Array)) {
       const { message: realMessage } = message;
       if (realMessage) {
         const copy = { ...message };
@@ -2267,11 +2269,11 @@ ${new Error('Stopping').stack}`);
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
