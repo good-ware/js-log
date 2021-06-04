@@ -73,14 +73,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs {}
+class LogArgs { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -107,8 +107,8 @@ class Loggers {
    *  {object} props.cloudWatch Properties:
    *   {string} streamName
    *   {object[]} transports
-   *  {object} props.loggers {string} category -> {Loggers|Logger}
    *  {object} props.categoryTags {string} category -> {{string} tag -> {object}}
+   *  {object} props.hasCategoryTags {string} category -> {boolean}
    *  {object} props.logLevel {string} level name or 'default' -> {logLevel: {string}}
    *  {object} props.levelSeverity {string} level plus 'on', 'off', and 'default'
    *   -> {Number} {object} winstonLevels Passed to Winston when creating a logger
@@ -132,8 +132,8 @@ class Loggers {
    * @constructor
    * @param {object} options
    * @param {object} [levels] An object with properties levels and colors, both of which are objects whose keys are
-   *  level names. This is the same object that is provided when creating Winston loggers. See an example at
-   *  https://www.npmjs.com/package/winston#using-custom-logging-levels
+   * level names. This is the same object that is provided when creating Winston loggers. See an example at
+   * https://www.npmjs.com/package/winston#using-custom-logging-levels
    */
   constructor(options, levels = Loggers.defaultLevels) {
     /**
@@ -204,7 +204,6 @@ class Loggers {
     this.props.created = Loggers.now();
     this.props.hostId = hostId();
 
-    this.props.loggers = {};
     this.props.winstonLoggers = {};
 
     // Process meta keys (begin)
@@ -239,6 +238,7 @@ class Loggers {
 
     // Process category tag switches
     this.props.categoryTags = {};
+    this.props.hasCategoryTags = {};
     if (!this.processCategoryTags('default')) {
       this.props.categoryTags.default = { on: true };
     }
@@ -284,9 +284,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -665,7 +664,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   static levelLog(logger, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (tagsOrMessage instanceof Array) {
-      return logger.log(logger.loggers.tags(levelObj, tagsOrMessage), messageOrContext, contextOrCategory, category);
+      return logger.log(logger.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
     }
     return logger.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
@@ -738,6 +737,8 @@ ${directories.join('\n')}`);
    * @returns {boolean} true only if tag switches are defined for the category
    */
   processCategoryTags(category) {
+    if (category in this.props.hasCategoryTags) return this.props.hasCategoryTags[category];
+
     // this.options looks like:
     // categories: {
     //   foo: {
@@ -746,13 +747,17 @@ ${directories.join('\n')}`);
     //         file: 'on'
     let tags = this.options.categories[category];
     if (tags) ({ tags } = tags);
-    if (!tags) return false;
+
+    if (!tags) {
+      this.props.hasCategoryTags[category] = false;
+      return false;
+    }
+
+    const categoryTags = {};
+    this.props.categoryTags[category] = categoryTags;
 
     // This code is only called once per category so use of Object.entries is fine
     Object.entries(tags).forEach(([tag, tagInfo]) => {
-      let categoryTags = this.props.categoryTags[category];
-      if (!categoryTags) categoryTags = this.props.categoryTags[category] = {};
-
       if (typeof tagInfo === 'string') {
         categoryTags[tag] = { on: tagInfo };
       } else {
@@ -760,6 +765,7 @@ ${directories.join('\n')}`);
       }
     });
 
+    this.props.hasCategoryTags[category] = true;
     return true;
   }
 
@@ -1129,7 +1135,6 @@ ${error}`);
     this.props.winstonLoggers = {};
 
     const errorLogger = this.props.winstonLoggers[logCategories.cloudWatch];
-    this.props.loggers = {};
 
     if (errorLogger && errorLogger.writable) {
       // eslint-disable-next-line no-constant-condition
@@ -1487,18 +1492,11 @@ at level '${level}' for category '${category}'`,
   /**
    * @description Returns a logger associated with a category
    * @param {string} [category]
-   * @returns {Loggers|Logger}
+   * @returns {Logger}
    */
   logger(category) {
-    category = this.category(category);
-    let logger = this.props.loggers[category];
-    if (logger) return logger;
-    // Initialize the category
-    this.processCategoryTags(category);
     // eslint-disable-next-line no-use-before-define
-    logger = new Logger(this, undefined, undefined, category);
-    this.props.loggers[category] = logger;
-    return logger;
+    return new Logger(this, undefined, undefined, category);
   }
 
   /**
@@ -1638,7 +1636,6 @@ at level '${level}' for category '${category}'`,
       message = x;
     }
 
-    category = this.category(category);
     tags = this.tags(tags);
 
     // Add 'error' tag if an error was provided in message or context
@@ -1679,14 +1676,15 @@ at level '${level}' for category '${category}'`,
     }
 
     ({ tags, category } = this.transformArgs(tags, undefined, undefined, category));
-
-    tags = this.tags(tags);
-    let tagNames;
+    category = this.category(category);
+    this.processCategoryTags(category);
 
     /**
      * The level to use when determining whether to log
      */
     let level;
+
+    let tagNames;
 
     {
       // =============================================================
@@ -1722,17 +1720,9 @@ at level '${level}' for category '${category}'`,
 
     if (!level) level = this.options.defaultLevel;
 
-    category = this.category(category);
-
-    // Process the category's settings for tag filtering
-    {
-      const logger = this.props.loggers[category];
-      if (!logger) this.logger(category);
-    }
-
     let logTransports;
 
-    if (tagNames) {
+    if (tagNames.length) {
       // Look for a blocked tag
       // TODO: Defaults should be specified at the category level
       // TODO: Cache results for tags for the category that aren't yet defined in config
@@ -2264,16 +2254,17 @@ ${new Error('Stopping').stack}`);
    */
   log(tags, message, context, category) {
     ({ tags, message, context, category } = this.transformArgs(tags, message, context, category));
+    category = this.category(category);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
       console.error(`[${category}] Stopped. Unable to log:
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2339,7 +2330,6 @@ class Logger {
    * @param {string} [category]
    */
   constructor(logger, tags, context, category) {
-    this.props = {};
     let loggers;
     let parent;
 
@@ -2352,7 +2342,8 @@ class Logger {
     }
 
     ({ tags, context, category } = logger.transformArgs(tags, undefined, context, category));
-    Object.assign(this.props, { loggers, parent, tags, context, category });
+    category = logger.category(category);
+    this.props = { loggers, parent, tags, context, category };
 
     // Dynamic logging-level methods
     this.props.loggers.addLevelMethods(this);
@@ -2371,6 +2362,7 @@ class Logger {
 
     tags = this.tags(tags);
     context = this.context(context);
+
     category = this.category(category);
 
     return Object.assign(new LogArgs(), {
@@ -2412,22 +2404,8 @@ class Logger {
   }
 
   /**
-   * @returns {Promise}
-   */
-  stop() {
-    return this.props.loggers.stop();
-  }
-
-  /**
-   * @returns {Promise}
-   */
-  flush() {
-    return this.props.loggers.flush();
-  }
-
-  /**
    * @param {string} [category]
-   * @returns {Loggers|Logger}
+   * @returns {Logger}
    */
   logger(category) {
     return new Logger(this, undefined, undefined, category);
@@ -2441,6 +2419,20 @@ class Logger {
    */
   child(tags, context, category) {
     return new Logger(this, tags, context, category);
+  }
+
+  /**
+   * @returns {Promise}
+   */
+  stop() {
+    return this.props.loggers.stop();
+  }
+
+  /**
+   * @returns {Promise}
+   */
+  flush() {
+    return this.props.loggers.flush();
   }
 
   /**
@@ -2477,7 +2469,9 @@ class Logger {
    * @returns {string}
    */
   category(category) {
-    if (category) return this.props.loggers.category(category);
+    if (category) {
+      return this.props.loggers.category(category);
+    }
     return this.props.category;
   }
 

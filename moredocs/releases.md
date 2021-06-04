@@ -1,5 +1,9 @@
 # Release History
 
+## 1.6.0 2020-06-04
+
+Bug fixes
+
 ## 1.6.0 2020-06-03
 
 ### Breaking Changes
