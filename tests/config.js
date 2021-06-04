@@ -22,8 +22,8 @@ let config = {
         console: {
           level: 'info',
           data: false,
-        }
-      }
+        },
+      },
     },
   },
 };
