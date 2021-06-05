@@ -16,6 +16,8 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
+const myVersion = require('./package.json').version;
+
 // =============================================================================
 // Developer Notes
 // =============================================================================
@@ -380,11 +382,14 @@ class Loggers {
    * @private
    * @ignore
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
-   *  See https://jsperf.com/testing-for-any-keys-in-js
+   * See https://jsperf.com/testing-for-any-keys-in-js
    * @param {object} object An object to test
    * @returns {boolean} true if object has properties (including inherited)
    */
   static hasKeys(object) {
+    if (!object) return false;
+    // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
+    if (object.constructor !== Object) return true;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
     for (const prop in object) return true;
     return false;
@@ -646,7 +651,12 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.say.ready) {
       const { service, stage, version } = options;
-      this.log(null, `Ready: ${service} v${version} ${stage}`, undefined, logCategories.log);
+      this.log(
+        null,
+        `Ready: ${service} v${version} ${stage} [@goodware/log version v${myVersion}]`,
+        undefined,
+        logCategories.log
+      );
     }
   }
 
@@ -762,6 +772,7 @@ ${directories.join('\n')}`);
     // This code is only called once per category so use of Object.entries is fine
     Object.entries(tags).forEach(([tag, tagInfo]) => {
       if (typeof tagInfo === 'string') {
+        // Level name
         categoryTags[tag] = { on: tagInfo };
       } else {
         categoryTags[tag] = tagInfo;
@@ -1631,8 +1642,11 @@ at level '${level}' for category '${category}'`,
       }
     }
 
+    if (message instanceof Object && !Loggers.hasKeys(message)) message = undefined;
+    if (context instanceof Object && !Loggers.hasKeys(context)) context = undefined;
+
     // info(new Error(), 'Message') is the same as info('Message', new Error())
-    if (typeof context === 'string' && message instanceof Error) {
+    if (scalars[typeof context] && message instanceof Object) {
       // swap message, context
       const x = context;
       context = message;

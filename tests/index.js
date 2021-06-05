@@ -62,6 +62,7 @@ async function go(colors) {
   // =================
   // Ready for testing
 
+  // Pass an object to child(). context is a string.
   // log({message: { error: Error })
   {
     logger.log({ message: { error: new Error('err') } });
