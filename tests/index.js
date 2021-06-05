@@ -64,67 +64,6 @@ async function go(colors) {
 
   // =================
   // Ready for testing
-  {
-    logger.logger('doctor').more(['sql'], 'xyz');
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.message !== 'xyz') throw new Error();
-    if (entry.level !== 'more') throw new Error();
-  }
-
-  // Pass an object to child(). context is a string.
-  // log({message: { error: Error })
-  {
-    logger.log({ message: { error: new Error('err') } });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.level !== 'error') throw new Error();
-  }
-  // log({message: Error})
-  {
-    logger.log({ message: new Error('err') });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.level !== 'error') throw new Error();
-  }
-  // log({error: Error})
-  {
-    logger.log({ error: new Error('err') });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.level !== 'error') throw new Error();
-  }
-  // log(Error)
-  {
-    logger.log(new Error('err'));
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.level !== 'error') throw new Error();
-  }
-  // log(Error, 'message')
-  {
-    logger.log(new Error('err'), 'message');
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (entry.level !== 'error') throw new Error();
-    if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
-  }
-  {
-    logger.info(new Error('err'), 'message');
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (entry.level !== 'info') throw new Error();
-    if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
-  }
-  {
-    logger.child().log(new Error('err'), 'message');
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (entry.level !== 'error') throw new Error();
-    if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
-  }
-  {
-    logger.child().info(new Error('err'), 'message');
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (entry.level !== 'info') throw new Error();
-    if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
-  }
 
   // Pass an object to child(). context is a string.
   // log({message: { error: Error })
@@ -764,7 +703,7 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 162 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 161 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 32) throw new Error(len);
     if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
