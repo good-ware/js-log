@@ -126,6 +126,61 @@ async function go(colors) {
     if (!entry.data.error) throw new Error();
   }
 
+  // Pass an object to child(). context is a string.
+  // log({message: { error: Error })
+  {
+    logger.log({ message: { error: new Error('err') } });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({message: Error})
+  {
+    logger.log({ message: new Error('err') });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({error: Error})
+  {
+    logger.log({ error: new Error('err') });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error)
+  {
+    logger.log(new Error('err'));
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error, 'message')
+  {
+    logger.log(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.info(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'info') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.child().log(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.child().info(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'info') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+
   // Test passing category to logLevel
   {
     logger.info(['extra'], null, null, 'dragon');
