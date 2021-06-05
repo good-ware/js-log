@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RequestLogger.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading">Tutorials</li><li class="nav-item"><a href="tutorial-releases.html">releases</a></li><li class="nav-heading">Classes</li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="GeneratorLogger.html">GeneratorLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="GeneratorLogger.html#.begin">begin</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Loggers.html">Loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#category">category</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#context">context</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#default">default</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flush">flush</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#levelEnabled">levelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#start">start</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#stop">stop</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#tags">tags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="MySqlLogger.html">MySqlLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.emitQuery">emitQuery</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.query">query</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="RequestLogger.html">RequestLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="RequestLogger.html#.request">request</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="TaskLogger.html">TaskLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="TaskLogger.html#.execute">execute</a></span></li>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">RequestLogger.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// eslint-disable-next-line import/no-extraneous-dependencies
+const requestPromise = require('request-promise');
+
+const Defaults = require('./Defaults');
+const TaskLogger = require('./TaskLogger');
+
+/**
+ * @description Logs start and the completion or error of an http operation performed via request-promise
+ * @hideconstructor
+ */
+class RequestLogger {
+  /**
+   * @description Creates two log entries for an HTTP request using the request-promise package: 'begin' and either
+   * 'end' or 'error.' See TaskLogger.execute for more information.
+   *
+   * @param {object} logger
+   * @param {object} options request options
+   * @param {function} [errorHandler]
+   * @returns {Promise} Returns the value returned by requestPromise
+   */
+  static request(logger, options, errorHandler) {
+    let { url } = options;
+    if (options.qs &amp;&amp; Object.keys(options.qs).length) url = `${url}?${JSON.stringify(options.qs)}`;
+
+    // Strip the protocol
+    const summary = `${options.method} ${url.replace(/^[^:]+:\/\//, '').substr(0, Defaults.maxMessageLength)}`;
+
+    const begin = {
+      options,
+      message: `Begin: ${summary}`,
+    };
+
+    // @todo errorMessage should be a function that logs the status code in StatusCodeError
+    return TaskLogger.execute(
+      logger.child('http'),
+      () => requestPromise(options),
+      begin,
+      `End: ${summary}`,
+      summary,
+      errorHandler
+    );
+  }
+}
+
+module.exports = RequestLogger;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Sat Jun 05 2021 12:00:44 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

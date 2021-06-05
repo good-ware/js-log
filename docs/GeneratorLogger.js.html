@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>GeneratorLogger.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading">Tutorials</li><li class="nav-item"><a href="tutorial-releases.html">releases</a></li><li class="nav-heading">Classes</li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="GeneratorLogger.html">GeneratorLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="GeneratorLogger.html#.begin">begin</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Loggers.html">Loggers</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#category">category</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#child">child</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#context">context</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#default">default</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#flush">flush</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#isLevelEnabled">isLevelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#levelEnabled">levelEnabled</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#log">log</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#logger">logger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#start">start</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#stop">stop</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#tags">tags</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Loggers.html#winstonLogger">winstonLogger</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="MySqlLogger.html">MySqlLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.emitQuery">emitQuery</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="MySqlLogger.html#.query">query</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="RequestLogger.html">RequestLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="RequestLogger.html#.request">request</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="TaskLogger.html">TaskLogger</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="TaskLogger.html#.execute">execute</a></span></li>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">GeneratorLogger.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* eslint-disable no-param-reassign */
+const { nanoid } = require('nanoid');
+
+/**
+ * @description Logs the start of a generator and returns an object for logging the progress, end, and error of it
+ * @hideconstructor
+ */
+class GeneratorLogger {
+  /**
+   * @description Similar to TaskLogger.execute() but is intended for generators. It creates one 'begin' log entry with:
+   * 1. tag: 'begin'
+   * 2. message: beginMessage
+   * 3. taskId: a newly created taskId
+   * and it returns an object with logging-related methods
+   * @param {Object} logger
+   * @param {*} beginMessage An initial message to log
+   * @param {*} [endMessage] A message to be logged via end()
+   * @param {*} [errorMessage] A message to be logged via error()
+   * @return {Object} Returns an object with the following properties:
+   *  1. {Object} logger: A child logger of 'logger' with the taskId tag
+   *  2. {String} taskId
+   *  and the following methods:
+   *  1. error({Error} error) Log the provided error with the tag 'error'
+   *  2. end({*} message) Logs endMessage and message with:
+   *     a) tag: 'end'
+   *     b) taskId
+   */
+  static begin(logger, beginMessage, endMessage, errorMessage) {
+    const taskId = nanoid();
+    logger = logger.child(taskId);
+    logger.log('begin', beginMessage);
+
+    return {
+      logger,
+      taskId,
+      end: (message) => logger.log('end', endMessage || beginMessage, message),
+      error: (error) => logger.log('error', errorMessage, { error }),
+    };
+  }
+}
+
+module.exports = GeneratorLogger;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Sat Jun 05 2021 12:00:44 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
