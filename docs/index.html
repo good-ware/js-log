@@ -89,12 +89,12 @@ log entries via uuid</li>
 <p>Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents assigning different colors to the same level.</p>
 <h3>Logging</h3>
 <p>Log messages via the <code>log()</code>, <code>default()</code>, and methods that are named after logging levels (aka <code>&lt;level&gt;()</code>), such as info(). The list of available logging levels and the console color for each level can be provided via options.</p>
-<p>Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object (for named parameters). tags() and context() merge two objects into a single object. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.</p>
+<p>Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.</p>
 <p>Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).</p>
 <p>The concept of tags was borrowed from the @hapi project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.</p>
 <p><code>&lt;level&gt;()</code> (e.g. info()), optionally accept an array of tags as the first parameter. <code>log()</code>'s <code>tag</code> parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.</p>
 <p>The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.</p>
-<p>log() and <code>&lt;level&gt;()</code> optionally accept an Error object as the first parameter, followed by message, context, and category.</p>
+<p>log(), default(), and <code>&lt;level&gt;()</code> optionally accept an Error object as the first parameter, followed by message, context, and category.</p>
 <p>When an Error instance is provided to <code>log()</code> and <code>&lt;level&gt;()</code>, 'error' is automatically added to the tags; however, 'level' for <code>&lt;level&gt;()</code> methods takes precdence. For example, <code>info(new Error('An error'))</code> is logged at the info level.</p>
 <h3>Logger (flyweight)</h3>
 <p>The logger() and child() methods create Logger objects that track the following: tags, context, and category. The Loggers and Logger classes have identical public interfaces but Logger is not meant to be instantiated.</p>
@@ -134,7 +134,7 @@ log entries via uuid</li>
 <h3>log entry</h3>
 <p>An object that is sent to a transport. A log entry consists of meta and data.</p>
 <h3>meta</h3>
-<p>The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logGroupId, logDepth, hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.</p>
+<p>The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logId, logGroupId, logDepth, hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.</p>
 <h3>data</h3>
 <p>The keys remaining in 'both' after meta keys are removed (see 'both' below)</p>
 <h3>level (severity)</h3>
@@ -145,7 +145,7 @@ log entries via uuid</li>
 <li>'fail' is more severe than 'error' and has the color red</li>
 <li>'more' is between 'info' and 'verbose' and has the color cyan</li>
 <li>'db' is between 'verbose' and 'http' and has the color yellow</li>
-<li>Therefore, from highest to lowest severity, the levels are: faile, error, warn, info, more, verbose, db, http, debug, silly.</li>
+<li>Therefore, from highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.</li>
 </ol>
 <p>A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.</p>
 <h3>default level</h3>
@@ -157,7 +157,7 @@ log entries via uuid</li>
 <h3>tag</h3>
 <p>Tags are logged as an array of strings. Tags are specified via a single string, an array of strings, or an object in which each key value is evaluated for truthiness. Tags are combined via the static method tags(a, b) where b's tags override a's tags.</p>
 <h4>tag and level</h4>
-<p>Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest severity. Level methods override this behavior such that the level associated with the method is chosen. The level can be specified via the logLevel meta tag. The level can also be modified via tag configuration.</p>
+<p>Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest severity. Level methods override this behavior such that the level associated with the method is chosen. The level can be specified via the logLevel meta tag. The level can also be modified via tag filtering options (see &quot;tag filtering&quot; below).</p>
 <h3>meta tag</h3>
 <p>Some tags alter logging behavior. A tag's value (tags can be specified as an object) enables and disables the feature, based on their truthiness. Meta tags are not logged. Meta tag names start with 'log' and 'noLog.' Meta tags tags that start with noLog negate their corresponding meta tags. For example,
 {logStack: true} is identical to 'logStack'. {logStack: false} is identical to 'noLogStack.' Meta tag names are:</p>
@@ -166,7 +166,7 @@ log entries via uuid</li>
 <h4>logStack</h4>
 <p>Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when the log entry's level is 'error.'</p>
 <h3>tag filtering</h3>
-<p>Tags can be used for additional filtering on a per-transport basis. Tags that are named after severity levels do not participate in tag filtering. All tags are enabled by default. When a log entry's level is 'warn' or 'error', tags are enabled. This behavior can be overidden by the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.</p>
+<p>Tags can be used for additional filtering. Tags that are named after logging levels do not participate in tag filtering. All tags are enabled by default. When using tag filtering, when the log entry's level is 'warn' or 'error', tags are enabled; however, this behavior can be overidden via the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.</p>
 <p>The following example enables the tag 'sql' for only two categories: one and two. Category 'one' changes the level to 'more' and sends log entries only to the file and console transports. Category 'two' sends log entries to all transports.</p>
 <pre class="prettyprint source lang-js"><code>categories: {
   default: {
@@ -261,7 +261,7 @@ logger.log('error', error);
 <pre class="prettyprint source lang-shell"><code>CONSOLE_COLORS
 </code></pre>
 <p>environment variable such that blank, 0, and 'false' are false and all other values are true.</p>
-<p>When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'context' properties objects, and stack traces. When it is false, a subset of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the</p>
+<p>When 'data' is true, the maximum amount of information is sent to the console, including meta, context, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the</p>
 <pre class="prettyprint source lang-shell"><code>CONSOLE_DATA
 </code></pre>
 <p>environment variable such that blank, 0, and 'false' are false and all other values are true.</p>
@@ -319,7 +319,7 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Fri Jun 04 2021 17:05:18 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Sat Jun 05 2021 11:45:44 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>

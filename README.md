@@ -51,7 +51,7 @@ Any number of Loggers instances can exist at any given time. This is useful if, 
 
 Log messages via the `log()`, `default()`, and methods that are named after logging levels (aka `<level>()`), such as info(). The list of available logging levels and the console color for each level can be provided via options.
 
-Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object (for named parameters). tags() and context() merge two objects into a single object. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
+Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
 
 Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
 
@@ -61,7 +61,7 @@ The concept of tags was borrowed from the @hapi project. Tags are a superset of 
 
 The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.
 
-log() and `<level>()` optionally accept an Error object as the first parameter, followed by message, context, and category.
+log(), default(), and `<level>()` optionally accept an Error object as the first parameter, followed by message, context, and category.
 
 When an Error instance is provided to `log()` and `<level>()`, 'error' is automatically added to the tags; however, 'level' for `<level>()` methods takes precdence. For example, `info(new Error('An error'))` is logged at the info level.
 
@@ -124,7 +124,7 @@ An object that is sent to a transport. A log entry consists of meta and data.
 
 ### meta
 
-The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logGroupId, logDepth, hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.
+The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logId, logGroupId, logDepth, hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.
 
 ### data
 
@@ -141,7 +141,7 @@ By default, Loggers uses Winston's default levels (aka [npm log levels](https://
 1. 'fail' is more severe than 'error' and has the color red
 2. 'more' is between 'info' and 'verbose' and has the color cyan
 3. 'db' is between 'verbose' and 'http' and has the color yellow
-4. Therefore, from highest to lowest severity, the levels are: faile, error, warn, info, more, verbose, db, http, debug, silly.
+4. Therefore, from highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
 
 A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 
@@ -163,7 +163,7 @@ Tags are logged as an array of strings. Tags are specified via a single string, 
 
 #### tag and level
 
-Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest severity. Level methods override this behavior such that the level associated with the method is chosen. The level can be specified via the logLevel meta tag. The level can also be modified via tag configuration.
+Tags are a superset of levels. A log entry's level is, by default, set to the tag with the highest severity. Level methods override this behavior such that the level associated with the method is chosen. The level can be specified via the logLevel meta tag. The level can also be modified via tag filtering options (see "tag filtering" below).
 
 ### meta tag
 
@@ -180,7 +180,7 @@ Whether to add the current stack to meta. When true, populates the 'stack' meta 
 
 ### tag filtering
 
-Tags can be used for additional filtering on a per-transport basis. Tags that are named after severity levels do not participate in tag filtering. All tags are enabled by default. When a log entry's level is 'warn' or 'error', tags are enabled. This behavior can be overidden by the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.
+Tags can be used for additional filtering. Tags that are named after logging levels do not participate in tag filtering. All tags are enabled by default. When using tag filtering, when the log entry's level is 'warn' or 'error', tags are enabled; however, this behavior can be overidden via the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.
 
 The following example enables the tag 'sql' for only two categories: one and two. Category 'one' changes the level to 'more' and sends log entries only to the file and console transports. Category 'two' sends log entries to all transports.
 
@@ -305,7 +305,7 @@ CONSOLE_COLORS
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, overridden 'context' properties objects, and stack traces. When it is false, a subset of meta keys are sent to the console with a log entry's message. To override the value for 'data', set the
+When 'data' is true, the maximum amount of information is sent to the console, including meta, context, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the
 
 ```shell
 CONSOLE_DATA
