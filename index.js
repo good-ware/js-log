@@ -6,9 +6,9 @@ const hostId = require('hostid');
 const mkdirp = require('mkdirp-sync');
 const humanizeDuration = require('humanize-duration');
 const Joi = require('joi');
+const { nanoid } = require('nanoid');
 const prune = require('json-prune');
 const util = require('util');
-const { v1: uuidv1 } = require('uuid');
 const path = require('path');
 // Winston includes
 const winston = require('winston');
@@ -294,12 +294,12 @@ class Loggers {
   /**
    * @description Combines two sets of tags into a single object
    * @param {*} [tags]
-   * @param {*} [moreTags]
-   * @returns {object} An object consisting of tags and moreTags combined, one key per tag name whose truthy value
+   * @param {*} [more]
+   * @returns {object} An object consisting of tags and more combined, one key per tag name whose truthy value
    * indicates the tag is enabled
    */
   // eslint-disable-next-line class-methods-use-this
-  tags(tags, moreTags) {
+  tags(tags, more) {
     let newTags;
 
     if (tags instanceof Object) {
@@ -308,7 +308,7 @@ class Loggers {
         tags.forEach((tag) => {
           if (tag) newTags[tag] = true;
         });
-      } else if (!moreTags) {
+      } else if (!more) {
         return tags;
       } else {
         newTags = { ...tags };
@@ -316,23 +316,23 @@ class Loggers {
     } else if (tags) {
       newTags = {};
       newTags[tags] = true;
-    } else if (!moreTags) return {};
+    } else if (!more) return {};
 
-    if (moreTags instanceof Object) {
-      if (moreTags instanceof Array) {
+    if (more instanceof Object) {
+      if (more instanceof Array) {
         if (!newTags) newTags = {};
-        moreTags.forEach((tag) => {
+        more.forEach((tag) => {
           if (tag) newTags[tag] = true;
         });
       } else if (!newTags) {
-        return moreTags;
+        return more;
       } else {
         if (!newTags) newTags = {};
-        Object.assign(newTags, moreTags);
+        Object.assign(newTags, more);
       }
-    } else if (moreTags) {
+    } else if (more) {
       if (!newTags) newTags = {};
-      newTags[moreTags] = true;
+      newTags[more] = true;
     }
 
     return newTags;
@@ -387,7 +387,6 @@ class Loggers {
    * @returns {boolean} true if object has properties (including inherited)
    */
   static hasKeys(object) {
-    if (!object) return false;
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     if (object.constructor !== Object) return true;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
@@ -675,7 +674,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
   static levelLog(logger, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (tagsOrMessage instanceof Array) {
-      return logger.log(logger.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
+      return logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
     }
     return logger.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
@@ -1996,6 +1995,7 @@ at level '${level}' for category '${category}'`,
       tags: false,
       ...this.props.userMeta,
       category: info.category, // Overwritten by defaultMeta
+      logId: nanoid(),
       logGroupId: false, // Set and removed by send()
       logDepth: 0, // Set and removed by send()
       stage: this.options.stage,
@@ -2210,7 +2210,7 @@ at level '${level}' for category '${category}'`,
 
     // ===================
     // Set logGroupId meta
-    if ((contextData || contextMessages.length) && !logGroupId) logGroupId = uuidv1();
+    if ((contextData || contextMessages.length) && !logGroupId) logGroupId = entry.logId;
     if (logGroupId) {
       entry.logGroupId = logGroupId;
     } else {
@@ -2376,7 +2376,6 @@ class Logger {
     if (tags instanceof LogArgs) return tags;
 
     ({ tags, message, context, category } = this.props.loggers.transformArgs(tags, message, context, category));
-
     tags = this.tags(tags);
     context = this.context(context);
 
@@ -2471,24 +2470,26 @@ class Logger {
   /**
    * @returns {object}
    */
-  tags(tags) {
-    return this.props.loggers.tags(this.props.tags, tags);
+  tags(tags, more) {
+    const { loggers, tags: myTags } = this.props;
+    if (more) tags = loggers.tags(tags, more);
+    return loggers.tags(myTags, tags);
   }
 
   /**
    * @returns {object}
    */
-  context(context) {
-    return this.props.loggers.context(this.props.context, context);
+  context(context, more) {
+    const { loggers, context: myContext } = this.props;
+    if (more) context = loggers.context(context, more);
+    return loggers.context(myContext, context);
   }
 
   /**
    * @returns {string}
    */
   category(category) {
-    if (category) {
-      return this.props.loggers.category(category);
-    }
+    if (category) return this.props.loggers.category(category);
     return this.props.category;
   }
 

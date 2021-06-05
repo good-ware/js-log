@@ -38,7 +38,10 @@ async function go(colors) {
 
   config.logging.categories.barber = { tags: { barber: { console: 'off' } } };
   config.logging.categories.doctor = {
-    tags: { doctor: { allowLevel: 'off', console: 'off', other: 'on' } },
+    tags: {
+      doctor: { allowLevel: 'off', console: 'off', other: 'on' },
+      sql: 'on',
+    },
   };
   config.logging.categories.nurse = { tags: { nurse: { console: 'off' } } };
   config.logging.categories.coordinator = {
@@ -333,6 +336,7 @@ async function go(colors) {
     if (unitTest.entries.length !== entries + 1) throw new Error();
   }
 
+  // =========================================
   // Tag filtering
   for (const i of [1, 2]) {
     const extra = hasCloudWatch && i === 1 ? 1 : 0;
@@ -414,6 +418,12 @@ async function go(colors) {
     }
 
     // Doctor category
+    {
+      logger.logger('doctor').more(['sql'], 'xyz');
+      const entry = unitTest.entries[unitTest.entries.length - 1];
+      if (entry.message !== 'xyz') throw new Error();
+      if (entry.level !== 'more') throw new Error();
+    }
     {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
@@ -693,7 +703,7 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 159 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 161 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
     if (len !== 32) throw new Error(len);
     if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);

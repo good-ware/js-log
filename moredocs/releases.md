@@ -1,5 +1,16 @@
 # Release History
 
+## 1.6.3 2020-06-05
+
+### Bug Fixes
+
+- Fix: For <level>([tags]), <level> was not included in the list of tags
+
+### New Features
+
+- Add logId (meta key) to log entries
+- Use nanoid instead of uuid
+
 ## 1.6.2 2020-06-04
 
 Bug fixes
