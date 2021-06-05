@@ -1,6 +1,6 @@
 # Release History
 
-## 1.6.0 2020-06-04
+## 1.6.2 2020-06-04
 
 Bug fixes
 
