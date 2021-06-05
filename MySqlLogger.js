@@ -10,11 +10,11 @@ class MySqlLogger {
   /**
    * @description Creates two log entries for a Connection.query() execution: 'begin' and either 'end' or 'error.' See
    * TaskLogger.execute for more information. The sql and params arguments are logged.
-   * @param {Object} logger
+   * @param {object} logger
    * @param {Connection} connection mysql2 Connection object
-   * @param {String} sql SQL statement to execute
+   * @param {string} sql SQL statement to execute
    * @param {*} params SQL statement placeholder arguments
-   * @return {Promise} Returns the return value of connection.query(sql, params)
+   * @returns {Promise} Returns the return value of connection.query(sql, params)
    */
   static query(logger, connection, sql, params) {
     const summary = ` ${sql}`.replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
@@ -30,11 +30,11 @@ class MySqlLogger {
   /**
    * @description Creates a 'begin' log entry. The SQL statement and params are logged. Returns the value returned by
    * the older mysql package's (instead of the mysql2 package) connection.query method for stream-based data access.
-   * @param {Object} logger
-   * @param {Object} connection A mysql2 Connection object
-   * @param {String} sql A SQL statement to execute
+   * @param {object} logger
+   * @param {object} connection A mysql2 Connection object
+   * @param {string} sql A SQL statement to execute
    * @param {*} params Placeholder arguments for the sql statement
-   * @return {Object} Returns an object with two properties:
+   * @returns {object} Returns an object with two properties:
    * emitter: The return value of conection.connection.query(). It has on() methods.
    * logger: The return value of GeneratorLogger.begin() with the following additional properties:
    * 1. {String} sql

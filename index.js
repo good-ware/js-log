@@ -16,10 +16,12 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
+const myVersion = require('./package.json').version;
+
 // =============================================================================
 // Developer Notes
 // =============================================================================
-// 1. typeof(null) === 'object'
+// 1. typeof(null) === 'object'. Use instanceof Object instead.
 // =============================================================================
 
 const { format } = winston;
@@ -88,30 +90,30 @@ class LogArgs {}
 class Loggers {
   /**
    * Private Properties
-   *  {Object} options
-   *  {Boolean} props.starting
-   *  {Boolean} props.stopping
-   *  {Boolean} props.stopped
-   *  {String} props.created
-   *  {String} props.hostId
-   *  {String} props.logsDirectory
-   *  {String[]} props.metaKeys
-   *  {Object} props.meta {String} key -> {String} metaKey
-   *  {Function} props.unhandledPromiseListener
-   *  {Function[]} props.stopWaiters
-   *  {String[]} props.levels {String} with 'default'
-   *  {Object} props.logStackLevels
-   *  {Object} props.winstonLoggers {String} category -> Winston logger
-   *  {Object} props.userMeta {String} metaFieldName -> undefined
-   *  {Object} unitTest
-   *  {Object} props.cloudWatch Properties:
-   *   {String} streamName
-   *   {Object[]} transports
-   *  {Object} props.loggers {String} category -> {Loggers|Logger}
-   *  {Object} props.categoryTags {String} category -> {{String} tag -> {Object}}
-   *  {Object} props.logLevel {String} level name or 'default' -> {logLevel: {String}}
-   *  {Object} props.levelSeverity {String} level plus 'on', 'off', and 'default'
-   *   -> {Number} {Object} winstonLevels Passed to Winston when creating a logger
+   *  {object} options
+   *  {boolean} props.starting
+   *  {boolean} props.stopping
+   *  {boolean} props.stopped
+   *  {string} props.created
+   *  {string} props.hostId
+   *  {string} props.logsDirectory
+   *  {string[]} props.metaKeys
+   *  {object} props.meta {string} key -> {string} metaKey
+   *  {function} props.unhandledPromiseListener
+   *  {function[]} props.stopWaiters
+   *  {string[]} props.levels {string} with 'default'
+   *  {object} props.logStackLevels
+   *  {object} props.winstonLoggers {string} category -> Winston logger
+   *  {object} props.userMeta {string} metaFieldName -> undefined
+   *  {object} unitTest
+   *  {object} props.cloudWatch Properties:
+   *   {string} streamName
+   *   {object[]} transports
+   *  {object} props.categoryTags {string} category -> {{string} tag -> {object}}
+   *  {object} props.hasCategoryTags {string} category -> {boolean}
+   *  {object} props.logLevel {string} level name or 'default' -> {logLevel: {string}}
+   *  {object} props.levelSeverity {string} level plus 'on', 'off', and 'default'
+   *   -> {Number} {object} winstonLevels Passed to Winston when creating a logger
    *
    * Notes to Maintainers
    *  1. tags, message, and context provided to public methods should never be modified
@@ -130,10 +132,10 @@ class Loggers {
    */
   /**
    * @constructor
-   * @param {Object} options
-   * @param {Object} [levels] An object with properties levels and colors, both of which are objects whose keys are
-   *  level names. This is the same object that is provided when creating Winston loggers. See an example at
-   *  https://www.npmjs.com/package/winston#using-custom-logging-levels
+   * @param {object} options
+   * @param {object} [levels] An object with properties levels and colors, both of which are objects whose keys are
+   * level names. This is the same object that is provided when creating Winston loggers. See an example at
+   * https://www.npmjs.com/package/winston#using-custom-logging-levels
    */
   constructor(options, levels = Loggers.defaultLevels) {
     /**
@@ -153,7 +155,7 @@ class Loggers {
      * @private
      * @ignore
      * @description Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
-     * @param {String} key 'data' or 'colors'
+     * @param {string} key 'data' or 'colors'
      */
     const envToConsoleKey = (key) => {
       const envKey = `CONSOLE_${key.toUpperCase()}`;
@@ -188,7 +190,7 @@ class Loggers {
     }
 
     /**
-     * @type {Object}
+     * @type {object}
      * @description Maps level names to integers where lower values have higher severity
      */
     this.winstonLevels = levels.levels;
@@ -204,7 +206,6 @@ class Loggers {
     this.props.created = Loggers.now();
     this.props.hostId = hostId();
 
-    this.props.loggers = {};
     this.props.winstonLoggers = {};
 
     // Process meta keys (begin)
@@ -239,6 +240,7 @@ class Loggers {
 
     // Process category tag switches
     this.props.categoryTags = {};
+    this.props.hasCategoryTags = {};
     if (!this.processCategoryTags('default')) {
       this.props.categoryTags.default = { on: true };
     }
@@ -264,7 +266,7 @@ class Loggers {
    * @description Converts a number to a string with leading zeroes
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
-   * @returns {String} num converted to a string with leading zeroes if necessary
+   * @returns {string} num converted to a string with leading zeroes if necessary
    */
   static pad(num, size = 2) {
     let s = num.toString();
@@ -276,7 +278,7 @@ class Loggers {
    * @private
    * @ignore
    * @description Returns local time in ISO8601 format with the local timezone offset
-   * @returns {String}
+   * @returns {string}
    */
   static now() {
     const now = new Date();
@@ -293,47 +295,44 @@ class Loggers {
    * @description Combines two sets of tags into a single object
    * @param {*} [tags]
    * @param {*} [moreTags]
-   * @returns {Object} An object consisting of tags and moreTags combined, one key per tag name whose truthy value
-   *  indicates the tag is enabled, or undefined if tags and moreTags are falsey
+   * @returns {object} An object consisting of tags and moreTags combined, one key per tag name whose truthy value
+   * indicates the tag is enabled
    */
-  static tags(tags, moreTags) {
+  // eslint-disable-next-line class-methods-use-this
+  tags(tags, moreTags) {
     let newTags;
 
-    if (tags) {
-      if (typeof tags === 'object') {
-        if (tags instanceof Array) {
-          newTags = {};
-          tags.forEach((tag) => {
-            if (tag) newTags[tag] = true;
-          });
-        } else if (!moreTags) {
-          return tags;
-        } else {
-          newTags = { ...tags };
-        }
-      } else {
+    if (tags instanceof Object) {
+      if (tags instanceof Array) {
         newTags = {};
-        newTags[tags] = true;
+        tags.forEach((tag) => {
+          if (tag) newTags[tag] = true;
+        });
+      } else if (!moreTags) {
+        return tags;
+      } else {
+        newTags = { ...tags };
       }
-    }
+    } else if (tags) {
+      newTags = {};
+      newTags[tags] = true;
+    } else if (!moreTags) return {};
 
-    if (moreTags) {
-      if (typeof moreTags === 'object') {
-        if (moreTags instanceof Array) {
-          if (!newTags) newTags = {};
-          moreTags.forEach((tag) => {
-            if (tag) newTags[tag] = true;
-          });
-        } else if (!newTags) {
-          return moreTags;
-        } else {
-          if (!newTags) newTags = {};
-          Object.assign(newTags, moreTags);
-        }
+    if (moreTags instanceof Object) {
+      if (moreTags instanceof Array) {
+        if (!newTags) newTags = {};
+        moreTags.forEach((tag) => {
+          if (tag) newTags[tag] = true;
+        });
+      } else if (!newTags) {
+        return moreTags;
       } else {
         if (!newTags) newTags = {};
-        newTags[moreTags] = true;
+        Object.assign(newTags, moreTags);
       }
+    } else if (moreTags) {
+      if (!newTags) newTags = {};
+      newTags[moreTags] = true;
     }
 
     return newTags;
@@ -344,12 +343,11 @@ class Loggers {
    * @ignore
    * @description Converts an context value to an object
    * @param {*} [context]
-   * @returns {Object} If context is falsey, returns context. If context is a string, returns {logMessage: context}. If
-   *  context is an Error, returns {error: context}. If context is an array, returns {logArray: context}.
+   * @returns {object|undefined}
    */
   static contextToObject(context) {
     if (context === undefined || context === null) return undefined;
-    if (typeof context === 'object') {
+    if (context instanceof Object) {
       if (context instanceof Error) return { error: context };
       if (!(context instanceof Array)) return context;
     }
@@ -360,13 +358,14 @@ class Loggers {
    * @description Combines the keys of two context objects and returns a new object
    * @param {*} [context]
    * @param {*} [more]
-   * @returns {Object} false if context and more are falsey. If context is truthy and more is falsey,
+   * @returns {object} context if context and more are falsey. If context is truthy and more is falsey,
    * returns context or context converted to an object. If more is truthy and context is falsey, returns
    * more or more converted to an object. Otherwise, returns a new object with context and more
    * converted to objects and combined such that more's keys overwite context's keys.
    */
-  static context(context, more) {
-    if (!context && !more) return false;
+  // eslint-disable-next-line class-methods-use-this
+  context(context, more) {
+    if (!context && !more) return context;
 
     context = Loggers.contextToObject(context);
     more = Loggers.contextToObject(more);
@@ -383,11 +382,14 @@ class Loggers {
    * @private
    * @ignore
    * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
-   *  See https://jsperf.com/testing-for-any-keys-in-js
-   * @param {Object} object An object to test
-   * @returns {Boolean} true if object has properties (including inherited)
+   * See https://jsperf.com/testing-for-any-keys-in-js
+   * @param {object} object An object to test
+   * @returns {boolean} true if object has properties (including inherited)
    */
   static hasKeys(object) {
+    if (!object) return false;
+    // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
+    if (object.constructor !== Object) return true;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
     for (const prop in object) return true;
     return false;
@@ -407,9 +409,11 @@ class Loggers {
   }
 
   /**
+   * @private
+   * @ignore
    * @description Processes options
-   * @param {Object} options
-   * @returns {Object} options with defaults added
+   * @param {object} options
+   * @returns {object} options with defaults added
    */
   validateOptions(options) {
     if (!options) options = {};
@@ -495,30 +499,36 @@ class Loggers {
         .default({}),
 
       // Errors
-      maxErrors: Joi.number()
-        .integer()
-        .min(1)
-        .default(25)
-        .description('Errors reference other errors. This is the maximum number of errors to log.'),
-      maxErrorDepth: Joi.number()
-        .integer()
-        .min(1)
-        .default(5)
-        .description(
-          `Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.`
-        ),
+      errors: Joi.object({
+        depth: Joi.number()
+          .integer()
+          .min(1)
+          .default(3)
+          .description(
+            'Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.'
+          ),
+        max: Joi.number()
+          .integer()
+          .min(1)
+          .default(25)
+          .description(
+            'Errors reference other errors. This is the maximum number of errors to log when logging one message.'
+          ),
+      }).default({}),
 
-      // Converting objects to strings
-      maxArrayLength: Joi.number()
-        .integer()
-        .min(1)
-        .default(10)
-        .description('The maximum number of elements to process when converting an array to a string'),
-      maxDepth: Joi.number()
-        .integer()
-        .min(1)
-        .default(10)
-        .description('The maximum depth to traverse when converting an object to a string'),
+      message: Joi.object({
+        // Converting objects to strings
+        arrayLength: Joi.number()
+          .integer()
+          .min(1)
+          .default(25)
+          .description('The maximum number of elements to process when converting an array to a string'),
+        depth: Joi.number()
+          .integer()
+          .min(1)
+          .default(10)
+          .description('The maximum depth to traverse when converting an object to a string'),
+      }).default({}),
 
       // Turn console status messages on and off
       say: Joi.object({
@@ -620,13 +630,17 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.stopped = false;
 
-    // Create one logger for uncaught exceptions and unhandled Promise rejections. Winston transports have some magic to
-    // catch uncaught exceptions.
+    // ==========================================================================
+    // Create one logger for uncaught exceptions and unhandled Promise rejections
+
     // process.on('uncaughtException') is dangerous and doesn't work for exceptions thrown in a function called by the
     // event loop -- e.g., setTimeout(() => {throw...})
+    // Use the magic in Winston transports instead to catch uncaught exceptions
     const unhandledLoggers = this.logger(logCategories.unhandled);
-    // Create a Winston logger now to catch uncaught exceptions
     if (unhandledLoggers.isLevelEnabled('error')) {
+      // Create a real Winston logger that has a transport with handleExceptions: true
+      unhandledLoggers.winstonLogger();
+      // Store this function so it can be removed later
       this.props.unhandledPromiseListener = (error) => {
         unhandledLoggers.error('Unhandled Promise rejection', { error });
       };
@@ -637,7 +651,12 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.say.ready) {
       const { service, stage, version } = options;
-      this.log(null, `Ready: ${service} v${version} ${stage}`, undefined, logCategories.log);
+      this.log(
+        null,
+        `Ready: ${service} v${version} ${stage} [@goodware/log version v${myVersion}]`,
+        undefined,
+        logCategories.log
+      );
     }
   }
 
@@ -646,20 +665,19 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @ignore
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
    * @param {Loggers|Logger} logger
-   * @param {Object} levelObj From this.props.logLevel. Has property logLevel.
+   * @param {object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrContext
    * @param {*} contextOrCategory
    * @param {*} category
-   * @returns {Object} Returns 'logger' argument
+   * @returns {object} Returns 'logger' argument
    */
-  static levelLog(obj, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
+  static levelLog(logger, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
-    if (messageOrContext !== undefined && tagsOrMessage instanceof Array) {
-      const tags = Loggers.tags(levelObj, tagsOrMessage);
-      return obj.log(tags, messageOrContext, contextOrCategory, category);
+    if (tagsOrMessage instanceof Array) {
+      return logger.log(logger.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
     }
-    return obj.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory);
+    return logger.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
 
   /**
@@ -695,14 +713,13 @@ ${directories.join('\n')}`);
   }
 
   /**
-   * @private
-   * @ignore
-   * @description Checks whether the provided category value is a string or a falsey value
-   * @param {*} category
-   * @returns {String} Returns the provided category if it is a truthy string; otherwise, returns the default category
+   * @description Checks a category value
+   * @param {string} [category]
+   * @returns {string} Returns the provided category if it is a truthy string; otherwise, returns the default category.
+   * Logs a warning when the value is truthy and its type is not a string.
    * @throws When this.options.unitTest is true, throws an exception if the category is not a string
    */
-  checkCategory(category) {
+  category(category) {
     if (category) {
       const type = typeof category;
       if (type === 'string') return category;
@@ -725,11 +742,16 @@ ${directories.join('\n')}`);
 
   /**
    * @private
+   * @ignore
    * @description Processes tag switches for one category specified in this.options
-   * @param {String} category
-   * @returns {Boolean} true only if tag switches are defined for the category
+   * @param {string} category
+   * @returns {boolean} true only if tag switches are defined for the category
    */
   processCategoryTags(category) {
+    if (category in this.props.hasCategoryTags) return this.props.hasCategoryTags[category];
+
+    // console.error(`*** Processing tags for ${category}`);
+
     // this.options looks like:
     // categories: {
     //   foo: {
@@ -738,20 +760,26 @@ ${directories.join('\n')}`);
     //         file: 'on'
     let tags = this.options.categories[category];
     if (tags) ({ tags } = tags);
-    if (!tags) return false;
+
+    if (!tags) {
+      this.props.hasCategoryTags[category] = false;
+      return false;
+    }
+
+    const categoryTags = {};
+    this.props.categoryTags[category] = categoryTags;
 
     // This code is only called once per category so use of Object.entries is fine
     Object.entries(tags).forEach(([tag, tagInfo]) => {
-      let categoryTags = this.props.categoryTags[category];
-      if (!categoryTags) categoryTags = this.props.categoryTags[category] = {};
-
       if (typeof tagInfo === 'string') {
+        // Level name
         categoryTags[tag] = { on: tagInfo };
       } else {
         categoryTags[tag] = tagInfo;
       }
     });
 
+    this.props.hasCategoryTags[category] = true;
     return true;
   }
 
@@ -759,9 +787,9 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Determines whether a log entry can be sent to a transport
-   * @param {String} transportName
-   * @param {Object} info Log entry
-   * @returns {Object} Either returns logEntry unaltered or a falsey value
+   * @param {string} transportName
+   * @param {object} info Log entry
+   * @returns {object} Either returns logEntry unaltered or a falsey value
    */
   checkTags(transportName, info) {
     if (info.logTransports && !info.logTransports.includes(transportName)) return false;
@@ -773,8 +801,8 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Returns default meta for log entries
-   * @param {String} category
-   * @returns {Object}
+   * @param {string} category
+   * @returns {object}
    */
   static defaultMeta(category) {
     // Do not add more fields here. category is needed by the custom formatter for logging uncaught exceptions.
@@ -788,7 +816,7 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Combines a custom Winston formatter with format.ms()
-   * @returns {Object} A Winston formatter
+   * @returns {object} A Winston formatter
    */
   formatter() {
     return format.combine(winston.format((info) => this.format(info))(), format.ms());
@@ -801,8 +829,8 @@ ${directories.join('\n')}`);
    *  1. Enforces log() is called to support uncaught exception logging
    *  2. Manages this.unitTest object for unit test validation
    *  3. Adds 'ms' to log entries
-   * @param {Object} info The log entry to format
-   * @returns {Object} info or false
+   * @param {object} info The log entry to format
+   * @returns {object} info or false
    */
   format(info) {
     if (info instanceof LogEntry) {
@@ -842,8 +870,8 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Console formatter for 'no data'
-   * @param {Object} info A log entry
-   * @returns {String}
+   * @param {object} info A log entry
+   * @returns {string}
    */
   static printf(info) {
     // info.level is colorized. To get the level, do this:
@@ -855,10 +883,10 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Creates a console transport
-   * @param {String} level
-   * @param {Boolean} handleExceptions
-   * @param {Object} settings
-   * @returns {Object} A new console transport
+   * @param {string} level
+   * @param {boolean} handleExceptions
+   * @param {object} settings
+   * @returns {object} A new console transport
    */
   createConsoleTransport(level, handleExceptions, settings) {
     if (!settings) settings = this.options.console;
@@ -927,7 +955,7 @@ ${directories.join('\n')}`);
    * @private
    * @ignore
    * @description Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
-   * @returns {Object} logger
+   * @returns {object} logger
    */
   createCloudWatchErrorLoggers() {
     const transports = [];
@@ -982,7 +1010,7 @@ ${error}`);
    * @private
    * @ignore
    * @description Handles errors from the CloudWatch transport
-   * @param {Object} error
+   * @param {object} error
    */
   cloudWatchError(error) {
     if (error.code === 'ThrottlingException') return;
@@ -998,7 +1026,7 @@ ${error}`);
    * @private
    * @ignore
    * @description Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
-   * @param {Object} transport
+   * @param {object} transport
    * @param {Number} timeout
    * @returns {Promise}
    */
@@ -1017,6 +1045,8 @@ ${error}`);
   }
 
   /**
+   * @private
+   * @ignore
    * @description Flushes Cloudwatch transports
    * @returns {Promise}
    */
@@ -1054,7 +1084,7 @@ ${error}`);
   }
 
   /**
-   * @description Flushes transports that suppot flushing. Currently only CloudWatch.
+   * @description Flushes transports that support flushing, which is currently only CloudWatch.
    * @returns {Promise}
    */
   flush() {
@@ -1076,12 +1106,11 @@ ${error}`);
       });
       await new Promise((resolve) => setTimeout(resolve, 1));
 
-      // This unhandled Promise rejection is handled after this method finishes
-      // by the default handler
+      // This unhandled Promise rejection is handled after this method finishes by the default handler
       Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
 
-    await this.flushCloudWatchTransports();
+    await this.flush();
 
     // Close
     await Promise.all(
@@ -1107,7 +1136,7 @@ ${error}`);
     if (this.props.cloudWatch) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
-      await this.flushCloudWatchTransports();
+      await this.flush();
       delete this.props.cloudWatch;
 
       if (this.unitTest) {
@@ -1120,7 +1149,6 @@ ${error}`);
     this.props.winstonLoggers = {};
 
     const errorLogger = this.props.winstonLoggers[logCategories.cloudWatch];
-    this.props.loggers = {};
 
     if (errorLogger && errorLogger.writable) {
       // eslint-disable-next-line no-constant-condition
@@ -1214,8 +1242,8 @@ ${error}`);
    * @private
    * @ignore
    * @description Creates a Winston logger for a category
-   * @param {String} category
-   * @returns {Object} Winston logger
+   * @param {string} category
+   * @returns {object} Winston logger
    */
   createWinstonLoggers(category) {
     if (this.props.stopped) throw new Error('Stopped');
@@ -1296,7 +1324,7 @@ ${error}`);
       let awsOptions = { ...this.options.cloudWatch };
       level = settings.cloudWatch || 'off';
 
-      if (typeof level === 'object') {
+      if (level instanceof Object) {
         Object.assign(awsOptions, level);
         level = awsOptions.level || 'off';
       }
@@ -1386,7 +1414,7 @@ at level '${level}' for category '${category}'`,
       const consoleOptions = { ...this.options.console };
       level = settings.console || 'info';
 
-      if (typeof level === 'object') {
+      if (level instanceof Object) {
         Object.assign(consoleOptions, level);
         level = consoleOptions.level || 'off';
       }
@@ -1398,11 +1426,13 @@ at level '${level}' for category '${category}'`,
       }
 
       // Winston wants at least one transport (error file transport is intentionally ignored because it's only error) so
-      // console is always active
+      // console is always active. This has the added benefit of ensuring that the unhandled exception logger has
+      // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
       if (!transports.length && level === 'off') level = 'error';
 
-      if (level !== 'off')
+      if (level !== 'off') {
         transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
+      }
 
       // ==========
       // Error file
@@ -1448,13 +1478,13 @@ at level '${level}' for category '${category}'`,
 
   /**
    * @description Returns a Winston logger associated with a category
-   * @param {String} [category]
-   * @returns {Object} A Winston logger
+   * @param {string} [category]
+   * @returns {object} A Winston logger
    */
   winstonLogger(category) {
     if (this.props.stopped) throw new Error('Stopped');
 
-    category = this.checkCategory(category);
+    category = this.category(category);
     let logger = this.props.winstonLoggers[category];
     if (!logger) logger = this.createWinstonLoggers(category);
 
@@ -1465,36 +1495,29 @@ at level '${level}' for category '${category}'`,
    * @private
    * @ignore
    * @description Accessor for the options provided for a category
-   * @param {String} [category]
-   * @returns {Object} An object or undefined
+   * @param {string} [category]
+   * @returns {object} An object or undefined
    */
   categoryOptions(category) {
-    category = this.checkCategory(category);
+    category = this.category(category);
     return this.options.categories[category];
   }
 
   /**
    * @description Returns a logger associated with a category
-   * @param {String} [category]
-   * @returns {Loggers|Logger}
+   * @param {string} [category]
+   * @returns {Logger}
    */
   logger(category) {
-    category = this.checkCategory(category);
-    let logger = this.props.loggers[category];
-    if (logger) return logger;
-    // Initialize the category
-    this.processCategoryTags(category);
     // eslint-disable-next-line no-use-before-define
-    logger = new Logger(this, undefined, undefined, category);
-    this.props.loggers[category] = logger;
-    return logger;
+    return new Logger(this, undefined, undefined, category);
   }
 
   /**
    * @description Creates a child logger
    * @param {*} [tags]
    * @param {*} [context]
-   * @param {String} [category]
+   * @param {string} [category]
    * @returns {Logger}
    */
   child(tags, context, category) {
@@ -1503,10 +1526,24 @@ at level '${level}' for category '${category}'`,
   }
 
   /**
-   * @description Indicates whether this object and its child loggers are ready to log messages
-   * @returns {Boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
+   * @returns {Loggers}
    */
-  isReady() {
+  get loggers() {
+    return this;
+  }
+
+  /**
+   * @returns {Loggers}
+   */
+  get parent() {
+    return this;
+  }
+
+  /**
+   * @description Indicates whether this object and its child loggers are ready to log messages
+   * @returns {boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
+   */
+  get ready() {
     return !this.props.starting && !this.props.stopped && !this.props.stopping;
   }
 
@@ -1517,40 +1554,30 @@ at level '${level}' for category '${category}'`,
    * @param {*} [tags] See description.
    * @param {*} [message]
    * @param {*} [context]
-   * @param {String} [category]
-   * @returns {Object} false or an argument containing new values for tags, message, context, and category
+   * @param {string} [category]
+   * @returns {object} false or an argument containing new values for tags, message, context, and category
    */
   transformArgs(tags, message, context, category) {
     if (tags instanceof LogArgs) return tags;
 
-    let transformed;
-
     // First argument is an Error object?
     if (tags instanceof Error) {
-      transformed = true;
       if (!message) {
         message = tags;
       } else {
-        context = Loggers.context(context, tags);
+        context = this.context(context, tags);
       }
-      tags = this.props.logLevel.error;
-    } else if (message instanceof Error) {
-      if (!tags) {
-        tags = this.props.logLevel.error;
-        transformed = true;
-      }
+      tags = undefined;
     }
     // log() called?
     else if (
-      tags &&
       !message &&
       !context &&
       !category &&
-      typeof tags === 'object' &&
+      tags instanceof Object &&
       !(tags instanceof Array) &&
-      (tags.tags || tags.message || tags.context || tags.category || (tags.error && typeof tags.error === 'object'))
+      (tags.tags || tags.message || tags.context || tags.category || tags.error instanceof Object)
     ) {
-      transformed = true;
       message = tags;
       let messageCopied;
       if ('tags' in message) {
@@ -1584,19 +1611,17 @@ at level '${level}' for category '${category}'`,
     else if (
       !context &&
       !category &&
-      message &&
-      typeof message === 'object' &&
+      message instanceof Object &&
       !(message instanceof Array) &&
       (message.tags || message.message || message.context || message.error)
     ) {
-      transformed = true;
       let messageCopied;
       if ('tags' in message) {
         if (!messageCopied) {
           message = { ...message };
           messageCopied = true;
         }
-        tags = Loggers.tags(tags, message.tags);
+        tags = this.tags(tags, message.tags);
         delete message.tags;
       }
       if ('context' in message) {
@@ -1617,7 +1642,33 @@ at level '${level}' for category '${category}'`,
       }
     }
 
-    if (!transformed) return false;
+    if (message instanceof Object && !Loggers.hasKeys(message)) message = undefined;
+    if (context instanceof Object && !Loggers.hasKeys(context)) context = undefined;
+
+    // info(new Error(), 'Message') is the same as info('Message', new Error())
+    if (scalars[typeof context] && message instanceof Object) {
+      // swap message, context
+      const x = context;
+      context = message;
+      message = x;
+    }
+
+    tags = this.tags(tags);
+
+    // Add 'error' tag if an error was provided in message or context
+    if (!tags.error) {
+      let addError;
+
+      if (message instanceof Object) {
+        addError = message instanceof Error || message.error instanceof Error;
+        if (!addError) addError = message.message instanceof Error;
+        if (!addError && message.message instanceof Object) addError = message.message.error instanceof Error;
+      }
+      if (!addError && context instanceof Object) {
+        addError = context instanceof Error || context.error instanceof Error;
+      }
+      if (addError) tags.error = true;
+    }
 
     return Object.assign(new LogArgs(), {
       tags,
@@ -1630,10 +1681,9 @@ at level '${level}' for category '${category}'`,
   /**
    * @description Determines whether a log entry will be sent to a logger
    * @param {*} [tags]
-   * @param {String} [category]
-   * @returns {Object} If the message will be logged, returns an object with keys
-   *     tags, logger, level, transports, and
-   *  category. Otherwise, returns false.
+   * @param {string} [category]
+   * @returns {object} If the message will be logged, returns an object with properties tags, logger, level, transports,
+   * and category. Otherwise, returns false.
    */
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
@@ -1642,18 +1692,18 @@ at level '${level}' for category '${category}'`,
       return false;
     }
 
-    const args = this.transformArgs(tags, undefined, undefined, category);
-    if (args) ({ tags, category } = args);
-
-    tags = Loggers.tags(tags);
-    let tagNames;
+    ({ tags, category } = this.transformArgs(tags, undefined, undefined, category));
+    category = this.category(category);
+    this.processCategoryTags(category);
 
     /**
      * The level to use when determining whether to log
      */
     let level;
 
-    if (tags) {
+    let tagNames;
+
+    {
       // =============================================================
       // logLevel meta tag is used when methods like info() are called
       const value = tags.logLevel;
@@ -1669,7 +1719,7 @@ at level '${level}' for category '${category}'`,
       tagNames = Object.keys(tags);
 
       if (!level) {
-        // =====================================================================
+        // ====================================================================================
         // Populate level such that, for example, 'error' overrides 'debug' if both are present
         let levelNum = 100000;
 
@@ -1687,17 +1737,9 @@ at level '${level}' for category '${category}'`,
 
     if (!level) level = this.options.defaultLevel;
 
-    category = this.checkCategory(category);
-
-    // Process the category's settings for tag filtering
-    {
-      const logger = this.props.loggers[category];
-      if (!logger) this.logger(category);
-    }
-
     let logTransports;
 
-    if (tagNames) {
+    if (tagNames.length) {
       // Look for a blocked tag
       // TODO: Defaults should be specified at the category level
       // TODO: Cache results for tags for the category that aren't yet defined in config
@@ -1842,15 +1884,22 @@ at level '${level}' for category '${category}'`,
   }
 
   /**
+   * @description Alias for isLevelEnabled
+   */
+  levelEnabled(...args) {
+    return this.levelEnabled(...args);
+  }
+
+  /**
    * @private
    * @ignore
    * @description Converts an object to a string
    * @param {*} value It must be truthy
-   * @returns {String} or a falsy value
+   * @returns {string} or a falsey value
    */
   objectToString(value) {
     if (value instanceof Array) {
-      value = JSON.parse(prune(value, this.options.maxDepth, this.options.maxArrayLength));
+      value = JSON.parse(prune(value, this.options.message.depth, this.options.message.arrayLength));
       return util.inspect(value);
     }
 
@@ -1875,11 +1924,11 @@ at level '${level}' for category '${category}'`,
    * @description Does nothing if the provided key is redacted. Helper function to combine 'message' and 'context'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.contextData and then sets
    * state.currentData[key] to value.
-   * @param {String} level
-   * @param {Object} tags
-   * @param {String} state An object with keys data, contextData, and currentData
-   * @param {Object} state An object with keys data, contextData, and currentData
-   * @param {String} key
+   * @param {string} level
+   * @param {object} tags
+   * @param {string} state An object with keys data, contextData, and currentData
+   * @param {object} state An object with keys data, contextData, and currentData
+   * @param {string} key
    * @param {*} value Value to store in the property named 'key'
    */
   copyData(level, tags, state, key, value) {
@@ -1914,26 +1963,26 @@ at level '${level}' for category '${category}'`,
    * @private
    * @ignore
    * @description Creates a log entry
-   * @param {Object} info A value returned by isLevelEnabled()
+   * @param {object} info A value returned by isLevelEnabled()
    * @param {*} message
    * @param {*} context
    * @param {Number} depth When falsey, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
    * 1. When the level is in this.props.logStackLevels, the stack is added when falsey
    * 2. The logStack and noLogStack meta tags are applied when falsey
-   * @returns {Object} A log entry
+   * @returns {object} A log entry
    */
   logEntry(info, message, context, depth) {
     const entry = new LogEntry();
     const { level } = info;
 
     // Check for message returned by transformArgs as: { message: 'Foo', error: {} }
-    if (message && typeof message === 'object' && !(message instanceof Error) && !(message instanceof Array)) {
+    if (message instanceof Object && !(message instanceof Error) && !(message instanceof Array)) {
       const { message: realMessage } = message;
       if (realMessage) {
         const copy = { ...message };
         delete copy.message;
-        context = Loggers.context(context, copy);
+        context = this.context(context, copy);
         message = realMessage;
       }
     }
@@ -2074,12 +2123,12 @@ at level '${level}' for category '${category}'`,
    * @private
    * @ignore
    * @description Sends log entries to a Winston logger
-   * @param {Object} info A value returned by isLevelEnabled()
+   * @param {object} info A value returned by isLevelEnabled()
    * @param {*} [message]
    * @param {*} [context]
    * @param {Error[]} [errors] Errors already logged, to avoid recursion
    * @param {Number} [depth] Recursion depth (defaults to 0)
-   * @param {String} [logGroupId]
+   * @param {string} [logGroupId]
    */
   send(info, message, context, errors = [], depth = 0, logGroupId) {
     const { category, logger, level } = info;
@@ -2097,7 +2146,7 @@ at level '${level}' for category '${category}'`,
     const contextMessages = [];
     let contextCopied;
 
-    const addContext = depth < this.options.maxErrorDepth;
+    const addContext = depth < this.options.errors.depth;
 
     let { contextData } = entry;
     if (contextData) {
@@ -2127,7 +2176,7 @@ at level '${level}' for category '${category}'`,
           if (!(value instanceof Error)) continue;
 
           // Check for circular references
-          if (errors.length < this.options.maxErrors && !errors.includes(value)) {
+          if (errors.length < this.options.errors.max && !errors.includes(value)) {
             errors.push(value);
             contextMessages.push(value);
           }
@@ -2152,7 +2201,7 @@ at level '${level}' for category '${category}'`,
 
       // =================================================================
       // Convert data to JSON. It removes keys that have undefined values.
-      entry.data = JSON.parse(prune(data, this.options.maxDepth, this.options.maxArrayLength));
+      entry.data = JSON.parse(prune(data, this.options.message.depth, this.options.message.arrayLength));
     }
 
     // ====================================================================
@@ -2204,27 +2253,25 @@ ${new Error('Stopping').stack}`);
   }
 
   /**
-   * @description Sends a log entry.
-   * If tags is an Error object, error is used for tags and message is set as follows:
-   *   1. If message is falsey, message = tags
-   *   2. Otherwise, context = Loggers.context(context, {error: tags})
-   * If tags is an object and has truthy values for tags, level, message, or context, the keys in tags are used as
-   * follows if they are truthy:
-   *   1. tags = Loggers.tags(tags.level, tags.tags)
+   * @description Sends a log entry to transports.
+   *
+   * If tags is an Error object, ['error'] is used as the tags and the error is logged with message and context.
+   *
+   * If tags is an object with tags, message, context, and/or category properties, those properties are used as follows:
+   *
+   *   1. tags = this.tags(tags.logLevel, tags.tags)
    *   2. message = tags.message
    *   3. context = tags.context
    *   4. category = tags.category
    * @param {*} [tags] See description
    * @param {*} [message]
    * @param {*} [context]
-   * @param {String} [category]
-   * @returns {Object} this
+   * @param {string} [category]
+   * @returns {object} this
    */
   log(tags, message, context, category) {
-    const args = this.transformArgs(tags, message, context, category);
-    if (args) {
-      ({ tags, message, context, category } = args);
-    }
+    ({ tags, message, context, category } = this.transformArgs(tags, message, context, category));
+    category = this.category(category);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
@@ -2280,21 +2327,15 @@ Loggers.defaultLevels = {
 };
 
 /**
- * @description This class manages a (tags, context, category) tuple. Its methods accept tags, context, and category,
- *  which, if provided, are combined with the object's corresponding properties. For example, if the object is created
- *  with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has level-specific logging
- *  methods such as error().
- *
- * Public Properties:
- *  {Object} tags
- *  {Object} context
- *  {String} category
+ * @description This class manages a (tags, context) tuple. Many of its methods also accept tags and context parameters,
+ * which, if provided, are combined with the object's corresponding properties. For example, if the object is created
+ * with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has almoast the same interface
+ * such as error().
  */
 class Logger {
   /**
    * Private Properties
-   *  {Object} loggersObj
-   *  {Object} parentObj
+   *  {object} props Has keys: tags, context, category, loggers, parent
    */
   /**
    * @private
@@ -2303,25 +2344,26 @@ class Logger {
    * @param {Loggers|Logger} logger
    * @param {*} [tags]
    * @param {*} [context]
-   * @param {String} [category]
+   * @param {string} [category]
    */
   constructor(logger, tags, context, category) {
+    let loggers;
+    let parent;
+
     if (logger instanceof Logger) {
-      this.loggersObj = logger.loggersObj;
-      this.parentObj = logger;
+      ({ loggers } = logger.props);
+      parent = logger;
     } else {
       if (!(logger instanceof Loggers)) throw new Error('logger must be an instance of Loggers or Logger');
-      this.loggersObj = this.parentObj = logger;
+      loggers = parent = logger;
     }
 
-    const results = logger.transformArgs(tags, undefined, context, category);
-    if (results) ({ tags, context, category } = results);
-
-    category = this.loggersObj.checkCategory(category);
-    Object.assign(this, { tags, context, category });
+    ({ tags, context, category } = logger.transformArgs(tags, undefined, context, category));
+    category = logger.category(category);
+    this.props = { loggers, parent, tags, context, category };
 
     // Dynamic logging-level methods
-    this.loggersObj.addLevelMethods(this);
+    this.props.loggers.addLevelMethods(this);
   }
 
   /**
@@ -2333,11 +2375,12 @@ class Logger {
   transformArgs(tags, message, context, category) {
     if (tags instanceof LogArgs) return tags;
 
-    const args = this.loggersObj.transformArgs(tags, message, context, category);
-    if (args) ({ tags, message, context, category } = args);
-    if (this.tags) tags = Loggers.tags(this.tags, tags);
-    if (this.context) context = Loggers.context(this.context, context);
-    if (!category) category = this.category;
+    ({ tags, message, context, category } = this.props.loggers.transformArgs(tags, message, context, category));
+
+    tags = this.tags(tags);
+    context = this.context(context);
+
+    category = this.category(category);
 
     return Object.assign(new LogArgs(), {
       tags,
@@ -2349,51 +2392,37 @@ class Logger {
 
   /**
    * @description Returns a Winston logger associated with a category
-   * @param {String} [category]
-   * @returns {Object} A Winston logger
+   * @param {string} [category]
+   * @returns {object} A Winston logger
    */
   winstonLogger(category) {
-    return this.loggersObj.winstonLogger(category || this.category);
+    return this.props.loggers.winstonLogger(this.category(category));
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  get ready() {
+    return this.ready;
   }
 
   /**
    * @returns {Loggers}
    */
-  loggers() {
-    return this.loggersObj;
+  get loggers() {
+    return this.props.loggers;
   }
 
   /**
    * @returns {Loggers|Logger}
    */
-  parent() {
-    return this.parentObj;
+  get parent() {
+    return this.props.parent;
   }
 
   /**
-   * @returns {Promise}
-   */
-  stop() {
-    return this.loggersObj.stop();
-  }
-
-  /**
-   * @returns {Promise}
-   */
-  flushCloudWatchTransports() {
-    return this.loggersObj.flushCloudWatchTransports();
-  }
-
-  /**
-   * @returns {Promise}
-   */
-  flush() {
-    return this.loggersObj.flush();
-  }
-
-  /**
-   * @param {String} [category]
-   * @returns {Loggers|Logger}
+   * @param {string} [category]
+   * @returns {Logger}
    */
   logger(category) {
     return new Logger(this, undefined, undefined, category);
@@ -2402,7 +2431,7 @@ class Logger {
   /**
    * @param {*} [tags]
    * @param {*} [context]
-   * @param {String} [category]
+   * @param {string} [category]
    * @returns {Logger}
    */
   child(tags, context, category) {
@@ -2410,23 +2439,68 @@ class Logger {
   }
 
   /**
+   * @returns {Promise}
+   */
+  stop() {
+    return this.props.loggers.stop();
+  }
+
+  /**
+   * @returns {Promise}
+   */
+  flush() {
+    return this.props.loggers.flush();
+  }
+
+  /**
    * @param {*} [tags]
-   * @param {String} [category]
-   * @returns {Boolean}
+   * @param {string} [category]
+   * @returns {boolean}
    */
   isLevelEnabled(tags, category) {
-    return this.loggersObj.isLevelEnabled(this.transformArgs(tags, undefined, undefined, category));
+    return this.props.loggers.isLevelEnabled(this.transformArgs(tags, undefined, undefined, category));
+  }
+
+  /**
+   * @description Alias for isLevelEnabled
+   */
+  levelEnabled(...args) {
+    return this.isLevelEnabled(...args);
+  }
+
+  /**
+   * @returns {object}
+   */
+  tags(tags) {
+    return this.props.loggers.tags(this.props.tags, tags);
+  }
+
+  /**
+   * @returns {object}
+   */
+  context(context) {
+    return this.props.loggers.context(this.props.context, context);
+  }
+
+  /**
+   * @returns {string}
+   */
+  category(category) {
+    if (category) {
+      return this.props.loggers.category(category);
+    }
+    return this.props.category;
   }
 
   /**
    * @param {*} [tags]
    * @param {*} [message]
    * @param {*} [context]
-   * @param {String} [category]
-   * @returns {Object}
+   * @param {string} [category]
+   * @returns {object}
    */
   log(tags, message, context, category) {
-    return this.loggersObj.log(this.transformArgs(tags, message, context, category));
+    return this.props.loggers.log(this.transformArgs(tags, message, context, category));
   }
 }
 

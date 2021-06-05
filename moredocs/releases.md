@@ -1,12 +1,53 @@
 # Release History
 
+## 1.6.2 2020-06-04
+
+Bug fixes
+
+## 1.6.0 2020-06-03
+
+### Breaking Changes
+
+- Loggers.tags() and Loggers.context() changed from static to regular methods
+- isReady() changed from method to 'ready' 'get' property
+- Logger methods tag(), context(), and category() changed from regular properties to methods
+
+### Other API Changes
+
+- Add Loggers.category() for consistency
+- levelEnabled is an alias for isLevelEnabled
+
+### Bug Fixes
+
+#25, #26: These have the same output:
+
+- loggers.log(new Error())
+- loggers.error(new Error())
+- loggers.child().log(new Error())
+- loggers.child().error(new Error())
+- loggers.log({error: new Error()})
+- loggers.child().error({message: new Error()})
+
+#25, #26: These have the same output:
+
+- loggers.log(new Error(), 'Foo')
+- loggers.error(new Error(), 'Foo')
+- loggers.child().log(new Error(), 'Foo')
+- loggers.child().error(new Error(), 'Foo')
+
 ## 1.5.3 2020-06-01
 
-- Bug fix: Logging the same error object twice when there are circular references
+### API Changes
+
+- Use flush() instead of flushCloudWatchTransports()
+
+### Bug Fixes
+
+- Logging the same error object twice when there are circular references
 
 ## 1.5.2 2020-05-31
 
-- console: allows an object that accepts data and color so that different categories can have different console transports
+- console: in options allows an object that accepts data and color so that different categories can have different console transports
 - Rename maxAge in file config to maxFiles to align with the DailyRotateFile transport
 
 ## 1.5.0 2020-05-28

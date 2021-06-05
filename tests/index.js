@@ -48,8 +48,6 @@ async function go(colors) {
   // Configuration for tags that affect logging levels - end
   // =========================================================
 
-  config.logging.console.data = true;
-
   // =============================
   // Create the 'loggers' instance
   loggers = new Loggers(config.logging);
@@ -64,17 +62,72 @@ async function go(colors) {
   // =================
   // Ready for testing
 
+  // Pass an object to child(). context is a string.
+  // log({message: { error: Error })
+  {
+    logger.log({ message: { error: new Error('err') } });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({message: Error})
+  {
+    logger.log({ message: new Error('err') });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log({error: Error})
+  {
+    logger.log({ error: new Error('err') });
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error)
+  {
+    logger.log(new Error('err'));
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+  // log(Error, 'message')
+  {
+    logger.log(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.info(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'info') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.child().log(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+  {
+    logger.child().info(new Error('err'), 'message');
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'info') throw new Error();
+    if (!entry.message === 'message') throw new Error();
+    if (!entry.data.error) throw new Error();
+  }
+
   // Test passing category to logLevel
   {
     logger.info(['extra'], null, null, 'dragon');
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
 
   {
     logger.info({ tags: ['extra'], category: 'dragon' });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
@@ -86,47 +139,48 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
   }
 
-  // Error + message, call logLevel method on logger. Check console output.
+  // Error + message, call logLevel method on logger
   {
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
     if (!entry.data.error) throw new Error();
-    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call logLevel method on child. Check console output.
+  // Error + message, call logLevel method on child
   {
     logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message + tag. Check console output.
+  // Error + message + tag
   {
     logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.tags.includes('info')) throw new Error();
     if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call log() on logger. Check console output.
+  // Error + message, call log() on logger
   {
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
-  // Error + message, call log() on child. Check console output.
+  // Error + message, call log() on child
   {
     logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
@@ -180,7 +234,7 @@ async function go(colors) {
 
   // This is logged as debug
   {
-    loggers.child('error').log(Loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
+    loggers.child('error').log(loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'debug') throw new Error();
   }
@@ -202,11 +256,11 @@ async function go(colors) {
     if (entry.message !== 'Error: 5') throw new Error();
   }
 
-  const tags = Loggers.tags('message');
+  const tags = loggers.tags('message');
   if (!tags.message) throw new Error();
 
   // Test disabling a tag
-  if (!loggers.isLevelEnabled(Loggers.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
+  if (!loggers.isLevelEnabled(loggers.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
 
   // Test isLevelEnabled
   if (!loggers.isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
@@ -221,7 +275,7 @@ async function go(colors) {
   });
 
   // Test 'ready'
-  if (!loggers.isReady()) throw new Error('ready failed');
+  if (!loggers.ready) throw new Error('ready failed');
 
   // Test two level names in tags
   {
@@ -622,7 +676,7 @@ async function go(colors) {
 
     setTimeout(() => {
       throw new Error('Unhandled exception');
-    });
+    }, 0.1);
     await new Promise((resolve) => setTimeout(resolve, 1));
 
     const len2 = Object.keys(unitTest.logGroupIds).length;
@@ -631,18 +685,18 @@ async function go(colors) {
 
   // ===============
   // Stop the logger
-  await new Promise((resolve) => setTimeout(() => loggers.stop().then(resolve), 100));
-
-  if (loggers.isReady()) throw new Error('ready failed');
+  if (!loggers.ready) throw new Error('ready failed');
+  await loggers.stop();
+  if (loggers.ready) throw new Error('ready failed');
 
   logger.info(`I've stopped and I can't get up`);
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 146 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 159 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.logGroupIds).length;
-    if (len !== 26) throw new Error(len);
-    if (unitTest.dataCount !== 91 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 32) throw new Error(len);
+    if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

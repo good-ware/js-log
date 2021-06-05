@@ -17,6 +17,14 @@ let config = {
       // region: 'us-west-2', // set AWS_DEFAULT_REGION environment variable
       logGroup: `/${env}/goodware/log`,
     },
+    categories: {
+      briefConsole: {
+        console: {
+          level: 'info',
+          data: false,
+        },
+      },
+    },
   },
 };
 
