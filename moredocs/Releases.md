@@ -1,6 +1,12 @@
 # Release History
 
-## 1.6.3 2020-06-05
+## 3.0.0 2020-06-05
+
+### Breaking Changes
+
+- Use peerDependencies instead of dependencies (see README)
+
+## 2.0.4 2020-06-05
 
 ### Bug Fixes
 
@@ -11,11 +17,11 @@
 - Add logId (meta key) to log entries
 - Use nanoid instead of uuid
 
-## 1.6.2 2020-06-04
+## 2.0.2 2020-06-04
 
 Bug fixes
 
-## 1.6.0 2020-06-03
+## 2.0.0 2020-06-03
 
 ### Breaking Changes
 
