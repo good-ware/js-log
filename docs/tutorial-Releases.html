@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>GeneratorLogger.js - Documentation</title>
+    <title>Releases - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -29,64 +29,85 @@
 
 <div id="main">
     
-    <h1 class="page-title">GeneratorLogger.js</h1>
+    <h1 class="page-title">Releases</h1>
     
 
-    
-
-
-
-    
     <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/* eslint-disable no-param-reassign */
-const { nanoid } = require('nanoid');
 
-/**
- * @description Logs the start of a generator and returns an object for logging the progress, end, and error of it
- * @hideconstructor
- */
-class GeneratorLogger {
-  /**
-   * @description Similar to TaskLogger.execute() but is intended for generators. It creates one 'begin' log entry with:
-   * 1. tag: 'begin'
-   * 2. message: beginMessage
-   * 3. taskId: a newly created taskId
-   * and it returns an object with logging-related methods
-   * @param {Object} logger
-   * @param {*} beginMessage An initial message to log
-   * @param {*} [endMessage] A message to be logged via end()
-   * @param {*} [errorMessage] A message to be logged via error()
-   * @return {Object} Returns an object with the following properties:
-   *  1. {Object} logger: A child logger of 'logger' with the taskId tag
-   *  2. {String} taskId
-   *  and the following methods:
-   *  1. error({Error} error) Log the provided error with the tag 'error'
-   *  2. end({*} message) Logs endMessage and message with:
-   *     a) tag: 'end'
-   *     b) taskId
-   */
-  static begin(logger, beginMessage, endMessage, errorMessage) {
-    const taskId = nanoid();
-    logger = logger.child(taskId);
-    logger.log('begin', beginMessage);
+<header>
+    
+</header>
 
-    return {
-      logger,
-      taskId,
-      end: (message) => logger.log('end', endMessage || beginMessage, message),
-      error: (error) => logger.log('error', errorMessage, { error }),
-    };
-  }
-}
+<article>
+    <h1>Release History</h1>
+<h2>1.6.3 2020-06-05</h2>
+<h3>Bug Fixes</h3>
+<ul>
+<li>Fix: For <level>([tags]), <level> was not included in the list of tags</li>
+</ul>
+<h3>New Features</h3>
+<ul>
+<li>Add logId (meta key) to log entries</li>
+<li>Use nanoid instead of uuid</li>
+</ul>
+<h2>1.6.2 2020-06-04</h2>
+<p>Bug fixes</p>
+<h2>1.6.0 2020-06-03</h2>
+<h3>Breaking Changes</h3>
+<ul>
+<li>Loggers.tags() and Loggers.context() changed from static to regular methods</li>
+<li>isReady() changed from method to 'ready' 'get' property</li>
+<li>Logger methods tag(), context(), and category() changed from regular properties to methods</li>
+</ul>
+<h3>Other API Changes</h3>
+<ul>
+<li>Add Loggers.category() for consistency</li>
+<li>levelEnabled is an alias for isLevelEnabled</li>
+</ul>
+<h3>Bug Fixes</h3>
+<p>#25, #26: These have the same output:</p>
+<ul>
+<li>loggers.log(new Error())</li>
+<li>loggers.error(new Error())</li>
+<li>loggers.child().log(new Error())</li>
+<li>loggers.child().error(new Error())</li>
+<li>loggers.log({error: new Error()})</li>
+<li>loggers.child().error({message: new Error()})</li>
+</ul>
+<p>#25, #26: These have the same output:</p>
+<ul>
+<li>loggers.log(new Error(), 'Foo')</li>
+<li>loggers.error(new Error(), 'Foo')</li>
+<li>loggers.child().log(new Error(), 'Foo')</li>
+<li>loggers.child().error(new Error(), 'Foo')</li>
+</ul>
+<h2>1.5.3 2020-06-01</h2>
+<h3>API Changes</h3>
+<ul>
+<li>Use flush() instead of flushCloudWatchTransports()</li>
+</ul>
+<h3>Bug Fixes</h3>
+<ul>
+<li>Logging the same error object twice when there are circular references</li>
+</ul>
+<h2>1.5.2 2020-05-31</h2>
+<ul>
+<li>console: in options allows an object that accepts data and color so that different categories can have different console transports</li>
+<li>Rename maxAge in file config to maxFiles to align with the DailyRotateFile transport</li>
+</ul>
+<h2>1.5.0 2020-05-28</h2>
+<ul>
+<li>Logging methods (log, info, etc.), isLevelEnabled(), and child() accept a single object with tags, context, and category keys.</li>
+<li>Bug fix: loggers.child().child() was not combining tags and context</li>
+</ul>
+<h2>1.4.0 2021-05-03</h2>
+<ol>
+<li>Allow message in <code>logger.levelName([tags], message)</code> to be an object with message, tags, and context keys</li>
+<li>Bug fix: 'tags' value was lost in loggers.child(tags).logger('loggerName')</li>
+</ol>
+</article>
 
-module.exports = GeneratorLogger;
-</code></pre>
-        </article>
-    </section>
-
-
-
+</section>
 
 </div>
 
