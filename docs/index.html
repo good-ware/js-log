@@ -58,7 +58,7 @@
 </ul>
 <h2>Requirements</h2>
 <ul>
-<li>NodeJS 8+</li>
+<li>NodeJS 8 and higher</li>
 </ul>
 <h2>Installation</h2>
 <p><code>npm i --save @goodware/log</code></p>
@@ -102,39 +102,43 @@ log entries via uuid</li>
 <p>The Loggers class is a container that manages logger instances that have unique category names. Each logger has its own settings, such as logging levels and transports.</p>
 <p>Any number of Loggers instances can exist at any given time. This is useful if, say, independent libraries use this package with different logging levels and other settings. The only caveat is Winston's design flaw that prevents assigning different colors to the same level.</p>
 <h3>Logging</h3>
-<p>Log messages via the <code>log()</code>, <code>default()</code>, and methods that are named after logging levels (aka <code>&lt;level&gt;()</code>), such as info(). The list of available logging levels and the console color for each level can be provided via options.</p>
-<p>Log entries are created via four optional components: 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.</p>
+<p>Log messages via log(), default(), and methods that are named after logging levels (aka <code>&lt;level&gt;()</code>), such as info(). The list of available logging levels and the console color for each can be provided via options.</p>
+<p>Log entries are created from four components (all optional): 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.</p>
 <p>Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).</p>
-<p>The concept of tags was borrowed from the @hapi project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.</p>
+<p>The concept of tags was borrowed from the HAPI project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.</p>
 <p><code>&lt;level&gt;()</code> (e.g. info()), optionally accept an array of tags as the first parameter. <code>log()</code>'s <code>tag</code> parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.</p>
 <p>The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.</p>
-<p>log(), default(), and <code>&lt;level&gt;()</code> optionally accept an Error object as the first parameter, followed by message, context, and category.</p>
-<p>When an Error instance is provided to <code>log()</code> and <code>&lt;level&gt;()</code>, 'error' is automatically added to the tags; however, 'level' for <code>&lt;level&gt;()</code> methods takes precdence. For example, <code>info(new Error('An error'))</code> is logged at the info level.</p>
-<h3>Logger (flyweight)</h3>
-<p>The logger() and child() methods create Logger objects that track the following: tags, context, and category. The Loggers and Logger classes have identical public interfaces but Logger is not meant to be instantiated.</p>
+<p>log(), default(), and <code>&lt;level&gt;()</code> optionally accept an Error object as the first parameter, followed by message, context, and category. 'error' is automatically added to the tags; however, 'level' for <code>&lt;level&gt;()</code> methods takes precdence. For example, <code>info(new Error('An error'))</code> is logged at the info level.</p>
+<h3>Winston Loggers</h3>
+<p>One Winston logger is created for each unique category name. winstonLogger() returns a Winston logger given a category name.</p>
+<h3>Child Loggers (flyweight)</h3>
+<p>The logger() and child() methods return objects that have their own tags, context, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.</p>
+<p>Child loggers and Loggers instances have the following methods:</p>
+<ul>
+<li>tags(a, b) Combines a and b such that b's tags override a's tags. The result is combined with (and overrides) the child logger's tags.</li>
+<li>context(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's context.</li>
+<li>category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.</li>
+</ul>
+<h3>Flushing</h3>
 <p>Loggers are flushed via the asynchronous flush() and stop() methods. Because of Winston's limitations, only CloudWatch Logs transports can be flushed without stopping them. stop() is a heavyweight operation that can be reversed via the asynchronous start() method.</p>
-<p>Neither Loggers nor Logger objects are Winston loggers and are therefore lightweight. Use winstonLogger() to retrieve a Winston logger for unusual use cases that require the Winston logger API.</p>
-<p>Loggers and Logger instances have the methods loggers(), logger(), child(), parent(), winstonLogger(), isLevelEnabled() (aka levelEnabled), log(), and default().</p>
-<p>Methods such as log() and info() that log messages accept four optional parameters: tags, message, context, and category. They are described below.</p>
-<p>Logger instances (aka child loggers) have read/write properties: tags, context, and category.</p>
-<p>child() and isLevelEnabled() optionally accept a single object with the following optional properties: tags, context, and category.</p>
 <h3>Unhandled exceptions and Promise rejections</h3>
 <p>While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category @log/unhandled. The process is not terminated after logging uncaught exceptions.</p>
-<h3>Adding stack traces</h3>
-<p>When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key is set to the sjtack trace of the caller. This behavior is manually enabled and disabled via the 'logStack' meta tag.</p>
+<h3>Adding the Stack Trace of API Callers</h3>
+<p>When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.</p>
 <h2>Concepts</h2>
 <h3>options</h3>
 <p>An object provided to Loggers' constructor. Options are described by optionsObject.</p>
 <h3>logger</h3>
-<p>A logger sends log entries to transports. Two classes, Loggers and Logger, implement the logger interface that includes:</p>
+<p>A logger sends log entries to transports. It implements the following methods:</p>
 <ul>
 <li>log()</li>
-<li>default()</li>
-<li><level>() Where level is a logging level name. Example: info()</li>
+<li>default() The default level is specified via option</li>
+<li><level>() level is a logging level name. Example: info()</li>
 <li>child()</li>
 <li>logger(category) Is an alias for child({category})</li>
-<li>parent()</li>
-<li>loggers()</li>
+<li>parent() For child loggers to access their parent, which is either a Loggers object or a child logger</li>
+<li>loggers() For child loggers to access the Loggers object that created them</li>
+<li>winstonLogger()</li>
 <li>tags(), for combining tags</li>
 <li>context(), for combining context objects</li>
 <li>category() (mostly useful for retrieving the category assigned to Logger objects)</li>
@@ -179,8 +183,8 @@ log entries via uuid</li>
 <p>Use the meta tag's value as a log entry's logging level</p>
 <h4>logStack</h4>
 <p>Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when the log entry's level is 'error.'</p>
-<h3>tag filtering</h3>
-<p>Tags can be used for additional filtering. Tags that are named after logging levels do not participate in tag filtering. All tags are enabled by default. When using tag filtering, when the log entry's level is 'warn' or 'error', tags are enabled; however, this behavior can be overidden via the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.</p>
+<h3>tag-based filtering</h3>
+<p>Tags can be used to filter messages beyond logging levels. Tags that are named after logging levels do not participate in tag filtering. All tags are enabled by default. When using tag filtering, when the log entry's severity level is 'warn' higher, tags are enabled; however, this behavior can be overidden via the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.</p>
 <p>The following example enables the tag 'sql' for only two categories: one and two. Category 'one' changes the level to 'more' and sends log entries only to the file and console transports. Category 'two' sends log entries to all transports.</p>
 <pre class="prettyprint source lang-js"><code>categories: {
   default: {
@@ -333,7 +337,7 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Sat Jun 05 2021 23:33:29 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Sun Jun 06 2021 10:44:53 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>
