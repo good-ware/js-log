@@ -104,7 +104,7 @@ Loggers are flushed via the asynchronous flush() and stop() methods. Because of 
 
 While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category @log/unhandled. The process is not terminated after logging uncaught exceptions.
 
-### Adding the Stack Trace of API Callers
+### Adding Stack Traces of API Callers
 
 When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.
 
@@ -216,7 +216,7 @@ categories: {
       sql: {
         // Fine-tune filtering for category 'one.' All of these keys are optional.
         allowLevel: 'off', // Enable tag filtering for all log entries regardless of their levels. 'off' is needed
-          // because the default is 'warn' which causes all log entries with warn and error levels to be logged.
+          // because the default is 'warn'
         level: 'more', // Set the log entry's level to 'more'
         // Log entries are sent to all transports by default (console, file, errorFile, cloudWatch). Each transport
         // can be overridden:
