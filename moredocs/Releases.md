@@ -6,6 +6,10 @@
 
 - Use peerDependencies instead of dependencies (see README)
 
+## 2.0.5 2020-06-06
+
+Documentation changes
+
 ## 2.0.4 2020-06-05
 
 ### Bug Fixes
