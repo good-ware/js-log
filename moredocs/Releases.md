@@ -1,3 +1,7 @@
+## 3.0.2 2020-06-07
+
+Update documentation
+
 ## 3.0.1 2020-06-07
 
 - Add dateFormat, utc, and zippedArchive to 'file' in options schema

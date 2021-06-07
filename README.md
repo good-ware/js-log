@@ -32,9 +32,9 @@
 
 The following transports can be utilized. They are all optional.
 
-- Console via [winston-console-format](https://www.npmjs.com/package/winston-console-format) and 'plain' console output, which is more appropriate for production deployment
-- File via [winston-daily-rotate-file](https://www.npmjs.com/package/winston-daily-rotate-file)
-- AWS CloudWatch Logs via [winston-cloudwatch](https://www.npmjs.com/package/winston-console-format)
+- The console (stdout) via [winston-console-format](https://www.npmjs.com/package/winston-console-format)
+- Local JSON files via [winston-daily-rotate-file](https://www.npmjs.com/package/winston-daily-rotate-file)
+- AWS CloudWatch Logs via [winston-cloudwatch](https://www.npmjs.com/package/winston-cloudwatch) in JSON format
 
 ## What's Missing
 
