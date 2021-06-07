@@ -551,6 +551,9 @@ class Loggers {
           .items(Joi.string())
           .default(['logs', '/tmp/logs'])
           .description('Use an empty array for read-only filesystems'),
+        datePattern: Joi.string().default('YYYY-MM-DD-HH'),
+        utc: Joi.boolean().default(true),
+        zippedArchive: Joi.boolean().default(true),
         maxSize: Joi.string().default('20m'),
         maxFiles: Joi.alternatives(Joi.number(), Joi.string()).default('14d')
           .description(`If a number, it is the maximum number of files to keep. If a string, it is the maximum \
@@ -979,15 +982,17 @@ ${error}`);
         }
 
       if (filename) {
+        const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
+
         transports.push(
           new winston.transports.DailyRotateFile({
             filename,
             extension: '.log',
-            datePattern: 'YYYY-MM-DD-HH',
-            utc: true,
-            zippedArchive: true,
-            maxSize: this.options.file.maxSize,
-            maxFiles: this.options.file.maxFiles,
+            datePattern,
+            utc,
+            zippedArchive,
+            maxSize,
+            maxFiles,
             format: format.json(),
             level: 'error',
             handleExceptions: false,
@@ -1299,13 +1304,13 @@ ${error}`);
 
           if (filename) {
             const checkTags = winston.format((info) => this.checkTags('file', info))();
-            const { maxSize, maxFiles } = this.options.file;
+            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
             const transport = new winston.transports.DailyRotateFile({
               filename,
               extension: '.log',
-              datePattern: 'YYYY-MM-DD-HH',
-              utc: true,
-              zippedArchive: true,
+              datePattern,
+              utc,
+              zippedArchive,
               maxSize,
               maxFiles,
               format: format.combine(checkTags, format.json()),
@@ -1446,13 +1451,15 @@ at level '${level}' for category '${category}'`,
         this.createLogsDirectory();
         if (this.props.logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
+          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
           const transport = new winston.transports.DailyRotateFile({
             filename: `${this.props.logsDirectory}/${category}-error-%DATE%`,
             extension: '.log',
-            datePattern: 'YYYY-MM-DD-HH',
-            zippedArchive: true,
-            maxSize: this.options.file.maxSize,
-            maxFiles: this.options.file.maxAge,
+            datePattern,
+            zippedArchive,
+            utc,
+            maxSize,
+            maxFiles,
             format: format.combine(checkTags, format.json()),
             level,
             handleExceptions: category === logCategories.unhandled,

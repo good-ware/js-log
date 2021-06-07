@@ -1,27 +1,11 @@
-# Release History
+## 3.0.1 2020-06-07
+
+- Add dateFormat, utc, and zippedArchive to 'file' in options schema
+- Do not use peer dependencies
 
 ## 3.0.0 2020-06-06
 
-### Breaking change! Peer dependencies for versions 3+
-
-All runtime dependencies in version 3 were changed to use peer dependencies.
-
-If you're missing a dependency, you have three options:
-
-1. Stick with version 2.x
-
-`npm i --save @goodware/log@2`
-
-Or, in package.json dependencies:
-
-`"@goodware/log": "^2.0.0"`
-
-2. Add the missing dependencies to your package.json
-3. Upgrade to npm version 7
-
-`npm i -g npm@7`'
-
-- Use peerDependencies instead of dependencies (see README)
+Experient with peer dependencies
 
 ## 2.0.5 2020-06-06
 

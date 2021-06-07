@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
@@ -22,7 +22,7 @@
     "cloudwatch-logs"
   ],
   "license": "BSD-2-Clause",
-  "peerDependencies": {
+  "dependencies": {
     "aws-sdk": "^2.0.0",
     "hostid": "^1.0.0",
     "humanize-duration": "^3.0.0",

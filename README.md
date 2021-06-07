@@ -2,6 +2,7 @@
 
 ## Links
 
+- [Release History](https://good-ware.github.io/js-log/tutorial-Releases)
 - [npm](https://www.npmjs.com/package/@goodware/log)
 - [git](https://github.com/good-ware/js-log)
 - [API Docs](https://good-ware.github.io/js-log/)
@@ -14,25 +15,6 @@
 ## Installation
 
 `npm i --save @goodware/log`
-
-## Breaking change! Peer dependencies for versions 3+
-
-All runtime dependencies in version 3 were changed to use peer dependencies.
-
-If you're missing a dependency, you have three options:
-
-1. Stick with version 2.x
-
-`npm i --save @goodware/log@2`
-
-Or, in package.json dependencies:
-
-`"@goodware/log": "^2.0.0"`
-
-2. Add the missing dependencies to your package.json
-3. Upgrade to npm version 7
-
-`npm i -g npm@7`
 
 ## Features
 
