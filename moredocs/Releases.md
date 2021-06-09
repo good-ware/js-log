@@ -1,3 +1,8 @@
+## 3.0.3 2020-06-08
+
+- Rename meta keys: logId->id, logGroupId->groupId, logDepth->depth, logTransports->transports
+- Output log id to console for searching files and CloudWatch Logs
+
 ## 3.0.2 2020-06-07
 
 Update documentation
@@ -23,7 +28,7 @@ Documentation changes
 
 ### New Features
 
-- Add logId (meta key) to log entries
+- Add id (meta key) to log entries
 - Use nanoid instead of uuid
 
 ## 2.0.2 2020-06-04

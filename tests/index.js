@@ -18,7 +18,7 @@ async function go(colors) {
 
   config.logging.stage = config.env;
   config.logging.service = config.service;
-  config.logging.console = { colors, data: colors };
+  config.logging.console = { colors: true, data: colors };
 
   config.logging.version = config.version;
   config.logging.unitTest = true;
@@ -671,25 +671,25 @@ async function go(colors) {
   // ===========================
   // Unhandled promise rejection
   {
-    const len = Object.keys(unitTest.logGroupIds).length;
+    const len = Object.keys(unitTest.groupIds).length;
     Promise.reject(new Error('Rejected promise'));
     await new Promise((resolve) => setTimeout(resolve, 1));
 
-    const len2 = Object.keys(unitTest.logGroupIds).length;
+    const len2 = Object.keys(unitTest.groupIds).length;
     if (len2 <= len) throw new Error(len2);
   }
 
   // ===================
   // Unhandled exception
   {
-    const len = Object.keys(unitTest.logGroupIds).length;
+    const len = Object.keys(unitTest.groupIds).length;
 
     setTimeout(() => {
       throw new Error('Unhandled exception');
     }, 0.1);
     await new Promise((resolve) => setTimeout(resolve, 1));
 
-    const len2 = Object.keys(unitTest.logGroupIds).length;
+    const len2 = Object.keys(unitTest.groupIds).length;
     if (len2 <= len) throw new Error(len2);
   }
 
@@ -704,7 +704,7 @@ async function go(colors) {
   {
     // These values must be tweaked whenever more entries are logged
     if (unitTest.entries.length !== 161 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
-    const len = Object.keys(unitTest.logGroupIds).length;
+    const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
     if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }

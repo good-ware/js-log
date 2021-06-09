@@ -67,7 +67,7 @@ const myVersion = require('./package.json').version;
 
 const { format } = winston;
 
-const banner = '[@goodware/log] ';
+const banner = '@goodware/log] ';
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
@@ -658,11 +658,11 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.log(`${banner}Unit test mode enabled`);
+      console.log(`debug ${banner}Unit test mode enabled`);
 
       this.unitTest = {
         entries: [],
-        logGroupIds: {},
+        groupIds: {},
         dataCount: 0,
       };
 
@@ -751,7 +751,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.error(`${banner}Creating logs directory failed. Directories attempted:
+    console.error(`error ${banner}Creating logs directory failed. Directories attempted:
 ${directories.join('\n')}`);
   }
 
@@ -767,15 +767,17 @@ ${directories.join('\n')}`);
       const type = typeof category;
       if (type === 'string') return category;
 
+      // =================================================
+      // Value with invalid datatype provided for category
       const message = `Invalid datatype for category argument (${type})`;
       const error = Error(message);
 
       // Send error message to console with the immediate caller (from the call stack) in the same line for easier
       // identification. Log the full stack to a file.
-      this.log('error', error, undefined, logCategories.log);
+      this.log(error, null, null, logCategories.log);
       const stack = error.stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.error(`${banner}${message}${stack}`);
+      console.error(`error ${banner}${message}${stack}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
     }
@@ -792,8 +794,6 @@ ${directories.join('\n')}`);
    */
   processCategoryTags(category) {
     if (category in this.props.hasCategoryTags) return this.props.hasCategoryTags[category];
-
-    // console.error(`*** Processing tags for ${category}`);
 
     // this.options looks like:
     // categories: {
@@ -835,7 +835,7 @@ ${directories.join('\n')}`);
    * @returns {object} Either returns logEntry unaltered or a falsey value
    */
   checkTags(transportName, info) {
-    if (info.logTransports &amp;&amp; !info.logTransports.includes(transportName)) return false;
+    if (info.transports &amp;&amp; !info.transports.includes(transportName)) return false;
     if (this.unitTest) this.unitTest[transportName].entries.push(info);
     return info;
   }
@@ -879,7 +879,7 @@ ${directories.join('\n')}`);
     if (info instanceof LogEntry) {
       if (this.unitTest) {
         this.unitTest.entries.push(info);
-        if (info.logGroupId) this.unitTest.logGroupIds[info.logGroupId] = true;
+        if (info.groupId) this.unitTest.groupIds[info.groupId] = true;
         if (info.data) ++this.unitTest.dataCount;
       }
       return info;
@@ -919,7 +919,7 @@ ${directories.join('\n')}`);
   static printf(info) {
     // info.level is colorized. To get the level, do this:
     // const shouldLogError = info.level.indexOf('error') >= 0;
-    return `[${info.level} ${info.category} ${info.ms}] ${info.message}`;
+    return `${info.level} ${info.category} ${info.ms} ${info.id}] ${info.message}`;
   }
 
   /**
@@ -961,7 +961,7 @@ ${directories.join('\n')}`);
 
     // Plain console
     const checkTags = winston.format((info) => {
-      if (info.logDepth) return false;
+      if (info.depth) return false;
       return this.checkTags('console', info);
     })();
 
@@ -1017,7 +1017,7 @@ ${directories.join('\n')}`);
           mkdirp(dir);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(`{$banner}Creating directory failed: ${dir}
+          console.error(`error {$banner}Creating directory failed: ${dir}
 ${error}`);
           filename = null;
         }
@@ -1064,7 +1064,7 @@ ${error}`);
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     if (error.code === 'InvalidParameterException') return;
-    this.log('error', error, undefined, logCategories.cloudWatch);
+    this.log(error, null, null, logCategories.cloudWatch);
   }
 
   /**
@@ -1109,7 +1109,7 @@ ${error}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`${banner}Waiting up to ${duration} to flush AWS CloudWatch Logs`);
+        console.log(`info ${banner}Waiting up to ${duration} to flush AWS CloudWatch Logs`);
       }, 2500);
     }
 
@@ -1124,7 +1124,7 @@ ${error}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log(`${banner}Flushed AWS CloudWatch Logs`);
+      console.log(`info ${banner}Flushed AWS CloudWatch Logs`);
     }
   }
 
@@ -1172,7 +1172,7 @@ ${error}`);
               .end();
           })
             // eslint-disable-next-line no-console
-            .catch((error) => console.error(`[${category}]`, error))
+            .catch((error) => console.error(`error ${category}]`, error))
         );
       })
     );
@@ -1236,7 +1236,7 @@ ${error}`);
     if (this.options.say.stopped) {
       const { service, stage, version } = this.options;
       // eslint-disable-next-line no-console
-      console.log(`${banner}Stopped: ${service} v${version} ${stage}`);
+      console.log(`info ${banner}Stopped: ${service} v${version} ${stage}`);
     }
   }
 
@@ -1338,7 +1338,7 @@ ${error}`);
               mkdirp(dir);
             } catch (error) {
               // eslint-disable-next-line no-console
-              console.error(`{$banner}Creating directory failed: ${dir}
+              console.error(`error {$banner}Creating directory failed: ${dir}
 ${error}`);
               filename = null;
             }
@@ -1392,10 +1392,10 @@ ${error}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.error(`[${category}] Region was not specified for AWS CloudWatch Logs`);
+          console.error(`error ${category}] Region was not specified for AWS CloudWatch Logs`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.error(`[${category}] Log group was not specified for AWS CloudWatch Logs`);
+          console.error(`error ${category}] Log group was not specified for AWS CloudWatch Logs`);
         } else {
           this.initCloudWatch();
           const { uploadRate } = awsOptions;
@@ -1406,7 +1406,7 @@ ${error}`);
           if (this.options.say.openCloudWatch) {
             if (category === logCategories.log) {
               // eslint-disable-next-line no-console
-              console.log(`[${category}] Opening AWS CloudWatch Logs stream \
+              console.log(`info ${category}] Opening AWS CloudWatch Logs stream \
 ${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level '${level}'`);
             } else {
               this.log(
@@ -1735,7 +1735,7 @@ at level '${level}' for category '${category}'`,
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(`${banner} ${new Error('Stopped').stack}`);
+      console.error(`error ${banner}${new Error('Stopped').stack}`);
       return false;
     }
 
@@ -1784,7 +1784,7 @@ at level '${level}' for category '${category}'`,
 
     if (!level) level = this.options.defaultLevel;
 
-    let logTransports;
+    let transports;
 
     if (tagNames.length) {
       // Look for a blocked tag
@@ -1857,9 +1857,9 @@ at level '${level}' for category '${category}'`,
             }
           }
 
-          // Process per-transport switches. Remove keys from logTransports.
+          // Process per-transport switches. Remove keys from transports.
           transportNames.forEach((transport) => {
-            if (logTransports &amp;&amp; !logTransports[transport]) return true;
+            if (transports &amp;&amp; !transports[transport]) return true;
 
             checkDefault = true;
 
@@ -1868,16 +1868,16 @@ at level '${level}' for category '${category}'`,
               if (on) {
                 checkDefault = false;
                 if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
-                  if (!logTransports) logTransports = { ...transportObj };
-                  delete logTransports[transport];
+                  if (!transports) transports = { ...transportObj };
+                  delete transports[transport];
                 }
               } else {
                 on = categoryTransports.other;
                 if (on) {
                   checkDefault = false;
                   if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
-                    if (!logTransports) logTransports = { ...transportObj };
-                    delete logTransports[transport];
+                    if (!transports) transports = { ...transportObj };
+                    delete transports[transport];
                   }
                 }
               }
@@ -1887,15 +1887,15 @@ at level '${level}' for category '${category}'`,
               let on = defaultTransports[transport];
               if (on) {
                 if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
-                  if (!logTransports) logTransports = { ...transportObj };
-                  delete logTransports[transport];
+                  if (!transports) transports = { ...transportObj };
+                  delete transports[transport];
                 }
               } else {
                 on = defaultTransports.other;
                 if (on) {
                   if (this.props.levelSeverity[level] > this.props.levelSeverity[on]) {
-                    if (!logTransports) logTransports = { ...transportObj };
-                    delete logTransports[transport];
+                    if (!transports) transports = { ...transportObj };
+                    delete transports[transport];
                   }
                 }
               }
@@ -1904,14 +1904,14 @@ at level '${level}' for category '${category}'`,
             return true;
           });
 
-          return !logTransports || Loggers.hasKeys(logTransports);
+          return !transports || Loggers.hasKeys(transports);
         })
       ) {
         return false;
       }
 
-      // Turn logTransports from an object to an array of keys
-      if (logTransports) logTransports = Object.keys(logTransports);
+      // Turn transports from an object to an array of keys
+      if (transports) transports = Object.keys(transports);
 
       // Change the level based on tag settings
       if (nextLevel) level = nextLevel;
@@ -1926,7 +1926,7 @@ at level '${level}' for category '${category}'`,
       level,
       logger,
       tags,
-      logTransports,
+      transports,
     };
   }
 
@@ -2043,9 +2043,9 @@ at level '${level}' for category '${category}'`,
       tags: false,
       ...this.props.userMeta,
       category: info.category, // Overwritten by defaultMeta
-      logId: nanoid(),
-      logGroupId: false, // Set and removed by send()
-      logDepth: 0, // Set and removed by send()
+      id: nanoid(),
+      groupId: false, // Set and removed by send()
+      depth: 0, // Set and removed by send()
       stage: this.options.stage,
       hostId: this.props.hostId,
       service: this.options.service,
@@ -2053,7 +2053,7 @@ at level '${level}' for category '${category}'`,
       commitSha: undefined,
       stack: false, // Set and removed by send()
       data: undefined,
-      logTransports: info.logTransports,
+      transports: info.transports,
     });
 
     // Points to data first and contextData if there are the same keys in message and context
@@ -2176,9 +2176,9 @@ at level '${level}' for category '${category}'`,
    * @param {*} [context]
    * @param {Error[]} [errors] Errors already logged, to avoid recursion
    * @param {Number} [depth] Recursion depth (defaults to 0)
-   * @param {string} [logGroupId]
+   * @param {string} [groupId]
    */
-  send(info, message, context, errors = [], depth = 0, logGroupId) {
+  send(info, message, context, errors = [], depth = 0, groupId) {
     const { category, logger, level } = info;
     const entry = this.logEntry(info, message, context, depth);
 
@@ -2257,27 +2257,27 @@ at level '${level}' for category '${category}'`,
     if (!entry.stack) delete entry.stack;
 
     // ===================
-    // Set logGroupId meta
-    if ((contextData || contextMessages.length) &amp;&amp; !logGroupId) logGroupId = entry.logId;
-    if (logGroupId) {
-      entry.logGroupId = logGroupId;
+    // Set groupId meta
+    if ((contextData || contextMessages.length) &amp;&amp; !groupId) groupId = entry.id;
+    if (groupId) {
+      entry.groupId = groupId;
     } else {
-      delete entry.logGroupId;
+      delete entry.groupId;
     }
 
     // =================
-    // Set logDepth meta
+    // Set depth meta
     if (depth) {
-      entry.logDepth = depth;
+      entry.depth = depth;
     } else {
-      delete entry.logDepth;
+      delete entry.depth;
     }
 
     // =========================================================
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping &amp;&amp; category !== logCategories.cloudWatch) {
       // eslint-disable-next-line no-console
-      console.error(`[${category}] Stopping. Unable to log:
+      console.warn(`warn ${category}] Stopping. Unable to log:
 ${util.inspect(entry)}
 ${new Error('Stopping').stack}`);
       return;
@@ -2285,10 +2285,10 @@ ${new Error('Stopping').stack}`);
 
     logger.log(level, entry);
 
-    if (contextData) this.send(info, contextData, undefined, errors, depth + 1, logGroupId);
+    if (contextData) this.send(info, contextData, undefined, errors, depth + 1, groupId);
 
     contextMessages.forEach((contextMessage) => {
-      this.send(info, contextMessage, context, errors, depth + 1, logGroupId);
+      this.send(info, contextMessage, context, errors, depth + 1, groupId);
     });
   }
 
@@ -2323,7 +2323,7 @@ ${new Error('Stopping').stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(`[${category}] Stopped. Unable to log:
+      console.warn(`warn ${category}] Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
@@ -2566,7 +2566,7 @@ module.exports = Loggers;
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Mon Jun 07 2021 08:35:37 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Tue Jun 08 2021 22:25:11 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>

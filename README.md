@@ -126,7 +126,7 @@ An object that is sent to a transport. A log entry consists of meta and data.
 
 ### meta
 
-The top-level keys of a log entry. Meta keys contain scalar values except for tags and logTransports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, logId, logGroupId, logDepth, hostId, stage, version, service, stack, and logTransports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.
+The top-level keys of a log entry. Meta keys contain scalar values except for tags and transports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, id, groupId, depth, hostId, stage, version, service, stack, and transports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.
 
 ### data
 
@@ -236,13 +236,13 @@ A scalar, array, or object to log. If an object is provided, its 'message' prope
 
 ### both
 
-message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap with those in 'context,' 'context' is logged separately; both log entries will have the same logGroupId meta value.
+message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap with those in 'context,' 'context' is logged separately; both log entries will have the same groupId meta value.
 
 ### Errors
 
 If both.error is truthy and both.message is falsey, both.message is set to `both.error.asString()`.
 
-Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same logGroupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The logDepth meta key contains a number, starting from 0, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is
+Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta key contains a number, starting from 0, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is
 specified via the 'maxErrors' options setting.
 
 The following example produces three three log entries. error3 will be logged first, followed by error2, followed by error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'
