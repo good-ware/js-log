@@ -37,6 +37,7 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
  * doesn't work for unit tests.
  */
 const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
+// TODO: Use myName ^^
 
 /**
  * @private
@@ -75,14 +76,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs {}
+class LogArgs { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -94,10 +95,9 @@ class Loggers {
    *  {boolean} props.starting
    *  {boolean} props.stopping
    *  {boolean} props.stopped
+   *  {boolean} props.restarting
    *  {string} props.created
    *  {string} props.hostId
-   *  {object} props.defaultConfig
-   *  {string} props.logsDirectory
    *  {string[]} props.metaKeys
    *  {object} props.meta {string} key -> {string} metaKey
    *  {function} props.unhandledPromiseListener
@@ -107,9 +107,8 @@ class Loggers {
    *  {object} props.winstonLoggers {string} category -> Winston logger
    *  {object} props.userMeta {string} metaFieldName -> undefined
    *  {object} unitTest
-   *  {object} props.cloudWatch Properties:
-   *   {string} streamName
-   *   {object[]} transports
+   *  {string} props.cloudWatchStream
+   *  {object[]} props.cloudWatchTransports
    *  {object} props.categoryTags {string} category -> {{string} tag -> {object}}
    *  {object} props.hasCategoryTags {string} category -> {boolean}
    *  {object} props.logLevel {string} level name or 'default' -> {logLevel: {string}}
@@ -144,12 +143,23 @@ class Loggers {
      * @ignore
      * @description Internal properties
      */
-    this.props = {};
-    this.props.stopped = true;
+    const props = {
+      stopped: true,
+      // levels must be set before validating options
+      levels: Object.keys(levels.levels),
+      created: Loggers.now(),
+      hostId: hostId(),
+      winstonLoggers: {},
+      meta: { message: 'message' },
+      userMeta: {},
+      categoryTags: {},
+      hasCategoryTags: {},
+      logLevel: {},
+    };
 
-    // This must be set before validating options
-    this.props.levels = Object.keys(levels.levels);
+    this.props = props;
 
+    // =============================================
     // Copy environment variables to options (begin)
 
     /**
@@ -204,27 +214,17 @@ class Loggers {
       on: 100000,
     });
 
-    this.props.created = Loggers.now();
-    this.props.hostId = hostId();
-
-    this.props.winstonLoggers = {};
-
     // Process meta keys (begin)
-    this.props.meta = {};
-    this.props.userMeta = {};
-
     Object.entries(options.metaKeys).forEach(([key, value]) => {
-      this.props.meta[key] = key;
+      props.meta[key] = key;
       if (value) {
         key = value;
-        this.props.meta[key] = key;
+        props.meta[key] = key;
       }
-      this.props.userMeta[key] = undefined;
+      props.userMeta[key] = undefined;
     });
 
-    this.props.meta.message = 'message';
-
-    this.props.metaKeys = Object.keys(this.props.meta);
+    props.metaKeys = Object.keys(props.meta);
     // Process meta keys (end)
 
     // Add the default category if it's missing
@@ -234,25 +234,36 @@ class Loggers {
     }
 
     // logLevel is used by level-named methods
-    this.props.logLevel = {};
-    this.props.levels.forEach((logLevel) => {
-      this.props.logLevel[logLevel] = { logLevel };
+    props.levels.forEach((logLevel) => {
+      props.logLevel[logLevel] = { logLevel };
     });
 
     // Process category tag switches
-    this.props.categoryTags = {};
-    this.props.hasCategoryTags = {};
     if (!this.processCategoryTags('default')) {
-      this.props.categoryTags.default = { on: true };
+      props.categoryTags.default = { on: true };
     }
 
     // Set props.logStackLevels
     {
-      const obj = (this.props.logStackLevels = {});
+      const obj = (props.logStackLevels = {});
       options.logStackLevels.forEach((level) => {
         if (level === 'default') level = options.defaultLevel;
         obj[level] = true;
       });
+    }
+
+    // For the default category, convert the settings for each transport from string to object and potentially overwrite
+    // corresponding transport settings in the top-level keys such as console
+    {
+      const { default: defaultConfig } = options.categories;
+
+      if (defaultConfig) {
+        Object.entries(defaultConfig).forEach(([key, value]) => {
+          if (!transportObj[key]) return;
+          if (!(value instanceof Object)) value = { level: value };
+          Object.assign(options[key], value);
+        });
+      }
     }
 
     // Dynamic logging-level methods
@@ -287,9 +298,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -556,7 +566,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
         ready: Joi.boolean().default(true),
         stopping: Joi.boolean().default(true),
         stopped: Joi.boolean().default(true),
-        openCloudWatch: Joi.boolean().default(true),
+        cloudWatch: Joi.boolean().default(true),
       }).default({}),
 
       // Transport configuration
@@ -567,6 +577,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
 
       // File settings
       file: fileLogObject.default({}),
+      errorFile: fileLogObject.default({}),
 
       // Category configuration
       categories: Joi.object()
@@ -659,7 +670,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     this.props.starting = false;
 
-    if (options.say.ready) {
+    if (!this.props.restarting && options.say.ready) {
       const { service, stage, version } = options;
       this.log(
         null,
@@ -694,32 +705,36 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @private
    * @ignore
    * @description Creates a directory for log files
+   * @param {object} options
+   * @returns {string} A directory path
    */
-  createLogsDirectory() {
-    if (this.props.logsDirectory !== undefined) return;
+  // eslint-disable-next-line class-methods-use-this
+  createLogsDirectory(options) {
+    const { directories } = options;
+    let directory;
 
-    this.props.logsDirectory = ''; // This method is only called once
-
-    const { directories } = this.options.file;
     if (
       directories.length &&
       !directories.every((dir) => {
         try {
           mkdirp(dir);
-          this.props.logsDirectory = dir;
+          directory = dir;
           return false;
         } catch (error) {
           return true; // Next iteration
         }
       })
     ) {
-      return;
+      // Directory exists
+      return directory;
     }
 
-    // Unable to create directories - output warning to console
+    // Unable to create directories
     // eslint-disable-next-line no-console
     console.warn(`[warn${endMsg}Creating logs directory failed. Directories attempted:
 ${directories.join('\n')}`);
+
+    return undefined;
   }
 
   /**
@@ -802,6 +817,7 @@ ${directories.join('\n')}`);
    * @returns {object} Either returns logEntry unaltered or a falsey value
    */
   checkTags(transportName, info) {
+    console.log({ transportName });
     if (info.transports && !info.transports.includes(transportName)) return false;
     if (this.unitTest) this.unitTest[transportName].entries.push(info);
     return info;
@@ -946,23 +962,23 @@ ${directories.join('\n')}`);
   /**
    * @private
    * @ignore
-   * @description Sets this.props.cloudWatch
+   * @description Sets this.props.cloudWatch*
    */
   initCloudWatch() {
-    if (this.props.cloudWatch) return;
+    if (this.props.cloudWatchTransports) return;
+    this.props.cloudWatchTransports = [];
 
-    this.props.cloudWatch = {};
-    this.props.cloudWatch.transports = [];
+    if (!this.cloudWatchStream) {
+      let stream = this.props.created.replace('T', ' ');
+      // CloudWatch UI already sorts on time
+      stream = `${stream} ${this.props.hostId}`;
+      stream = stream.replace(/:/g, '');
+      this.props.cloudWatchStream = stream;
 
-    let stream = this.props.created.replace('T', ' ');
-    // CloudWatch UI already sorts on time
-    stream = `${stream} ${this.props.hostId}`;
-    stream = stream.replace(/:/g, '');
-    this.props.cloudWatch.streamName = stream;
-
-    if (this.options.say.openCloudWatch) {
-      // eslint-disable-next-line no-console
-      console.log(`[info ${myName}${endMsg}AWS CloudWatch Logs stream names: ${stream}`);
+      if (this.options.say.cloudWatch) {
+        // eslint-disable-next-line no-console
+        console.log(`[info ${myName}${endMsg}AWS CloudWatch Logs stream names: ${stream}`);
+      }
     }
   }
 
@@ -979,12 +995,14 @@ ${directories.join('\n')}`);
     transports.push(this.createConsoleTransport('error', false));
 
     // File
-    this.createLogsDirectory();
-    if (this.props.logsDirectory) {
-      let filename = path.join(this.props.logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
+    const fileOptions = this.options.errorFile;
+    const logsDirectory = this.createLogsDirectory(fileOptions);
+
+    if (logsDirectory) {
+      let filename = path.join(logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
       const dir = path.dirname(filename);
 
-      if (dir !== this.props.logsDirectory)
+      if (dir !== logsDirectory) {
         try {
           mkdirp(dir);
         } catch (error) {
@@ -994,23 +1012,24 @@ ${error}`);
           filename = null;
         }
 
-      if (filename) {
-        const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
+        if (filename) {
+          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
 
-        transports.push(
-          new winston.transports.DailyRotateFile({
-            filename,
-            extension: '.log',
-            datePattern,
-            utc,
-            zippedArchive,
-            maxSize,
-            maxFiles,
-            format: format.json(),
-            level: 'error',
-            handleExceptions: false,
-          })
-        );
+          transports.push(
+            new winston.transports.DailyRotateFile({
+              filename,
+              extension: '.log',
+              datePattern,
+              utc,
+              zippedArchive,
+              maxSize,
+              maxFiles,
+              format: format.json(),
+              level: 'error',
+              handleExceptions: false,
+            })
+          );
+        }
       }
     }
 
@@ -1066,8 +1085,10 @@ ${error}`);
    * @returns {Promise}
    */
   async flushCloudWatchTransports() {
-    if (!this.props.cloudWatch) return;
+    const { cloudWatchTransports } = this.props;
+    if (!cloudWatchTransports || !cloudWatchTransports.length) return;
 
+    // TODO: The flush timeout should be specified on a per-category basis
     const { flushTimeout } = this.options.cloudWatch;
 
     let flushMessageTask;
@@ -1084,7 +1105,7 @@ ${error}`);
     }
 
     await Promise.all(
-      this.props.cloudWatch.transports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
+      cloudWatchTransports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
     );
 
     // For testing the message
@@ -1147,11 +1168,11 @@ ${error}`);
     );
 
     // Close the CloudWatch error logger last
-    if (this.props.cloudWatch) {
+    if (this.props.cloudWatchTransports) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
       await this.flushCloudWatchTransports();
-      delete this.props.cloudWatch;
+      delete this.props.cloudWatchTransports;
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
@@ -1185,10 +1206,10 @@ ${error}`);
     this.props.stopping = false;
     this.props.stopped = true;
 
-    if (this.options.say.stopped) {
+    if (!this.props.restarting && this.options.say.stopped) {
       const { service, stage, version } = this.options;
       // eslint-disable-next-line no-console
-      console.log(`[info ${myName}${endMsg}Stopped: ${service} v${version} ${stage}`);
+      console.log(`[info${endMsg}Stopped: ${service} v${version} ${stage}`);
     }
   }
 
@@ -1197,8 +1218,21 @@ ${error}`);
    * @returns {Promise}
    */
   async restart() {
-    await this.stop();
-    this.start();
+    const { props } = this;
+    if (props.restarting) throw new Error('Restarting');
+    if (props.starting) throw new Error('Starting');
+    if (props.stopping) throw new Error('Stopping');
+    if (props.stopped) {
+      this.start();
+    } else {
+      try {
+        props.restarting = true;
+        await this.stop();
+        this.start();
+      } finally {
+        props.restarting = false;
+      }
+    }
   }
 
   /**
@@ -1223,7 +1257,7 @@ ${error}`);
       return;
     }
 
-    if (this.options.say.stopping) {
+    if (!this.props.restarting && this.options.say.stopping) {
       const { service, stage, version } = this.options;
       this.log(null, `Stopping: ${service} v${version} ${stage}`, undefined, logCategories.log);
     }
@@ -1262,43 +1296,24 @@ ${error}`);
     } else {
       if (this.props.stopping) throw new Error('Stopping');
 
-      const { categories } = this.options;
-      let settings = categories[category];
-
-      // ===================================================================================
-      // Overlay the transport settings for the category over those for the default category
-      {
-        let { defaultConfig } = this.props;
-
-        if (!defaultConfig) {
-          // For the default category, convert the settings for each transport from string to object
-          defaultConfig = categories.default || {};
-          Object.keys(defaultConfig).forEach((key) => {
-            if (!(defaultConfig[key] instanceof Object)) defaultConfig[key] = { level: defaultConfig[key] };
-          });
-          this.props.defaultConfig = defaultConfig; // Cache it
-        }
-
-        settings = settings ? { ...defaultConfig, ...settings } : defaultConfig;
-      }
-
-      if (!settings) settings = {};
+      const { options } = this;
+      const settings = options.categories[category] || {};
 
       const transports = [];
       let level;
 
       // ==========
       // CloudWatch
-      let awsOptions = { ...this.options.cloudWatch };
-      level = settings.cloudWatch || 'off';
-
+      let awsOptions = { ...options.cloudWatch };
+      level = settings.cloudWatch;
       if (level instanceof Object) {
         Object.assign(awsOptions, level);
-        level = awsOptions.level || 'off';
+        level = undefined;
       }
-
-      if (level === 'default') {
-        level = this.options.defaultLevel;
+      if (!level) ({ level } = awsOptions);
+      if (!level) level = 'off';
+      else if (level === 'default') {
+        level = options.defaultLevel;
       } else if (level === 'on') {
         level = 'warn';
       }
@@ -1337,7 +1352,7 @@ ${error}`);
           // TODO: add more options supported by winston-cloudwatch
           const transport = new WinstonCloudWatch({
             messageFormatter: checkTags,
-            logStreamName: this.props.cloudWatch.streamName,
+            logStreamName: this.props.cloudWatchStream,
             createLogGroup: true,
             createLogStream: true,
             logGroupName,
@@ -1348,60 +1363,35 @@ ${error}`);
             handleExceptions: category === logCategories.unhandled,
           });
 
-          this.props.cloudWatch.transports.push(transport);
+          this.props.cloudWatchTransports.push(transport);
           transports.push(transport);
         }
       }
 
-      // =======
-      // Console
-      const consoleOptions = { ...this.options.console };
-      level = settings.console || 'info';
-
-      if (level instanceof Object) {
-        Object.assign(consoleOptions, level);
-        level = consoleOptions.level || 'off';
-      }
-
-      if (level === 'default') {
-        level = this.options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'info';
-      }
-
-      // Winston wants at least one transport (error file transport is intentionally ignored because it's only error) so
-      // console is always active. This has the added benefit of ensuring that the unhandled exception logger has
-      // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
-      if (!transports.length && level === 'off') level = 'error';
-
-      if (level !== 'off') {
-        transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
-      }
-
       // ====
       // File
-      let fileOptions = { ...this.options.file };
-      level = settings.file || 'off';
-
+      let fileOptions = { ...options.file };
+      level = settings.file;
       if (level instanceof Object) {
         Object.assign(fileOptions, level);
-        level = fileOptions.level || 'off';
+        level = undefined;
       }
-
-      if (level === 'default') {
-        level = this.options.defaultLevel;
+      if (!level) ({ level } = fileOptions);
+      if (!level) level = 'off';
+      else if (level === 'default') {
+        level = options.defaultLevel;
       } else if (level === 'on') {
         level = 'info';
       }
 
       if (level !== 'off') {
-        this.createLogsDirectory();
+        const logsDirectory = this.createLogsDirectory(fileOptions);
 
-        if (this.props.logsDirectory) {
-          let filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
+        if (logsDirectory) {
+          let filename = path.join(logsDirectory, `${category}-%DATE%`);
           const dir = path.dirname(filename);
 
-          if (dir !== this.props.logsDirectory)
+          if (dir !== logsDirectory)
             try {
               mkdirp(dir);
             } catch (error) {
@@ -1434,27 +1424,28 @@ ${error}`);
 
       // ==========
       // Error file
-      fileOptions = { ...this.options.file };
-      level = settings.errorFile || 'off';
-
+      fileOptions = { ...options.errorFile };
+      level = settings.errorFile;
       if (level instanceof Object) {
         Object.assign(fileOptions, level);
-        level = fileOptions.level || 'off';
+        level = undefined;
       }
-
-      if (level === 'default') {
-        level = this.options.defaultLevel;
+      if (!level) ({ level } = fileOptions);
+      if (!level) level = 'off';
+      else if (level === 'default') {
+        level = options.defaultLevel;
       } else if (level === 'on') {
         level = 'error';
       }
 
       if (level !== 'off') {
-        this.createLogsDirectory();
-        if (this.props.logsDirectory) {
+        const logsDirectory = this.createLogsDirectory(fileOptions);
+
+        if (logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
           const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
           const transport = new winston.transports.DailyRotateFile({
-            filename: `${this.props.logsDirectory}/${category}-error-%DATE%`,
+            filename: `${logsDirectory}/${category}-error-%DATE%`,
             extension: '.log',
             datePattern,
             zippedArchive,
@@ -1477,6 +1468,32 @@ ${error}`);
         levels: this.winstonLevels,
         transports,
       });
+
+      // ===============================================
+      // Console
+      // Must be last because it's the default transport
+      const consoleOptions = { ...options.console };
+      level = settings.console;
+      if (level instanceof Object) {
+        Object.assign(consoleOptions, level);
+        level = undefined;
+      }
+      if (!level) ({ level } = consoleOptions);
+      if (!level) level = 'info';
+      else if (level === 'default') {
+        level = options.defaultLevel;
+      } else if (level === 'on') {
+        level = 'info';
+      }
+
+      // Winston wants at least one transport (error file transport is intentionally ignored because it's only error) so
+      // console is always active. This has the added benefit of ensuring that the unhandled exception logger has
+      // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
+      if (!transports.length && level === 'off') level = 'error';
+
+      if (level !== 'off') {
+        transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
+      }
     }
 
     this.props.winstonLoggers[category] = logger;
@@ -1748,7 +1765,7 @@ ${error}`);
 
     if (tagNames.length) {
       // Look for a blocked tag
-      // TODO: Defaults should be specified at the category level
+      // TODO: Defaults should be specified at the category level or via the category named 'default'
       // TODO: Cache results for tags for the category that aren't yet defined in config
       const categoryTags = this.props.categoryTags[category];
       const defaultTags = this.props.categoryTags.default;
@@ -2285,11 +2302,11 @@ ${new Error('').stack}`);
       // eslint-disable-next-line no-console
       console.warn(`[warn${endMsg}Stopped. Unable to log:
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);

@@ -8,7 +8,7 @@
 
 ### Loggers Options Schema Changes
 
-- file and errorFile can be objects with the same properties as the top-level file object
+- file and errorFile can contain objects that have the same properties as the top-level 'file' key
 
 ### New methods
 

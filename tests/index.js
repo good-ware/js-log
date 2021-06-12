@@ -204,6 +204,7 @@ async function go(colors) {
   // message is an object 1
   {
     logger.info(['c'], { message: { a: 1, b: 2 } });
+    process.exit()
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     if (!entry.data.a) throw new Error();
