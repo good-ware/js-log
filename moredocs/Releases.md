@@ -1,3 +1,25 @@
+# @goodware/log Release History
+
+## 3.1.0 2020-06-11
+
+### Bug Fixes
+
+- #31: Transport settings were not based on the 'default' category when objects were provided
+
+### Loggers Options Schema Changes
+
+- file and errorFile can be objects with the same properties as the top-level file object
+
+### New methods
+
+- `restart()`
+- `flushCloudWatchTransports()`
+- Add missing `start()` method for child loggers
+
+### Other
+
+- Do not output the category name to the console. A new feature will be added for configuring the format.
+
 ## 3.0.3 2020-06-08
 
 - Rename meta keys: logId->id, logGroupId->groupId, logDepth->depth, logTransports->transports

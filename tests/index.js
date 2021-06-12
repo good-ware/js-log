@@ -65,6 +65,8 @@ async function go(colors) {
   // =================
   // Ready for testing
 
+  // loggers.info('msg', null, 'briefConsole'); process.exit();
+
   // Pass an object to child(). context is a string.
   // log({message: { error: Error })
   {
@@ -742,7 +744,7 @@ async function test() {
 
   if (loggers) {
     await loggers.stop();
-    loggers = false;
+    loggers = undefined;
   }
 
   // Uncomment if the process is hanging to investigate

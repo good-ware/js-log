@@ -78,9 +78,11 @@ Child loggers and Loggers instances have the following methods:
 - context(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's context.
 - category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
-### Flushing
+### Stopping and Flushing
 
-Loggers are flushed via the asynchronous flush() and stop() methods. Because of Winston's limitations, only CloudWatch Logs transports can be flushed without stopping them. stop() is a heavyweight operation that can be reversed via the asynchronous start() method.
+`stop()` is a heavyweight asynchronous method that safely closes all transports. It can be reversed via `start().` `restart()` is also available.
+
+Only CloudWatch Logs transports can be flushed without stopping them. `flush()` is therefore an alias for `restart().` Use flushCloudWatchTransports() when you only need to flush CloudWatch Logs transports because it's substantially faster.
 
 ### Unhandled exceptions and Promise rejections
 

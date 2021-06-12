@@ -16,7 +16,7 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
 
-const myVersion = require('./package.json').version;
+const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 // =============================================================================
 // Developer Notes
@@ -26,7 +26,7 @@ const myVersion = require('./package.json').version;
 
 const { format } = winston;
 
-const banner = '@goodware/log] ';
+const endMsg = '] ';
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
@@ -96,6 +96,7 @@ class Loggers {
    *  {boolean} props.stopped
    *  {string} props.created
    *  {string} props.hostId
+   *  {object} props.defaultConfig
    *  {string} props.logsDirectory
    *  {string[]} props.metaKeys
    *  {object} props.meta {string} key -> {string} metaKey
@@ -434,6 +435,25 @@ class Loggers {
       level: onOffDefaultLevelEnum,
     });
 
+    // File settings
+    const fileLogObject = Joi.object({
+      directories: Joi.array()
+        .items(Joi.string())
+        .default(['logs', '/tmp/logs'])
+        .description('Use an empty array for read-only filesystems'),
+      datePattern: Joi.string().default('YYYY-MM-DD-HH'),
+      utc: Joi.boolean().default(true),
+      zippedArchive: Joi.boolean().default(true),
+      maxSize: Joi.string().default('20m'),
+      maxFiles: Joi.alternatives(Joi.number(), Joi.string()).default('14d')
+        .description(`If a number, it is the maximum number of files to keep. If a string, it is the maximum \
+age of files to keep in days, followed by the chracter 'd'.`),
+    });
+
+    const fileCategoryObject = fileLogObject.keys({
+      level: onOffDefaultLevelEnum,
+    });
+
     // Region and logGroup are required by winston-cloudwatch but they can be provided under categories
     const cloudWatchLogObject = Joi.object({
       region: Joi.string(),
@@ -546,19 +566,7 @@ class Loggers {
       console: consoleLogObject.default({}),
 
       // File settings
-      file: Joi.object({
-        directories: Joi.array()
-          .items(Joi.string())
-          .default(['logs', '/tmp/logs'])
-          .description('Use an empty array for read-only filesystems'),
-        datePattern: Joi.string().default('YYYY-MM-DD-HH'),
-        utc: Joi.boolean().default(true),
-        zippedArchive: Joi.boolean().default(true),
-        maxSize: Joi.string().default('20m'),
-        maxFiles: Joi.alternatives(Joi.number(), Joi.string()).default('14d')
-          .description(`If a number, it is the maximum number of files to keep. If a string, it is the maximum \
-age of files to keep in days, followed by the chracter 'd'.`),
-      }).default({}),
+      file: fileLogObject.default({}),
 
       // Category configuration
       categories: Joi.object()
@@ -581,9 +589,9 @@ Enable the tag for log entries with severity levels equal to or greater than the
                 })
               )
             ),
-            file: onOffDefaultLevelEnum,
+            file: Joi.alternatives(fileCategoryObject, onOffDefaultLevelEnum),
+            errorFile: Joi.alternatives(fileCategoryObject, onOffDefaultLevelEnum),
             console: Joi.alternatives(consoleCategoryObject, onOffDefaultLevelEnum),
-            errorFile: onOffDefaultLevelEnum,
             cloudWatch: Joi.alternatives(cloudWatchCategoryObject, onOffDefaultLevelEnum),
           })
         )
@@ -617,7 +625,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.log(`debug ${banner}Unit test mode enabled`);
+      console.log(`[debug ${myName}${endMsg}Unit test mode enabled`);
 
       this.unitTest = {
         entries: [],
@@ -655,7 +663,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
       const { service, stage, version } = options;
       this.log(
         null,
-        `Ready: ${service} v${version} ${stage} [@goodware/log version v${myVersion}]`,
+        `Ready: ${service} v${version} ${stage} [${myName} version v${myVersion}]`,
         undefined,
         logCategories.log
       );
@@ -710,7 +718,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     // Unable to create directories - output warning to console
     // eslint-disable-next-line no-console
-    console.error(`error ${banner}Creating logs directory failed. Directories attempted:
+    console.warn(`[warn${endMsg}Creating logs directory failed. Directories attempted:
 ${directories.join('\n')}`);
   }
 
@@ -736,7 +744,7 @@ ${directories.join('\n')}`);
       this.log(error, null, null, logCategories.log);
       const stack = error.stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.error(`error ${banner}${message}${stack}`);
+      console.warn(`[warn ${myName}${endMsg}${message}${stack}`);
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
     }
@@ -876,9 +884,9 @@ ${directories.join('\n')}`);
    * @returns {string}
    */
   static printf(info) {
-    // info.level is colorized. To get the level, do this:
+    // info.level may be colorized. To get the level, do this:
     // const shouldLogError = info.level.indexOf('error') >= 0;
-    return `${info.level} ${info.category} ${info.ms} ${info.id}] ${info.message}`;
+    return `${info.level} [${info.ms} ${info.id}${endMsg}${info.message}`;
   }
 
   /**
@@ -951,6 +959,11 @@ ${directories.join('\n')}`);
     stream = `${stream} ${this.props.hostId}`;
     stream = stream.replace(/:/g, '');
     this.props.cloudWatch.streamName = stream;
+
+    if (this.options.say.openCloudWatch) {
+      // eslint-disable-next-line no-console
+      console.log(`[info ${myName}${endMsg}AWS CloudWatch Logs stream names: ${stream}`);
+    }
   }
 
   /**
@@ -976,7 +989,7 @@ ${directories.join('\n')}`);
           mkdirp(dir);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(`error {$banner}Creating directory failed: ${dir}
+          console.warn(`[warn{$endMsg}Creating directory failed: ${dir}
 ${error}`);
           filename = null;
         }
@@ -1049,8 +1062,6 @@ ${error}`);
   }
 
   /**
-   * @private
-   * @ignore
    * @description Flushes Cloudwatch transports
    * @returns {Promise}
    */
@@ -1068,7 +1079,7 @@ ${error}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`info ${banner}Waiting up to ${duration} to flush AWS CloudWatch Logs`);
+        console.log(`[info${endMsg}Waiting up to ${duration} to flush AWS CloudWatch Logs`);
       }, 2500);
     }
 
@@ -1083,7 +1094,7 @@ ${error}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log(`info ${banner}Flushed AWS CloudWatch Logs`);
+      console.log(`[info${endMsg}Flushed AWS CloudWatch Logs`);
     }
   }
 
@@ -1091,8 +1102,9 @@ ${error}`);
    * @description Flushes transports that support flushing, which is currently only CloudWatch.
    * @returns {Promise}
    */
-  flush() {
-    return this.flushCloudWatchTransports();
+  async flush() {
+    await this.stop();
+    await this.start();
   }
 
   /**
@@ -1114,24 +1126,22 @@ ${error}`);
       Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
 
-    await this.flush();
+    await this.flushCloudWatchTransports();
 
-    // Close
+    // Close loggers in the background except the CloudWatch error logger
     await Promise.all(
       Object.entries(this.props.winstonLoggers).map(([category, logger]) => {
-        if (!logger.writable || category === logCategories.cloudWatch) {
-          return Promise.resolve();
-        }
+        if (!logger.writable || category === logCategories.cloudWatch) return Promise.resolve();
         return (
           new Promise((resolve, reject) => {
             logger
-              .on('error', reject)
-              .on('close', resolve)
-              .on('finish', () => setImmediate(() => logger.close()))
+              .once('error', reject)
+              .once('close', resolve)
+              .once('finish', () => setImmediate(() => logger.close()))
               .end();
           })
             // eslint-disable-next-line no-console
-            .catch((error) => console.error(`error ${category}]`, error))
+            .catch((error) => console.warn(`[warn${endMsg}`, `Closing category '${category}' failed\n${error}`))
         );
       })
     );
@@ -1140,7 +1150,7 @@ ${error}`);
     if (this.props.cloudWatch) {
       // Flush again because uncaught exceptions can be sent to CloudWatch transports during close
       // https://github.com/lazywithclass/winston-cloudwatch/issues/129
-      await this.flush();
+      await this.flushCloudWatchTransports();
       delete this.props.cloudWatch;
 
       if (this.unitTest) {
@@ -1154,24 +1164,7 @@ ${error}`);
 
     const errorLogger = this.props.winstonLoggers[logCategories.cloudWatch];
 
-    if (errorLogger && errorLogger.writable) {
-      // eslint-disable-next-line no-constant-condition
-      if (true) {
-        errorLogger.close();
-      } else {
-        // For testing
-        // TODO: finish doesn't fire and this terminates the process
-        // The only downside is the CloudWatch error log might not get flushed
-        await new Promise((resolve, reject) => {
-          errorLogger
-            .on('error', reject)
-            .on('close', resolve)
-            .on('finish', () => setImmediate(() => errorLogger.close()))
-            .end();
-          // eslint-disable-next-line no-console
-        }).catch(console.error);
-      }
-    }
+    if (errorLogger && errorLogger.writable) errorLogger.close();
 
     if (this.unitTest) {
       // Test error handlers after closing loggers
@@ -1195,8 +1188,17 @@ ${error}`);
     if (this.options.say.stopped) {
       const { service, stage, version } = this.options;
       // eslint-disable-next-line no-console
-      console.log(`info ${banner}Stopped: ${service} v${version} ${stage}`);
+      console.log(`[info ${myName}${endMsg}Stopped: ${service} v${version} ${stage}`);
     }
+  }
+
+  /**
+   * Restarts
+   * @returns {Promise}
+   */
+  async restart() {
+    await this.stop();
+    this.start();
   }
 
   /**
@@ -1247,6 +1249,7 @@ ${error}`);
    * @ignore
    * @description Creates a Winston logger for a category
    * @param {string} category
+   * @param {object} defaults
    * @returns {object} Winston logger
    */
   createWinstonLoggers(category) {
@@ -1262,66 +1265,27 @@ ${error}`);
       const { categories } = this.options;
       let settings = categories[category];
 
+      // ===================================================================================
+      // Overlay the transport settings for the category over those for the default category
       {
-        const defaults = categories.default;
-        if (settings) {
-          settings = { ...defaults, ...settings };
-        } else {
-          settings = defaults;
+        let { defaultConfig } = this.props;
+
+        if (!defaultConfig) {
+          // For the default category, convert the settings for each transport from string to object
+          defaultConfig = categories.default || {};
+          Object.keys(defaultConfig).forEach((key) => {
+            if (!(defaultConfig[key] instanceof Object)) defaultConfig[key] = { level: defaultConfig[key] };
+          });
+          this.props.defaultConfig = defaultConfig; // Cache it
         }
+
+        settings = settings ? { ...defaultConfig, ...settings } : defaultConfig;
       }
 
       if (!settings) settings = {};
 
       const transports = [];
       let level;
-
-      // ====
-      // File
-      level = settings.file || 'off';
-      if (level === 'default') {
-        level = this.options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'info';
-      }
-
-      if (level !== 'off') {
-        this.createLogsDirectory();
-
-        if (this.props.logsDirectory) {
-          let filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
-          const dir = path.dirname(filename);
-
-          if (dir !== this.props.logsDirectory)
-            try {
-              mkdirp(dir);
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error(`error {$banner}Creating directory failed: ${dir}
-${error}`);
-              filename = null;
-            }
-
-          if (filename) {
-            const checkTags = winston.format((info) => this.checkTags('file', info))();
-            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
-            const transport = new winston.transports.DailyRotateFile({
-              filename,
-              extension: '.log',
-              datePattern,
-              utc,
-              zippedArchive,
-              maxSize,
-              maxFiles,
-              format: format.combine(checkTags, format.json()),
-              level,
-              handleExceptions: category === logCategories.unhandled,
-            });
-
-            transports.push(transport);
-          }
-        }
-      }
 
       // ==========
       // CloudWatch
@@ -1351,40 +1315,16 @@ ${error}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.error(`error ${category}] Region was not specified for AWS CloudWatch Logs`);
+          console.warn(`[warn${endMsg}Region was not specified for AWS CloudWatch Logs for category '${category}'`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.error(`error ${category}] Log group was not specified for AWS CloudWatch Logs`);
+          console.warn(`[warn${endMsg}Log group was not specified for AWS CloudWatch Logs for category '${category}'`);
         } else {
           this.initCloudWatch();
           const { uploadRate } = awsOptions;
 
           // log group ends with a slash
           logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
-
-          if (this.options.say.openCloudWatch) {
-            if (category === logCategories.log) {
-              // eslint-disable-next-line no-console
-              console.log(`info ${category}] Opening AWS CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} at level '${level}'`);
-            } else {
-              this.log(
-                'info',
-                `Opening AWS CloudWatch Logs stream \
-${awsOptions.region}:${logGroupName}:${this.props.cloudWatch.streamName} \
-at level '${level}' for category '${category}'`,
-                {
-                  category,
-                  logGroup: logGroupName,
-                  logStream: this.props.cloudWatch.streamName,
-                  level,
-                  awsRegion: awsOptions.region,
-                  uploadRate,
-                },
-                logCategories.log
-              );
-            }
-          }
 
           awsOptions = { region: awsOptions.region };
 
@@ -1438,9 +1378,70 @@ at level '${level}' for category '${category}'`,
         transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
       }
 
+      // ====
+      // File
+      let fileOptions = { ...this.options.file };
+      level = settings.file || 'off';
+
+      if (level instanceof Object) {
+        Object.assign(fileOptions, level);
+        level = fileOptions.level || 'off';
+      }
+
+      if (level === 'default') {
+        level = this.options.defaultLevel;
+      } else if (level === 'on') {
+        level = 'info';
+      }
+
+      if (level !== 'off') {
+        this.createLogsDirectory();
+
+        if (this.props.logsDirectory) {
+          let filename = path.join(this.props.logsDirectory, `${category}-%DATE%`);
+          const dir = path.dirname(filename);
+
+          if (dir !== this.props.logsDirectory)
+            try {
+              mkdirp(dir);
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.warn(`[warn{$endMsg}Creating directory failed: ${dir}
+${error}`);
+              filename = null;
+            }
+
+          if (filename) {
+            const checkTags = winston.format((info) => this.checkTags('file', info))();
+            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
+            const transport = new winston.transports.DailyRotateFile({
+              filename,
+              extension: '.log',
+              datePattern,
+              utc,
+              zippedArchive,
+              maxSize,
+              maxFiles,
+              format: format.combine(checkTags, format.json()),
+              level,
+              handleExceptions: category === logCategories.unhandled,
+            });
+
+            transports.push(transport);
+          }
+        }
+      }
+
       // ==========
       // Error file
+      fileOptions = { ...this.options.file };
       level = settings.errorFile || 'off';
+
+      if (level instanceof Object) {
+        Object.assign(fileOptions, level);
+        level = fileOptions.level || 'off';
+      }
+
       if (level === 'default') {
         level = this.options.defaultLevel;
       } else if (level === 'on') {
@@ -1451,7 +1452,7 @@ at level '${level}' for category '${category}'`,
         this.createLogsDirectory();
         if (this.props.logsDirectory) {
           const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
-          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = this.options.file;
+          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
           const transport = new winston.transports.DailyRotateFile({
             filename: `${this.props.logsDirectory}/${category}-error-%DATE%`,
             extension: '.log',
@@ -1694,7 +1695,7 @@ at level '${level}' for category '${category}'`,
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.error(`error ${banner}${new Error('Stopped').stack}`);
+      console.warn(`[warn${endMsg}${new Error('Stopped').stack}`);
       return false;
     }
 
@@ -2236,9 +2237,9 @@ at level '${level}' for category '${category}'`,
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== logCategories.cloudWatch) {
       // eslint-disable-next-line no-console
-      console.warn(`warn ${category}] Stopping. Unable to log:
+      console.warn(`[warn${endMsg}Stopping. Unable to log:
 ${util.inspect(entry)}
-${new Error('Stopping').stack}`);
+${new Error('').stack}`);
       return;
     }
 
@@ -2282,7 +2283,7 @@ ${new Error('Stopping').stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(`warn ${category}] Stopped. Unable to log:
+      console.warn(`[warn${endMsg}Stopped. Unable to log:
 ${util.inspect({
   category,
   tags,
@@ -2447,6 +2448,13 @@ class Logger {
   /**
    * @returns {Promise}
    */
+  start() {
+    return this.props.loggers.start();
+  }
+
+  /**
+   * @returns {Promise}
+   */
   stop() {
     return this.props.loggers.stop();
   }
@@ -2454,8 +2462,22 @@ class Logger {
   /**
    * @returns {Promise}
    */
+  restart() {
+    return this.props.loggers.restart();
+  }
+
+  /**
+   * @returns {Promise}
+   */
   flush() {
     return this.props.loggers.flush();
+  }
+
+  /**
+   * @returns {Promise}
+   */
+  flushCloudWatchTransports() {
+    return this.props.loggers.flushCloudWatchTransports();
   }
 
   /**
