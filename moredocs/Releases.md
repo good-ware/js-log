@@ -12,6 +12,7 @@
 
 - restart() and flush() are less noisy
 - Complete the 'default' category work
+- Constructor options has top-level errorFile key
 
 ## 3.1.0 2020-06-11
 
