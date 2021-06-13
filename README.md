@@ -50,7 +50,7 @@ Any number of Loggers instances can exist at any given time. This is useful if, 
 
 ### Logging
 
-Log messages via log(), default(), and methods that are named after logging levels (aka `<level>()`), such as info(). The list of available logging levels and the console color for each can be provided via options.
+Log messages via log(), default(), and methods that are named after logging levels (aka `level`()), such as info(). The list of available logging levels and the console color for each can be provided via options.
 
 Log entries are created from four components (all optional): 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
 
@@ -58,11 +58,11 @@ Winston's splat formatter is not enabled. However, any type of data can be logge
 
 The concept of tags was borrowed from the HAPI project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.
 
-`<level>()` (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+`level`() (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
 
 The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.
 
-log(), default(), and `<level>()` optionally accept an Error object as the first parameter, followed by message, context, and category. 'error' is automatically added to the tags; however, 'level' for `<level>()` methods takes precdence. For example, `info(new Error('An error'))` is logged at the info level.
+log(), default(), and `level`() optionally accept an Error object as the first parameter, followed by message, context, and category. 'error' is automatically added to the tags; however, 'level' for `level`() methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
 
 ### Winston Loggers
 
@@ -104,7 +104,7 @@ A logger sends log entries to transports. It implements the following methods:
 
 - log()
 - default() The default level is specified via option
-- <level>() level is a logging level name. Example: info()
+- `level`() where `level` is a logging level name. Example: info()
 - child()
 - logger(category) Is an alias for child({category})
 - parent() For child loggers to access their parent, which is either a Loggers object or a child logger
@@ -113,10 +113,12 @@ A logger sends log entries to transports. It implements the following methods:
 - tags(), for combining tags
 - context(), for combining context objects
 - category() (mostly useful for retrieving the category assigned to Logger objects)
-- flush() (only works with Cloudwatch Logs transports)
+- flush()
+- flushCloudWatchTransports()
 - ready
 - start()
 - stop()
+- restart()
 
 ### category
 
