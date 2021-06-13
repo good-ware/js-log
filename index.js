@@ -76,14 +76,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs { }
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -299,8 +299,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -582,7 +583,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
                 Joi.object({
                   allowLevel: offDefaultLevelEnum.description(`\
 Enable the tag for log entries with severity levels equal to or greater than the provided value`),
-                  level: defaultLevelEnum,
+                  level: defaultLevelEnum.description('Alters the level of the log entry'),
                   other: onOffDefaultLevelEnum.description('Which value to use for transports not listed'),
                   file: onOffDefaultLevelEnum,
                   console: onOffDefaultLevelEnum,
@@ -2291,11 +2292,11 @@ ${new Error('').stack}`);
       // eslint-disable-next-line no-console
       console.warn(`[warn${endMsg}Stopped. Unable to log:
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
