@@ -1,6 +1,6 @@
 # @goodware/log Release History
 
-## 3.1.1 2020-06-12
+## 3.1.1 2020-06-11
 
 ### Bug Fixes
 
