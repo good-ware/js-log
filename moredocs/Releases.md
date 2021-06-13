@@ -3,6 +3,7 @@
 ## 3.2.0 2020-06-12
 
 - #35: Allow level in top-level transport keys (errorFile, console, etc.)
+- Add more console unit tests
 
 ## 3.1.1 2020-06-11
 

@@ -76,14 +76,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs {}
+class LogArgs { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -179,7 +179,7 @@ class Loggers {
     // Copy environment variables to options (end)
 
     // Validate options
-    options = this.validateOptions(options);
+    options = this.options = this.validateOptions(options);
 
     envToConsoleKey('colors');
     envToConsoleKey('data');
@@ -299,9 +299,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -603,7 +602,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
       // Testing
       unitTest: Joi.boolean(),
     }).label('Loggers options');
-    // ==== Joi model for options (end)
+    // Joi model for options (end)
+    // ===========================
 
     let validation = optionsSchema.validate(options);
     if (validation.error) throw new Error(validation.error.message);
@@ -611,7 +611,6 @@ Enable the tag for log entries with severity levels equal to or greater than the
     validation = optionsSchema.validate(validation.value);
     options = validation.value;
 
-    this.options = options;
     return options;
   }
 
@@ -2292,11 +2291,11 @@ ${new Error('').stack}`);
       // eslint-disable-next-line no-console
       console.warn(`[warn${endMsg}Stopped. Unable to log:
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
