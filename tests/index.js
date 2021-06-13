@@ -65,7 +65,10 @@ async function go(colors) {
   // =================
   // Ready for testing
 
-  // loggers.info('msg', null, 'briefConsole'); process.exit();
+  // TODO: Test this
+  loggers.error('msg', {}, 'briefConsole');
+
+  if (!loggers.ready || !logger.ready) throw new Error('failed');
 
   // Pass an object to child(). context is a string.
   // log({message: { error: Error })
@@ -204,7 +207,6 @@ async function go(colors) {
   // message is an object 1
   {
     logger.info(['c'], { message: { a: 1, b: 2 } });
-    process.exit()
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     if (!entry.data.a) throw new Error();
@@ -706,7 +708,7 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 161 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 162 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
     if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);

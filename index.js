@@ -20,7 +20,7 @@ const { name: myName, version: myVersion } = require('./package.json'); // Disca
 
 // =============================================================================
 // Developer Notes
-// =============================================================================
+//
 // 1. typeof(null) === 'object'. Use instanceof Object instead.
 // =============================================================================
 
@@ -76,14 +76,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs { }
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -95,7 +95,7 @@ class Loggers {
    *  {boolean} props.starting
    *  {boolean} props.stopping
    *  {boolean} props.stopped
-   *  {boolean} props.restarting
+   *  {number} props.restarting
    *  {string} props.created
    *  {string} props.hostId
    *  {string[]} props.metaKeys
@@ -145,6 +145,7 @@ class Loggers {
      */
     const props = {
       stopped: true,
+      restarting: 0,
       // levels must be set before validating options
       levels: Object.keys(levels.levels),
       created: Loggers.now(),
@@ -298,8 +299,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -628,6 +630,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
    */
   start() {
     if (!this.props.stopped) return;
+
+    // This is a synchronous method so reentrancy is impossible unless there's an infinite loop
     if (this.props.starting) throw new Error('Starting');
 
     this.props.starting = true;
@@ -817,7 +821,6 @@ ${directories.join('\n')}`);
    * @returns {object} Either returns logEntry unaltered or a falsey value
    */
   checkTags(transportName, info) {
-    console.log({ transportName });
     if (info.transports && !info.transports.includes(transportName)) return false;
     if (this.unitTest) this.unitTest[transportName].entries.push(info);
     return info;
@@ -902,7 +905,7 @@ ${directories.join('\n')}`);
   static printf(info) {
     // info.level may be colorized. To get the level, do this:
     // const shouldLogError = info.level.indexOf('error') >= 0;
-    return `${info.level} [${info.ms} ${info.id}${endMsg}${info.message}`;
+    return `${info.level} ${info.ms} [${info.id}${endMsg}${info.message}`;
   }
 
   /**
@@ -1104,9 +1107,7 @@ ${error}`);
       }, 2500);
     }
 
-    await Promise.all(
-      cloudWatchTransports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout))
-    );
+    await Promise.all(cloudWatchTransports.map((transport) => this.flushCloudWatchTransport(transport, flushTimeout)));
 
     // For testing the message
     // await new Promise( (resolve) => setTimeout(resolve, 10000));
@@ -1123,9 +1124,8 @@ ${error}`);
    * @description Flushes transports that support flushing, which is currently only CloudWatch.
    * @returns {Promise}
    */
-  async flush() {
-    await this.stop();
-    await this.start();
+  flush() {
+    return this.restart();
   }
 
   /**
@@ -1219,19 +1219,19 @@ ${error}`);
    */
   async restart() {
     const { props } = this;
-    if (props.restarting) throw new Error('Restarting');
-    if (props.starting) throw new Error('Starting');
-    if (props.stopping) throw new Error('Stopping');
+    if (props.starting) throw new Error('Starting'); // Impossible
+
     if (props.stopped) {
       this.start();
-    } else {
-      try {
-        props.restarting = true;
-        await this.stop();
-        this.start();
-      } finally {
-        props.restarting = false;
-      }
+      return;
+    }
+
+    ++props.restarting;
+    try {
+      await this.stop();
+      this.start();
+    } finally {
+      --props.restarting;
     }
   }
 
@@ -1461,14 +1461,6 @@ ${error}`);
         }
       }
 
-      logger = winston.createLogger({
-        defaultMeta: Loggers.defaultMeta(category),
-        exitOnError: false,
-        format: this.formatter(),
-        levels: this.winstonLevels,
-        transports,
-      });
-
       // ===============================================
       // Console
       // Must be last because it's the default transport
@@ -1494,6 +1486,15 @@ ${error}`);
       if (level !== 'off') {
         transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
       }
+
+      // All transports created
+      logger = winston.createLogger({
+        defaultMeta: Loggers.defaultMeta(category),
+        exitOnError: false,
+        format: this.formatter(),
+        levels: this.winstonLevels,
+        transports,
+      });
     }
 
     this.props.winstonLoggers[category] = logger;
@@ -1523,8 +1524,7 @@ ${error}`);
    * @returns {object} An object or undefined
    */
   categoryOptions(category) {
-    category = this.category(category);
-    return this.options.categories[category];
+    return this.options.categories[this.category(category)];
   }
 
   /**
@@ -1568,7 +1568,8 @@ ${error}`);
    * @returns {boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
    */
   get ready() {
-    return !this.props.starting && !this.props.stopped && !this.props.stopping;
+    const { props } = this;
+    return !props.stopped && !props.stopping;
   }
 
   /**
@@ -1894,8 +1895,7 @@ ${error}`);
       if (nextLevel) level = nextLevel;
     }
 
-    let logger = this.props.winstonLoggers[category];
-    if (!logger) logger = this.winstonLogger(category);
+    const logger = this.winstonLogger(category);
     if (!logger.isLevelEnabled(level)) return false;
 
     return {
@@ -2302,11 +2302,11 @@ ${new Error('').stack}`);
       // eslint-disable-next-line no-console
       console.warn(`[warn${endMsg}Stopped. Unable to log:
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2427,7 +2427,7 @@ class Logger {
    * @returns {boolean}
    */
   get ready() {
-    return this.ready;
+    return this.props.loggers.ready;
   }
 
   /**

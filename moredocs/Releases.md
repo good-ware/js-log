@@ -1,5 +1,18 @@
 # @goodware/log Release History
 
+## 3.1.1 2020-06-12
+
+### Bug Fixes
+
+- file/errorFile directories value is ignored when an object is provided
+- CloudWatch Logs error transports (console and errorFile) use default category overrides
+- childLogger.ready does not work
+
+### Other
+
+- restart() and flush() are less noisy
+- Complete the 'default' category work
+
 ## 3.1.0 2020-06-11
 
 ### Bug Fixes
