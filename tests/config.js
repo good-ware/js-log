@@ -13,6 +13,10 @@ let config = {
   version: pack.version,
   service: pack.name,
   logging: {
+    console: {
+      level: 'silly',
+      data: true,
+    },
     cloudWatch: {
       // region: 'us-west-2', // set AWS_DEFAULT_REGION environment variable
       logGroup: `/${env}/goodware/log`,
@@ -22,6 +26,12 @@ let config = {
         console: {
           level: 'info',
           data: false,
+        },
+      },
+      dataConsole: {
+        console: {
+          level: 'info',
+          data: true,
         },
       },
     },
@@ -37,7 +47,6 @@ configs.dev = {
   logging: {
     categories: {
       default: {
-        console: 'silly',
         file: 'silly',
         errorFile: 'on',
         cloudWatch: 'info',

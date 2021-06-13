@@ -438,17 +438,15 @@ class Loggers {
     const onOffDefaultLevelEnum = Joi.alternatives(offDefaultLevelEnum, Joi.string().valid('on'));
 
     // Console settings
-    const consoleLogObject = Joi.object({
+    const consoleObject = Joi.object({
+      level: onOffDefaultLevelEnum,
       colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
       data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
     });
 
-    const consoleCategoryObject = consoleLogObject.keys({
-      level: onOffDefaultLevelEnum,
-    });
-
     // File settings
-    const fileLogObject = Joi.object({
+    const fileObject = Joi.object({
+      level: onOffDefaultLevelEnum,
       directories: Joi.array()
         .items(Joi.string())
         .default(['logs', '/tmp/logs'])
@@ -462,12 +460,9 @@ class Loggers {
 age of files to keep in days, followed by the chracter 'd'.`),
     });
 
-    const fileCategoryObject = fileLogObject.keys({
-      level: onOffDefaultLevelEnum,
-    });
-
     // Region and logGroup are required by winston-cloudwatch but they can be provided under categories
-    const cloudWatchLogObject = Joi.object({
+    const cloudWatchObject = Joi.object({
+      level: onOffDefaultLevelEnum,
       region: Joi.string(),
       logGroup: Joi.string(),
       uploadRate: Joi.number()
@@ -477,20 +472,15 @@ age of files to keep in days, followed by the chracter 'd'.`),
         .description('The frequency in which entries are sent to CloudWatch. Number of milliseconds between flushes.'),
     });
 
-    const cloudWatchObject = cloudWatchLogObject
-      .keys({
-        flushTimeout: Joi.number()
-          .integer()
-          .min(1)
-          .default(90000)
-          .description(
-            `The maximum number of milliseconds to wait when sending the current batch of log entries to CloudWatch`
-          ),
-      })
-      .default({});
-
-    const cloudWatchCategoryObject = cloudWatchLogObject.keys({
-      level: onOffDefaultLevelEnum,
+    // Add flushTimeout for the top cloudWatch key only
+    const cloudWatchTopObject = cloudWatchObject.keys({
+      flushTimeout: Joi.number()
+        .integer()
+        .min(1)
+        .default(90000)
+        .description(
+          `The maximum number of milliseconds to wait when sending the current batch of log entries to CloudWatch`
+        ),
     });
 
     // Options provided to the constructor. The defaults in this object assume the following levels exist:
@@ -571,17 +561,17 @@ age of files to keep in days, followed by the chracter 'd'.`),
         cloudWatch: Joi.boolean().default(true),
       }).default({}),
 
-      // Transport configuration
-      cloudWatch: cloudWatchObject,
+      // CloudWatch settings
+      cloudWatch: cloudWatchTopObject.default({}),
 
       // Console settings
-      console: consoleLogObject.default({}),
+      console: consoleObject.default({}),
 
       // File settings
-      file: fileLogObject.default({}),
-      errorFile: fileLogObject.default({}),
+      file: fileObject.default({}),
+      errorFile: fileObject.default({}),
 
-      // Category configuration
+      // Categories
       categories: Joi.object()
         .pattern(
           Joi.string(),
@@ -602,10 +592,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
                 })
               )
             ),
-            file: Joi.alternatives(fileCategoryObject, onOffDefaultLevelEnum),
-            errorFile: Joi.alternatives(fileCategoryObject, onOffDefaultLevelEnum),
-            console: Joi.alternatives(consoleCategoryObject, onOffDefaultLevelEnum),
-            cloudWatch: Joi.alternatives(cloudWatchCategoryObject, onOffDefaultLevelEnum),
+            file: Joi.alternatives(fileObject, onOffDefaultLevelEnum),
+            errorFile: Joi.alternatives(fileObject, onOffDefaultLevelEnum),
+            console: Joi.alternatives(consoleObject, onOffDefaultLevelEnum),
+            cloudWatch: Joi.alternatives(cloudWatchObject, onOffDefaultLevelEnum),
           })
         )
         .default({}),
@@ -1091,7 +1081,7 @@ ${error}`);
     const { cloudWatchTransports } = this.props;
     if (!cloudWatchTransports || !cloudWatchTransports.length) return;
 
-    // TODO: The flush timeout should be specified on a per-category basis
+    // Flush timeout is only on the top-level cloudWatch key
     const { flushTimeout } = this.options.cloudWatch;
 
     let flushMessageTask;

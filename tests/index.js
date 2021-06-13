@@ -18,7 +18,8 @@ async function go(colors) {
 
   config.logging.stage = config.env;
   config.logging.service = config.service;
-  config.logging.console = { colors: true, data: colors };
+
+  Object.assign(config.logging.console, { colors: true, data: colors });
 
   config.logging.version = config.version;
   config.logging.unitTest = true;
@@ -62,13 +63,43 @@ async function go(colors) {
   const logger = loggers.logger();
   const { unitTest } = loggers;
 
+  if (!loggers.ready || !logger.ready) throw new Error();
+
   // =================
   // Ready for testing
 
-  // TODO: Test this
-  loggers.error('msg', {}, 'briefConsole');
-
-  if (!loggers.ready || !logger.ready) throw new Error('failed');
+  // =============
+  // Console tests
+  // No output (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.silly('msg', {}, 'briefConsole');
+    if (count !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs message (default category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.silly('msg', { a: 1 });
+    if (count === unitTest.console.entries.length) throw new Error();
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (!entry.id) throw new Error();
+  }
+  // Outputs message without data
+  {
+    const count = unitTest.console.entries.length;
+    loggers.info('msg', { a: 1 }, 'briefConsole');
+    if (count === unitTest.console.entries.length) throw new Error();
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (entry[Symbol.for('message')].indexOf('data:') >= 0) throw new Error();
+  }
+  // Outputs message with data
+  {
+    const count = unitTest.console.entries.length;
+    loggers.info('msg', { a: 1 }, 'dataConsole');
+    if (count === unitTest.console.entries.length) throw new Error();
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (entry[Symbol.for('message')].indexOf('data:') < 0) throw new Error();
+  }
 
   // Pass an object to child(). context is a string.
   // log({message: { error: Error })
@@ -708,10 +739,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 162 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 165 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 107 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
