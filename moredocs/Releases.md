@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.2 2020-06-13
+
+Change console output - move log id after message
+
 ## 3.2.0 2020-06-12
 
 - #35: Allow level in top-level transport keys (errorFile, console, etc.)
