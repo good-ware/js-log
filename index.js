@@ -628,7 +628,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.log(`debug ${myName} Unit test mode enabled`);
+      console.log(`info: Unit test mode enabled [${myName}]`);
 
       this.unitTest = {
         entries: [],
@@ -723,7 +723,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     // Unable to create directories
     // eslint-disable-next-line no-console
-    console.warn(`warn Creating logs directory failed. Directories attempted:
+    console.warn(`warn: Failed creating logs directory. Directories attempted: [${myName}]
 ${directories.join('\n')}`);
 
     return undefined;
@@ -743,16 +743,14 @@ ${directories.join('\n')}`);
 
       // =================================================
       // Value with invalid datatype provided for category
-      const message = `Invalid datatype for category argument (${type})`;
-      const error = Error(message);
+      const error = Error(`Invalid datatype provided for category (${type})`);
 
-      // Send error message to console with the immediate caller (from the call stack) in the same line for easier
-      // identification. Log the full stack to a file.
-      this.log(error, null, null, logCategories.log);
       const stack = error.stack.replace(stripStack, '');
+      this.log('error', stack, null, logCategories.log);
       // eslint-disable-next-line no-console
-      console.warn(`warn ${myName} ${message}
+      console.warn(`error: [${myName}]
 ${stack}`);
+
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
     }
@@ -894,7 +892,8 @@ ${stack}`);
   static printf(info) {
     // info.level may be colorized. To get the level, do this:
     // const shouldLogError = info.level.indexOf('error') >= 0;
-    return `${info.level} ${info.ms} ${info.message} [id:${info.id}]`;
+    const { id, level, ms, message, category } = info;
+    return `${level}: ${ms} ${message} [${category} ${id}]`;
   }
 
   /**
@@ -969,7 +968,7 @@ ${stack}`);
 
       if (this.options.say.cloudWatch) {
         // eslint-disable-next-line no-console
-        console.log(`info ${myName} AWS CloudWatch Logs stream names: ${stream}`);
+        console.log(`info: AWS CloudWatch Logs stream names: ${stream} [${myName}]`);
       }
     }
   }
@@ -999,7 +998,7 @@ ${stack}`);
           mkdirp(dir);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.warn(`warn Creating directory failed: ${dir}
+          console.warn(`warn: Failed creating directory '${dir}' [${myName}]
 ${error}`);
           filename = null;
         }
@@ -1092,7 +1091,7 @@ ${error}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`info Waiting up to ${duration} to flush AWS CloudWatch Logs`);
+        console.log(`info: Waiting up to ${duration} to flush AWS CloudWatch Logs [${myName}]`);
       }, 2500);
     }
 
@@ -1105,7 +1104,7 @@ ${error}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log(`info Flushed AWS CloudWatch Logs`);
+      console.log(`info: Flushed AWS CloudWatch Logs [${myName}]`);
     }
   }
 
@@ -1142,16 +1141,16 @@ ${error}`);
     await Promise.all(
       Object.entries(this.props.winstonLoggers).map(([category, logger]) => {
         if (!logger.writable || category === logCategories.cloudWatch) return Promise.resolve();
-        return (
-          new Promise((resolve, reject) => {
-            logger
-              .once('error', reject)
-              .once('close', resolve)
-              .once('finish', () => setImmediate(() => logger.close()))
-              .end();
-          })
-            // eslint-disable-next-line no-console
-            .catch((error) => console.warn(`warn Failed closing category '${category}'\n${error}`))
+        return new Promise((resolve, reject) => {
+          logger
+            .once('error', reject)
+            .once('close', resolve)
+            .once('finish', () => setImmediate(() => logger.close()))
+            .end();
+        }).catch((error) =>
+          // eslint-disable-next-line no-console
+          console.warn(`warn: Failed closing '${category}' [${myName}]
+${error}`)
         );
       })
     );
@@ -1198,7 +1197,7 @@ ${error}`);
     if (!this.props.restarting && this.options.say.stopped) {
       const { service, stage, version } = this.options;
       // eslint-disable-next-line no-console
-      console.log(`info Stopped: ${service} v${version} ${stage}`);
+      console.log(`info: Stopped ${service} v${version} ${stage} [${myName}]`);
     }
   }
 
@@ -1319,10 +1318,10 @@ ${error}`);
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`warn Region was not specified for AWS CloudWatch Logs for category '${category}'`);
+          console.warn(`warn: Region was not specified for AWS CloudWatch Logs for '${category}' [${myName}]`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`warn Log group was not specified for AWS CloudWatch Logs for category '${category}'`);
+          console.warn(`warn: Log group was not specified for AWS CloudWatch Logs for '${category}' [${myName}]`);
         } else {
           this.initCloudWatch();
           const { uploadRate } = awsOptions;
@@ -1385,7 +1384,7 @@ ${error}`);
               mkdirp(dir);
             } catch (error) {
               // eslint-disable-next-line no-console
-              console.warn(`warn Creating directory failed: ${dir}
+              console.warn(`warn: Failed creating directory '${dir}' [${myName}]
 ${error}`);
               filename = null;
             }
@@ -1701,8 +1700,10 @@ ${error}`);
    */
   isLevelEnabled(tags, category) {
     if (this.props.stopped) {
+      const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`warn ${new Error('Stopped').stack}`);
+      console.warn(`warn: Stopped [${myName}]
+${stack}`);
       return false;
     }
 
@@ -2242,10 +2243,11 @@ ${error}`);
     // =========================================================
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== logCategories.cloudWatch) {
+      const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`warn Stopping. Unable to log:
+      console.warn(`warn: Stopping [${myName}]
 ${util.inspect(entry)}
-${new Error('').stack}`);
+${stack}`);
       return;
     }
 
@@ -2289,7 +2291,7 @@ ${new Error('').stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(`warn Stopped. Unable to log:
+      console.warn(`warn: Stopped [${myName}]
 ${util.inspect({
   category,
   tags,

@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.3 2020-06-14
+
+Change console output - add category after message
+
 ## 3.2.2 2020-06-13
 
 Change console output - move log id after message

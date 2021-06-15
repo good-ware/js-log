@@ -768,7 +768,7 @@ async function test() {
   let error;
 
   try {
-    await go(false);
+    // await go(false);
     await go(true);
     // eslint-disable-next-line no-console
     console.log('Successful');
