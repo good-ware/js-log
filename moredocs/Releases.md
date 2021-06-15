@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.4 2020-06-14
+
+Fix unit tests
+
 ## 3.2.3 2020-06-14
 
 Change console output - add category after message

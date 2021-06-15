@@ -742,7 +742,7 @@ async function go(colors) {
     if (unitTest.entries.length !== 165 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 107 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
@@ -768,7 +768,7 @@ async function test() {
   let error;
 
   try {
-    // await go(false);
+    await go(false);
     await go(true);
     // eslint-disable-next-line no-console
     console.log('Successful');
