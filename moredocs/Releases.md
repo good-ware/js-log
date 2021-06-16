@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.5 2020-06-15
+
+Fix: log('warn' new Error()) logs as error
+
 ## 3.2.4 2020-06-14
 
 Fix unit tests

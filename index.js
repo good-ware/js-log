@@ -18,6 +18,8 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
+const addErrorSymbol = Symbol.for('error');
+
 // =============================================================================
 // Developer Notes
 //
@@ -663,7 +665,11 @@ Enable the tag for log entries with severity levels equal to or greater than the
     this.props.starting = false;
 
     if (!this.props.restarting && options.say.ready) {
-      const { service, stage, version } = options;
+      let { service, stage, version } = options;
+      if (service === undefined) service = '';
+      if (stage === undefined) stage = '';
+      if (version === undefined) version = '';
+
       this.log(
         null,
         `Ready: ${service} v${version} ${stage} [${myName} version v${myVersion}]`,
@@ -892,8 +898,8 @@ ${stack}`);
   static printf(info) {
     // info.level may be colorized. To get the level, do this:
     // const shouldLogError = info.level.indexOf('error') >= 0;
-    const { id, level, ms, message, category } = info;
-    return `${level}: ${ms} ${message} [${category} ${id}]`;
+    const { id, level, ms, message, category, tags } = info;
+    return `${level}: ${ms} ${message} [${category}][${tags.join(' ')}][${id}]`;
   }
 
   /**
@@ -1195,7 +1201,10 @@ ${error}`)
     this.props.stopped = true;
 
     if (!this.props.restarting && this.options.say.stopped) {
-      const { service, stage, version } = this.options;
+      let { service, stage, version } = this.options;
+      if (service === undefined) service = '';
+      if (stage === undefined) stage = '';
+      if (version === undefined) version = '';
       // eslint-disable-next-line no-console
       console.log(`info: Stopped ${service} v${version} ${stage} [${myName}]`);
     }
@@ -1677,10 +1686,8 @@ ${error}`);
         if (!addError) addError = message.message instanceof Error;
         if (!addError && message.message instanceof Object) addError = message.message.error instanceof Error;
       }
-      if (!addError && context instanceof Object) {
-        addError = context instanceof Error || context.error instanceof Error;
-      }
-      if (addError) tags.error = true;
+      if (!addError && context instanceof Object) addError = context instanceof Error || context.error instanceof Error;
+      if (addError) tags[addErrorSymbol] = true;
     }
 
     return Object.assign(new LogArgs(), {
@@ -1711,11 +1718,9 @@ ${stack}`);
     category = this.category(category);
     this.processCategoryTags(category);
 
-    /**
-     * The level to use when determining whether to log
-     */
+    // ==========================================================
+    // Determine the level to use when determining whether to log
     let level;
-
     let tagNames;
 
     {
@@ -1747,6 +1752,16 @@ ${stack}`);
             }
           }
         });
+      }
+    }
+
+    // Add error tag when Error is provided as the message
+    if (tags[addErrorSymbol]) {
+      delete tags[addErrorSymbol];
+      if (!tags.error) {
+        tags.error = true;
+        tagNames.unshift('error');
+        if (!level) level = 'error';
       }
     }
 

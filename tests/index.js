@@ -68,6 +68,23 @@ async function go(colors) {
   // =================
   // Ready for testing
 
+  // Specify the level
+  {
+    const count = unitTest.entries.length;
+    logger.log('warn', new Error());
+    if (count === unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'warn') throw new Error();
+  }
+  // Add level 'error' because no tag is specified
+  {
+    const count = unitTest.entries.length;
+    logger.log(new Error());
+    if (count === unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+  }
+
   // =============
   // Console tests
   // No output (specify category)
@@ -76,6 +93,7 @@ async function go(colors) {
     loggers.silly('msg', {}, 'briefConsole');
     if (count !== unitTest.console.entries.length) throw new Error();
   }
+
   // Outputs message (default category)
   {
     const count = unitTest.console.entries.length;
@@ -676,7 +694,7 @@ async function go(colors) {
 
   loggers.log('error', new Error('error'));
   // You can provide an error as the first argument and also a message
-  loggers.log(new Error(''), 'message');
+  loggers.log(new Error(), 'message');
   logger.error({ error: 'I already have an error' });
 
   // This logs three items
@@ -739,10 +757,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 165 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 167 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 104 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 106 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
