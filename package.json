@@ -19,7 +19,9 @@
   "keywords": [
     "winston",
     "logging",
-    "cloudwatch-logs"
+    "cloudwatch-logs",
+    "aws",
+    "cloudwatch"
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
