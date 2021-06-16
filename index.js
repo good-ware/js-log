@@ -66,9 +66,9 @@ const scalars = {
  * @description Category names for internal loggers
  */
 const logCategories = {
-  unhandled: '@log/unhandled',
-  cloudWatch: '@log/cloudwatch-error',
-  log: '@log/log', // When the API is misused
+  unhandled: '@goodware/unhandled',
+  cloudWatch: '@goodware/cloudwatch-error',
+  log: '@goodware/log', // When the API is misused
 };
 
 /**

@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.6 2020-06-15
+
+Rename built-in log names starting with @log/ to start with @goodware instead
+
 ## 3.2.5 2020-06-15
 
 Fix: log('warn' new Error()) logs as error
