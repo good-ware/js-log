@@ -51,6 +51,11 @@ configs.dev = {
         errorFile: 'on',
         cloudWatch: 'info',
       },
+      dog: {
+        file: 'warn',
+        console: 'warn',
+        cloudWatch: 'warn',
+      },
     },
   },
 };
