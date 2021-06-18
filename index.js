@@ -633,7 +633,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.log(`info: Unit test mode enabled [${myName}]`);
+      console.log(`Unit test mode enabled [${myName}]`);
 
       this.unitTest = {
         entries: [],
@@ -675,7 +675,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
       this.log(
         undefined,
-        `Ready: ${service} v${version} ${stage} [${myName} version v${myVersion}]`,
+        `Ready: ${service} v${version} ${stage} [${myName} v${myVersion}]`,
         undefined,
         logCategories.log
       );
@@ -980,7 +980,7 @@ ${stack}`);
 
       if (this.options.say.cloudWatch) {
         // eslint-disable-next-line no-console
-        console.log(`info: AWS CloudWatch Logs stream names: ${stream} [${myName}]`);
+        console.log(`AWS CloudWatch Logs stream names: ${stream} [${myName}]`);
       }
     }
   }
@@ -1103,7 +1103,7 @@ ${error}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`info: Waiting up to ${duration} to flush AWS CloudWatch Logs [${myName}]`);
+        console.log(`Waiting up to ${duration} to flush AWS CloudWatch Logs [${myName}]`);
       }, 2500);
     }
 
@@ -1116,7 +1116,7 @@ ${error}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log(`info: Flushed AWS CloudWatch Logs [${myName}]`);
+      console.log(`Flushed AWS CloudWatch Logs [${myName}]`);
     }
   }
 
@@ -1212,7 +1212,7 @@ ${error}`)
       if (stage === undefined) stage = '';
       if (version === undefined) version = '';
       // eslint-disable-next-line no-console
-      console.log(`info: Stopped ${service} v${version} ${stage} [${myName}]`);
+      console.log(`Stopped ${service} v${version} ${stage} [${myName} v${myVersion}]`);
     }
   }
 

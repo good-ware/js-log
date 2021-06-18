@@ -1,8 +1,8 @@
 # @goodware/log Release History
 
-## 3.3.2 2020-06-18
+## 3.3.1 - 3.3.4 2020-06-18
 
-- Add a unit test
+- Add unit tests
 - Update docs
 
 ## 3.3.0 2020-06-17
