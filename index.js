@@ -19,6 +19,7 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 const addErrorSymbol = Symbol.for('error');
+const levelSymbol = Symbol.for('level');
 
 // =============================================================================
 // Developer Notes
@@ -76,14 +77,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs {}
+class LogArgs { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -98,6 +99,7 @@ class Loggers {
    *  {number} props.restarting
    *  {string} props.created
    *  {string} props.hostId
+   *  {object[]} props.loggers
    *  {string[]} props.metaKeys
    *  {object} props.meta {string} key -> {string} metaKey
    *  {function} props.unhandledPromiseListener
@@ -150,6 +152,7 @@ class Loggers {
       levels: Object.keys(levels.levels),
       created: Loggers.now(),
       hostId: hostId(),
+      loggers: {},
       winstonLoggers: {},
       meta: { message: 'message' },
       userMeta: {},
@@ -299,9 +302,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -683,7 +685,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @private
    * @ignore
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
-   * @param {Loggers|Logger} logger
+   * @param {Loggers|object} logger
    * @param {object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrContext
@@ -896,10 +898,13 @@ ${stack}`);
    * @returns {string}
    */
   static printf(info) {
-    // info.level may be colorized. To get the level, do this:
-    // const shouldLogError = info.level.indexOf('error') >= 0;
     const { id, level, ms, message, category, tags } = info;
-    return `${level}: ${ms} ${message} [${category}][${tags.join(' ')}][${id}]`;
+    const plainLevel = info[levelSymbol]; // Not colorized
+    const tags2 = [level]; // Might be colorized
+    tags.forEach((tag) => {
+      if (tag !== plainLevel) tags2.push(tag);
+    });
+    return `${ms} ${message} [${tags2.join(' ')}][${category}][${id}]`;
   }
 
   /**
@@ -1525,13 +1530,28 @@ ${error}`);
   }
 
   /**
-   * @description Returns a logger associated with a category
+   * @description Returns a logger associated with a category. Optionally assocates a logger with a category.
    * @param {string} [category]
-   * @returns {Logger}
+   * @param {Loggers|object} [logger]
+   * @returns {Loggers|object}
    */
-  logger(category) {
-    // eslint-disable-next-line no-use-before-define
-    return new Logger(this, undefined, undefined, category);
+  logger(category, logger) {
+    category = this.category(category);
+    const { loggers } = this.props;
+    if (logger) {
+      loggers[category] = logger;
+      return logger;
+    }
+    logger = loggers[logger];
+    if (logger) return logger;
+    if (category === this.options.defaultCategory) {
+      logger = this;
+    } else {
+      // eslint-disable-next-line no-use-before-define
+      logger = new Logger(this, undefined, undefined, category);
+    }
+    loggers[logger] = logger;
+    return logger;
   }
 
   /**
@@ -1539,7 +1559,7 @@ ${error}`);
    * @param {*} [tags]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {Logger}
+   * @returns {object}
    */
   child(tags, context, category) {
     // eslint-disable-next-line no-use-before-define
@@ -1581,6 +1601,9 @@ ${error}`);
    */
   transformArgs(tags, message, context, category) {
     if (tags instanceof LogArgs) return tags;
+
+    // This method doesn't call this.category(category) so Logger::transformArgs call call this method and override
+    // the category
 
     // First argument is an Error object?
     if (tags instanceof Error) {
@@ -1716,6 +1739,13 @@ ${stack}`);
 
     ({ tags, category } = this.transformArgs(tags, undefined, undefined, category));
     category = this.category(category);
+
+    // Mix in category loger's tags
+    {
+      const cat = this.logger(category);
+      if (cat !== this) tags = cat.tags(tags);
+    }
+
     this.processCategoryTags(category);
 
     // ==========================================================
@@ -2044,6 +2074,12 @@ ${stack}`);
 
     context = Loggers.contextToObject(context);
 
+    // Mix in category loggers's context (isLevelEnabled does this for tags)
+    {
+      const cat = this.logger(info.category);
+      if (cat !== this) context = cat.context(context);
+    }
+
     // Combine message and context
     [message, context].forEach((item) => {
       if (!item) return;
@@ -2308,11 +2344,11 @@ ${stack}`);
       // eslint-disable-next-line no-console
       console.warn(`warn: Stopped [${myName}]
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2372,25 +2408,24 @@ class Logger {
    * @private
    * @ignore
    * @constructor
-   * @param {Loggers|Logger} logger
+   * @param {Loggers|object} parent
    * @param {*} [tags]
    * @param {*} [context]
    * @param {string} [category]
    */
-  constructor(logger, tags, context, category) {
+  constructor(parent, tags, context, category) {
     let loggers;
-    let parent;
 
-    if (logger instanceof Logger) {
-      ({ loggers } = logger.props);
-      parent = logger;
+    if (parent instanceof Logger) {
+      ({ loggers } = parent.props);
     } else {
-      if (!(logger instanceof Loggers)) throw new Error('logger must be an instance of Loggers or Logger');
-      loggers = parent = logger;
+      if (!(parent instanceof Loggers)) throw new Error('parent must be an instance of Loggers or Logger');
+      loggers = parent;
     }
 
-    ({ tags, context, category } = logger.transformArgs(tags, undefined, context, category));
-    category = logger.category(category);
+    ({ tags, context, category } = parent.transformArgs(tags, undefined, context, category));
+    category = parent.category(category);
+
     this.props = { loggers, parent, tags, context, category };
 
     // Dynamic logging-level methods
@@ -2405,19 +2440,14 @@ class Logger {
    */
   transformArgs(tags, message, context, category) {
     if (tags instanceof LogArgs) return tags;
+    const ret = this.props.loggers.transformArgs(tags, message, context, category);
 
-    ({ tags, message, context, category } = this.props.loggers.transformArgs(tags, message, context, category));
-    tags = this.tags(tags);
-    context = this.context(context);
+    // Overlay my tags and context
+    ret.tags = this.tags(ret.tags);
+    ret.context = this.context(ret.context);
+    ret.category = this.category(ret.category);
 
-    category = this.category(category);
-
-    return Object.assign(new LogArgs(), {
-      tags,
-      message,
-      context,
-      category,
-    });
+    return ret;
   }
 
   /**
@@ -2444,17 +2474,18 @@ class Logger {
   }
 
   /**
-   * @returns {Loggers|Logger}
+   * @returns {Loggers|object}
    */
   get parent() {
     return this.props.parent;
   }
 
   /**
-   * @param {string} [category]
-   * @returns {Logger}
+   * @returns {object}
    */
-  logger(category) {
+  logger(category, logger) {
+    category = this.category(category);
+    if (logger) return this.props.loggers.logger(category, logger);
     return new Logger(this, undefined, undefined, category);
   }
 
@@ -2462,7 +2493,7 @@ class Logger {
    * @param {*} [tags]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {Logger}
+   * @returns {object}
    */
   child(tags, context, category) {
     return new Logger(this, tags, context, category);

@@ -1,5 +1,10 @@
 # @goodware/log Release History
 
+## 3.2.7 2020-06-17
+
+1. For plain console output, move level after the message
+2. [#39 Child logger caching](https://github.com/good-ware/js-log/issues/39)
+
 ## 3.2.6 2020-06-15
 
 Rename built-in log names starting with @log/ to start with @goodware instead
