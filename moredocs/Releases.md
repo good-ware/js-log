@@ -1,10 +1,11 @@
 # @goodware/log Release History
 
-## 3.2.8 2020-06-18
+## 3.3.2 2020-06-18
 
-Add a unit test
+- Add a unit test
+- Update docs
 
-## 3.2.7 2020-06-17
+## 3.3.0 2020-06-17
 
 1. For plain console output, output level after the message
 2. [#39 Child logger caching](https://github.com/good-ware/js-log/issues/39)
