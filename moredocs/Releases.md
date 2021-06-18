@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.2.8 2020-06-18
+
+Add a unit test
+
 ## 3.2.7 2020-06-17
 
 1. For plain console output, output level after the message

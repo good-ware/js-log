@@ -80,7 +80,7 @@ async function go(colors) {
   }
 
   // Now 'dog' logs at silly
-  loggers.logger('dog', loggers.child(['warn', 'goofy'], null, null, 'cat'));
+  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof' }));
   if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
 
   // Check the category of a saved logger is the same as the category provided to Loggers.logger()
@@ -92,6 +92,8 @@ async function go(colors) {
     if (count !== unitTest.entries.length) throw new Error();
     loggers.logger('dog').log('a'); // Use the tags for dog's logger
     if (count === unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    if (entry.data.dog !== 'woof') throw new Error();
   }
   // ============ logger() tests end
 
@@ -787,7 +789,7 @@ async function go(colors) {
     if (unitTest.entries.length !== 169 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 107 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 108 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
@@ -813,10 +815,11 @@ async function test() {
   let error;
 
   try {
-    await go(false);
     await go(true);
+    await go(false);
+
     // eslint-disable-next-line no-console
-    console.log('Successful');
+    console.log('\x1b[32m\x1b[40m\u2713\x1b Pass\x1b[0m');
   } catch (err) {
     error = err;
   }
