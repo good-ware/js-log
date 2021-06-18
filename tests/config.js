@@ -52,7 +52,9 @@ configs.dev = {
         cloudWatch: 'info',
       },
       dog: {
-        file: 'warn', console: 'warn', cloudWatch: 'warn',
+        file: 'warn',
+        console: 'warn',
+        cloudWatch: 'warn',
       },
     },
   },

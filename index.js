@@ -904,7 +904,7 @@ ${stack}`);
     tags.forEach((tag) => {
       if (tag !== plainLevel) tags2.push(tag);
     });
-    return `${ms} ${message} [${tags2.join(' ')}][${category}][${id}]`;
+    return `${ms} ${message}  [${tags2.join(' ')} ${category}] [${id}]`;
   }
 
   /**
@@ -1745,7 +1745,7 @@ ${stack}`);
     ({ tags, category } = this.transformArgs(tags, undefined, undefined, category));
     category = this.category(category);
 
-    // Mix in category loger's tags
+    // Mix in category logger's tags
     {
       const cat = this.logger(category);
       if (cat !== this) tags = cat.tags(tags);
@@ -2079,7 +2079,7 @@ ${stack}`);
 
     context = Loggers.contextToObject(context);
 
-    // Mix in category loggers's context (isLevelEnabled does this for tags)
+    // Mix in category logger's context (isLevelEnabled does this for tags)
     {
       const cat = this.logger(info.category);
       if (cat !== this) context = cat.context(context);

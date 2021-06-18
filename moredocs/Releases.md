@@ -2,7 +2,7 @@
 
 ## 3.2.7 2020-06-17
 
-1. For plain console output, move level after the message
+1. For plain console output, output level after the message
 2. [#39 Child logger caching](https://github.com/good-ware/js-log/issues/39)
 
 ## 3.2.6 2020-06-15

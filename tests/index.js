@@ -784,10 +784,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 167 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 169 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 106 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 107 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();
