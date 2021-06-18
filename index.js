@@ -1540,7 +1540,7 @@ ${error}`);
     category = this.category(category);
     const { loggers } = this.props;
     if (logger) {
-      // Ensure the logger's cateogry is the same as the category argument
+      // Ensure the logger's category is the same as the category argument
       if (category !== logger.category()) {
         // eslint-disable-next-line no-use-before-define
         logger = new Logger(logger, undefined, undefined, category);

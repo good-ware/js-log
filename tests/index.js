@@ -69,22 +69,28 @@ async function go(colors) {
   // Ready for testing
 
   // ============ logger() tests begin
+  // eslint-disable-next-line no-self-compare
+  if (loggers.logger('dog') !== loggers.logger('dog')) throw new Error();
+
   // 'dog' doesn't log at silly
   if (loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
-
   {
     const count = unitTest.entries.length;
-    loggers.logger('dog');
     loggers.logger('dog').silly('a');
     if (count !== unitTest.entries.length) throw new Error();
   }
 
-  // Now 'dog' logs at silly
+  // Now 'dog' logs at silly because warn is added
   loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof' }));
+
+  // Check the category of a saved logger is the same as the category provided to Loggers.logger(category, loggerObj)
+  if (loggers.logger('dog').category() !== 'dog') throw new Error();
+
+  // Check logging at any level works
   if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
 
-  // Check the category of a saved logger is the same as the category provided to Loggers.logger()
-  if (loggers.logger('dog').category() !== 'dog') throw new Error();
+  // Check disabling the warn tag
+  if (loggers.isLevelEnabled({ tags: { silly: true, warn: false }, category: 'dog' })) throw new Error();
 
   {
     const count = unitTest.entries.length;
