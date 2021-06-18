@@ -673,7 +673,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
       if (version === undefined) version = '';
 
       this.log(
-        null,
+        undefined,
         `Ready: ${service} v${version} ${stage} [${myName} version v${myVersion}]`,
         undefined,
         logCategories.log
@@ -754,7 +754,7 @@ ${directories.join('\n')}`);
       const error = Error(`Invalid datatype provided for category (${type})`);
 
       const stack = error.stack.replace(stripStack, '');
-      this.log('error', stack, null, logCategories.log);
+      this.log('error', stack, undefined, logCategories.log);
       // eslint-disable-next-line no-console
       console.warn(`error: [${myName}]
 ${stack}`);
@@ -1057,7 +1057,7 @@ ${error}`);
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     if (error.code === 'InvalidParameterException') return;
-    this.log(error, null, null, logCategories.cloudWatch);
+    this.log(error, undefined, undefined, logCategories.cloudWatch);
   }
 
   /**
@@ -1261,7 +1261,7 @@ ${error}`)
 
     if (!this.props.restarting && this.options.say.stopping) {
       const { service, stage, version } = this.options;
-      this.log(null, `Stopping: ${service} v${version} ${stage}`, undefined, logCategories.log);
+      this.log(undefined, `Stopping: ${service} v${version} ${stage}`, undefined, logCategories.log);
     }
 
     this.props.stopping = true;
@@ -1539,10 +1539,15 @@ ${error}`);
     category = this.category(category);
     const { loggers } = this.props;
     if (logger) {
+      // Ensure the logger's cateogry is the same as the category argument
+      if (category !== logger.category()) {
+        // eslint-disable-next-line no-use-before-define
+        logger = new Logger(logger, undefined, undefined, category);
+      }
       loggers[category] = logger;
       return logger;
     }
-    logger = loggers[logger];
+    logger = loggers[category];
     if (logger) return logger;
     if (category === this.options.defaultCategory) {
       logger = this;
@@ -1550,7 +1555,7 @@ ${error}`);
       // eslint-disable-next-line no-use-before-define
       logger = new Logger(this, undefined, undefined, category);
     }
-    loggers[logger] = logger;
+    loggers[category] = logger;
     return logger;
   }
 
