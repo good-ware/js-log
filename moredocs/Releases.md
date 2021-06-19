@@ -1,8 +1,9 @@
 # @goodware/log Release History
 
-## 3.3.6 2020-06-19
+## 3.3.6-3.3.7 2020-06-19
 
-Fix colorization for plain console
+- Fix colorization for plain console
+- Update docs
 
 ## 3.3.1 - 3.3.5 2020-06-18
 
