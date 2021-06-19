@@ -633,7 +633,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (options.unitTest) {
       // eslint-disable-next-line no-console
-      console.log(`Unit test mode enabled [${myName}]`);
+      console.log(`Unit test mode enabled  [info ${myName}]`);
 
       this.unitTest = {
         entries: [],
@@ -732,8 +732,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     // Unable to create directories
     // eslint-disable-next-line no-console
-    console.warn(`warn: Failed creating logs directory. Directories attempted: [${myName}]
-${directories.join('\n')}`);
+    console.warn(`Failed creating logs directory. Directories attempted:
+${directories.join('\n')}  [warn ${myName}]`);
 
     return undefined;
   }
@@ -755,10 +755,9 @@ ${directories.join('\n')}`);
       const error = Error(`Invalid datatype provided for category (${type})`);
 
       const stack = error.stack.replace(stripStack, '');
-      this.log('error', stack, undefined, logCategories.log);
+      this.log('warn', stack, undefined, logCategories.log);
       // eslint-disable-next-line no-console
-      console.warn(`error: [${myName}]
-${stack}`);
+      console.warn(`${stack}  [warn ${myName}]`);
 
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
@@ -980,7 +979,7 @@ ${stack}`);
 
       if (this.options.say.cloudWatch) {
         // eslint-disable-next-line no-console
-        console.log(`AWS CloudWatch Logs stream names: ${stream} [${myName}]`);
+        console.log(`AWS CloudWatch Logs stream names: ${stream}  [info ${myName}]`);
       }
     }
   }
@@ -1010,7 +1009,7 @@ ${stack}`);
           mkdirp(dir);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.warn(`warn: Failed creating directory '${dir}' [${myName}]
+          console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
 ${error}`);
           filename = null;
         }
@@ -1103,7 +1102,7 @@ ${error}`);
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
         // eslint-disable-next-line no-console
-        console.log(`Waiting up to ${duration} to flush AWS CloudWatch Logs [${myName}]`);
+        console.log(`Waiting up to ${duration} to flush AWS CloudWatch Logs  [info ${myName}]`);
       }, 2500);
     }
 
@@ -1116,7 +1115,7 @@ ${error}`);
 
     if (flushMessageSent) {
       // eslint-disable-next-line no-console
-      console.log(`Flushed AWS CloudWatch Logs [${myName}]`);
+      console.log(`Flushed AWS CloudWatch Logs  [info ${myName}]`);
     }
   }
 
@@ -1161,7 +1160,7 @@ ${error}`);
             .end();
         }).catch((error) =>
           // eslint-disable-next-line no-console
-          console.warn(`warn: Failed closing '${category}' [${myName}]
+          console.warn(`Failed closing '${category}'  [warn ${myName}]
 ${error}`)
         );
       })
@@ -1212,7 +1211,7 @@ ${error}`)
       if (stage === undefined) stage = '';
       if (version === undefined) version = '';
       // eslint-disable-next-line no-console
-      console.log(`Stopped ${service} v${version} ${stage} [${myName} v${myVersion}]`);
+      console.log(`Stopped ${service} v${version} ${stage}  [info ${myName} v${myVersion}]`);
     }
   }
 
@@ -1333,10 +1332,10 @@ ${error}`)
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(`warn: Region was not specified for AWS CloudWatch Logs for '${category}' [${myName}]`);
+          console.warn(` Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
-          console.warn(`warn: Log group was not specified for AWS CloudWatch Logs for '${category}' [${myName}]`);
+          console.warn(` Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
         } else {
           this.initCloudWatch();
           const { uploadRate } = awsOptions;
@@ -1399,7 +1398,7 @@ ${error}`)
               mkdirp(dir);
             } catch (error) {
               // eslint-disable-next-line no-console
-              console.warn(`warn: Failed creating directory '${dir}' [${myName}]
+              console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
 ${error}`);
               filename = null;
             }
@@ -1738,7 +1737,7 @@ ${error}`);
     if (this.props.stopped) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`warn: Stopped [${myName}]
+      console.warn(`Stopped  [warn ${myName}]
 ${stack}`);
       return false;
     }
@@ -2302,7 +2301,7 @@ ${stack}`);
     if (this.props.stopping && category !== logCategories.cloudWatch) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`warn: Stopping [${myName}]
+      console.warn(`Stopping  [warn ${myName}]
 ${util.inspect(entry)}
 ${stack}`);
       return;
@@ -2348,7 +2347,7 @@ ${stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(`warn: Stopped [${myName}]
+      console.warn(`Stopped  [warn ${myName}]
 ${util.inspect({
   category,
   tags,
