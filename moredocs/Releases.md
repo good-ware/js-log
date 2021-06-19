@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.3.6 2020-06-19
+
+Fix colorization for plain console
+
 ## 3.3.1 - 3.3.5 2020-06-18
 
 - Add unit tests

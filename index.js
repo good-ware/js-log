@@ -2,6 +2,7 @@
 /* eslint-disable no-multi-assign */
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
+const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12
 const hostId = require('hostid');
 const mkdirp = require('mkdirp-sync');
 const humanizeDuration = require('humanize-duration');
@@ -19,7 +20,6 @@ const WinstonCloudWatch = require('winston-cloudwatch');
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 const addErrorSymbol = Symbol.for('error');
-const levelSymbol = Symbol.for('level');
 
 // =============================================================================
 // Developer Notes
@@ -77,14 +77,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs { }
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -302,8 +302,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -898,12 +899,10 @@ ${directories.join('\n')}  [warn ${myName}]`);
    */
   static printf(info) {
     const { id, level, ms, message, category, tags } = info;
-    const plainLevel = info[levelSymbol]; // Not colorized
-    const tags2 = [level]; // Might be colorized
-    tags.forEach((tag) => {
-      if (tag !== plainLevel) tags2.push(tag);
-    });
-    return `${ms} ${message}  [${tags2.join(' ')} ${category}] [${id}]`;
+    let codes = level.match(ansiRegex);
+    if (!codes) codes = ['', ''];
+    const spaces = message ? '  ' : '';
+    return `${ms} ${message}${spaces}${codes[0]}[${tags.join(' ')} ${category}] [${id}]${codes[1]}`;
   }
 
   /**
@@ -1331,7 +1330,7 @@ ${error}`)
 
         if (!awsOptions.region) {
           // eslint-disable-next-line no-console
-          console.warn(` Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+          console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
         } else if (!logGroupName) {
           // eslint-disable-next-line no-console
           console.warn(` Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
@@ -2348,11 +2347,11 @@ ${stack}`);
       // eslint-disable-next-line no-console
       console.warn(`Stopped  [warn ${myName}]
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);

@@ -18,7 +18,7 @@
 
 ## Features
 
-1. Brings HAPI-style logging via tags to Winston. Log entries can be filtered by tags on a per-transport basis.
+1. HAPI-style tags: Log entries can be filtered by tags on a per-transport basis
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 3. Safely logs large objects and arrays - even those with circular references
    3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple
@@ -78,6 +78,20 @@ Child loggers and Loggers instances have the following methods:
 - context(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's context.
 - category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
+Context can be 'built up' by chaining calls to logger() and/or child().
+
+```js
+loggers.logger('dog').child('dogTag').child(null, { userId: 101 }).logger('anotherCategory').debug('Wow!');
+```
+
+### Caching Loggers
+
+A logger can be associated with a category by providing an object as the second parameter to logger(). This changes the value that is returned by logger() when the same category is provided. For example:
+
+```js
+loggers.logger('dog', loggers.child('dogTag'));
+```
+
 ### Stopping and Flushing
 
 `stop()` is a heavyweight asynchronous method that safely closes all transports. It can be reversed via `start().` `restart()` is also available.
@@ -106,7 +120,7 @@ A logger sends log entries to transports. It implements the following methods:
 - default() The default level is specified via option
 - `level`() where `level` is a logging level name. Example: info()
 - child()
-- logger(category) Is an alias for child({category})
+- logger(category, [loggerObject])
 - parent() For child loggers to access their parent, which is either a Loggers object or a child logger
 - loggers() For child loggers to access the Loggers object that created them
 - winstonLogger()
@@ -122,7 +136,7 @@ A logger sends log entries to transports. It implements the following methods:
 
 ### category
 
-The name of a logger. The default category is specified via the 'defaultCategory' options setting and defaults to 'general.' Transport filtering (based on tags) is specified on a per-category basis.
+Per Winston terminology, a category is the name of a logger. When a category is not specified, the category specified via the 'defaultCategory' options setting is used. 'defaultCategory' defaults to 'general.' Transport filtering (based on tags) is specified on a per-category basis. Loggers inherit the settings of the 'default' category (not the 'defaultCategory' options setting).
 
 ### log entry
 
