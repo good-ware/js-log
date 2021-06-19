@@ -16,6 +16,12 @@
 
 `npm i --save @goodware/log`
 
+## Introduction
+
+This package extends Winston3 with additional features such as tag-based filtering. It is intended for NodeJS runtimes including AWS Lambda. The package can log scalars, objects (even with cyclical references), arrays, and graphs of Error objects quickly and reliably. Log entries can be sent to the following transports: console (via winston-console-format), files (via winston-daily-rotate-file) in JSON format, and CloudWatch Logs (via winston-cloudwatch) in JSON format.
+
+@goodware/log features a large unit test suite and has been servicing a commercial SaaS product for several years. It is BSD licensed.
+
 ## Features
 
 1. HAPI-style tags: Log entries can be filtered by tags on a per-transport basis
@@ -70,7 +76,7 @@ One Winston logger is created for each unique category name. winstonLogger() ret
 
 ### Child Loggers (flyweight)
 
-The logger() and child() methods return objects that have their own tags, context, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
+logger() and child() return objects with their own tags, context, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
 
 Child loggers and Loggers instances have the following methods:
 
@@ -120,7 +126,7 @@ A logger sends log entries to transports. It implements the following methods:
 - default() The default level is specified via option
 - `level`() where `level` is a logging level name. Example: info()
 - child()
-- logger(category, [loggerObject])
+- logger(category [, loggerObject])
 - parent() For child loggers to access their parent, which is either a Loggers object or a child logger
 - loggers() For child loggers to access the Loggers object that created them
 - winstonLogger()
