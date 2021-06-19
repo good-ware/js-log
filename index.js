@@ -899,10 +899,18 @@ ${directories.join('\n')}  [warn ${myName}]`);
    */
   static printf(info) {
     const { id, level, ms, message, category, tags } = info;
-    let codes = level.match(ansiRegex);
-    if (!codes) codes = ['', ''];
+    let colorBegin;
+    let colorEnd;
+    {
+      const codes = level.match(ansiRegex);
+      if (codes) {
+        [colorBegin, colorEnd] = codes;
+      } else {
+        colorBegin = colorEnd = '';
+      }
+    }
     const spaces = message ? '  ' : '';
-    return `${ms} ${message}${spaces}${codes[0]}[${tags.join(' ')} ${category}] [${id}]${codes[1]}`;
+    return `${ms} ${message}${spaces}${colorBegin}[${tags.join(' ')} ${category} ${id}]${colorEnd}`;
   }
 
   /**
