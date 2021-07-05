@@ -16,6 +16,7 @@ const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
+const Stack = require('./Stack');
 
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
@@ -116,6 +117,7 @@ class Loggers {
    *  {object} props.logLevel {string} level name or 'default' -> {logLevel: {string}}
    *  {object} props.levelSeverity {string} level plus 'on', 'off', and 'default'
    *   -> {Number} {object} winstonLevels Passed to Winston when creating a logger
+   *  {object} props.loggerStacks
    *
    * Notes to Maintainers
    *  1. tags, message, and context provided to public methods should never be modified
@@ -976,7 +978,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
     if (this.props.cloudWatchTransports) return;
     this.props.cloudWatchTransports = [];
 
-    if (!this.cloudWatchStream) {
+    if (!this.props.cloudWatchStream) {
       let stream = this.props.created.replace('T', ' ');
       // CloudWatch UI already sorts on time
       stream = `${stream} ${this.props.hostId}`;
@@ -1575,6 +1577,22 @@ ${error}`);
   child(tags, context, category) {
     // eslint-disable-next-line no-use-before-define
     return new Logger(this, tags, context, category);
+  }
+
+  /**
+   * Retrieves a named Stack instance
+   * @param {string} [name]
+   * @returns {Stack}
+   */
+  stack(name = 'default') {
+    let { stacks } = this.props;
+    if (!stacks) this.props.stacks = stacks = {};
+    let stack = stacks[name];
+    if (stack) return stack;
+
+    stack = new Stack();
+    stacks[name] = stack;
+    return stack;
   }
 
   /**
@@ -2508,6 +2526,14 @@ class Logger {
    */
   child(tags, context, category) {
     return new Logger(this, tags, context, category);
+  }
+
+  /**
+   * @param {string} name
+   * @returns {Stack}
+   */
+  stack(name = 'default') {
+    return this.props.loggers.stack(name);
   }
 
   /**

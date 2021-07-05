@@ -120,12 +120,19 @@ An object provided to Loggers' constructor. Options are described by optionsObje
 
 ### logger
 
-A logger sends log entries to transports. It implements the following methods:
+A logger sends log entries to transports. Loggers instances are loggers. child() and logger() return loggers.
 
+A logger implements the following interface:
+
+- start()
+- stop()
+- restart()
+- ready (property)
 - log()
 - default() The default level is specified via option
 - `level`() where `level` is a logging level name. Example: info()
 - child()
+- stack()
 - logger(category [, loggerObject])
 - parent() For child loggers to access their parent, which is either a Loggers object or a child logger
 - loggers() For child loggers to access the Loggers object that created them
@@ -135,10 +142,6 @@ A logger sends log entries to transports. It implements the following methods:
 - category() (mostly useful for retrieving the category assigned to Logger objects)
 - flush()
 - flushCloudWatchTransports()
-- ready
-- start()
-- stop()
-- restart()
 
 ### category
 

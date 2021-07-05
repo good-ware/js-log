@@ -782,6 +782,22 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
+  // ===========
+  // Stack Tests
+  {
+    const stack = loggers.stack('joe');
+    if (!stack) throw new Error();
+    if (stack !== loggers.stack('joe')) throw new Error();
+    stack.push(loggers);
+    stack.push(loggers);
+    if (stack.push(loggers) !== 3) throw new Error();
+    if (loggers !== stack.pop(2)) throw new Error();
+    if (stack.push(loggers) !== 3) throw new Error();
+    if (stack.pop() !== loggers) throw new Error();
+    if (stack.pop(0) !== loggers) throw new Error();
+    if (stack.length) throw new Error();
+  }
+
   // ===============
   // Stop the logger
   if (!loggers.ready) throw new Error('ready failed');
@@ -805,10 +821,10 @@ async function go(colors) {
   logger.info('Restarted');
 
   await loggers.stop();
-
   loggers.start();
   await loggers.flushCloudWatchTransports();
   await loggers.flushCloudWatchTransports();
+  await loggers.restart();
   await loggers.stop();
 
   loggers = undefined;

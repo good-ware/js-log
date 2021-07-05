@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>MySqlLogger - Documentation</title>
+    <title>Stack - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -29,7 +29,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">MySqlLogger</h1>
+    <h1 class="page-title">Stack</h1>
     
 
     
@@ -42,8 +42,10 @@
 <header>
     
         <h2>
-        MySqlLogger
+        Stack
         </h2>
+        
+            <div class="class-description"><p>A stack with some extra error handling. Items stored in the stack can have any type.</p></div>
         
     
 </header>
@@ -55,16 +57,14 @@
 <div class="section-method">
 
     
+    <h2>Constructor</h2>
+    
 
-    <h4 class="name" id="MySqlLogger"><span class="type-signature"></span>new MySqlLogger<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Stack"><span class="type-signature"></span>new Stack<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
 
-
-<div class="description">
-    <p>Logs the start and completion or error of a MySql database command</p>
-</div>
 
 
 
@@ -99,7 +99,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line9">line 9</a>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line4">line 4</a>
     </li></ul></dd>
     
 
@@ -147,6 +147,74 @@
     
 
     
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<div class="section-members">
+<h4 class="name" id="length"><span class="type-signature"></span>length<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>Returns the number of items in the stack</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line23">line 23</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+</div>
+
+        
+    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -157,15 +225,14 @@
 
     
 
-    <h4 class="name" id=".emitQuery"><span class="type-signature">(static) </span>emitQuery<span class="signature">(logger, connection, sql, params)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    <h4 class="name" id="bottom"><span class="type-signature"></span>bottom<span class="signature">(offset<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {*}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Creates a 'begin' log entry. The SQL statement and params are logged. Returns the value returned by
-the older mysql package's (instead of the mysql2 package) connection.query method for stream-based data access.</p>
+    <p>Returns an item relative to the bottom of the stack</p>
 </div>
 
 
@@ -201,7 +268,7 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line45">line 45</a>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line69">line 69</a>
     </li></ul></dd>
     
 
@@ -233,7 +300,11 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -245,102 +316,41 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
 
         <tr>
             
-                <td class="name"><code>logger</code></td>
+                <td class="name"><code>offset</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><code>object</code></span>
+<span class="param-type"><code>number</code></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
             
 
             <td class="description last">
-                
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>connection</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>object</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>A mysql2 Connection object</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sql</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>string</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>A SQL statement to execute</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>params</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>*</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>Placeholder arguments for the sql statement</p>
+                <p>An index relative to the bottom of the stack. 0 for the bottom of the stack; 1 for the
+item above the bottom of the stack; 2 for the second item above the bottom of the stack; etc..</p>
                 
             </td>
         </tr>
@@ -373,7 +383,259 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
     </dt>
     <dd>
         
-<span class="param-type"><code>object</code></span>
+<span class="param-type"><code>*</code></span>
+
+
+    </dd>
+</dl>
+
+
+    
+</div>
+
+
+
+</div>
+        
+            
+<div class="section-method">
+
+    
+
+    <h4 class="name" id="clear"><span class="type-signature"></span>clear<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Removes all items</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line15">line 15</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+        
+            
+<div class="section-method">
+
+    
+
+    <h4 class="name" id="pop"><span class="type-signature"></span>pop<span class="signature">(to<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {*}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Removes items from the top of the stack</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line42">line 42</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>to</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><code>number</code></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <p>If negative, remove the item at the top of the stack only. Otherwise, remove items from the
+top of the stack until its length is equal to the specified value.</p>
+                
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="section-returns">
+<h5>Returns:</h5>
+
+        
+
+<dl class="param-type">
+    <dt>
+        Type:
+    </dt>
+    <dd>
+        
+<span class="param-type"><code>*</code></span>
 
 
     </dd>
@@ -381,15 +643,7 @@ the older mysql package's (instead of the mysql2 package) connection.query metho
 
 
 <div class="param-desc">
-    <p>Returns an object with two properties:
-emitter: The return value of conection.connection.query(). It has on() methods.
-logger: The return value of GeneratorLogger.begin() with the following additional properties:</p>
-<ol>
-<li>{String} sql</li>
-<li>{*[]} params</li>
-<li>{String} summary: A summarized version of the sql argument
-See GeneratorLogger.begin() for more information.</li>
-</ol>
+    <p>The last item removed from the stack</p>
 </div>
 
     
@@ -404,15 +658,14 @@ See GeneratorLogger.begin() for more information.</li>
 
     
 
-    <h4 class="name" id=".query"><span class="type-signature">(static) </span>query<span class="signature">(logger, connection, sql, params)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+    <h4 class="name" id="push"><span class="type-signature"></span>push<span class="signature">(item)</span><span class="type-signature"> &rarr; {number}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Creates two log entries for a Connection.query() execution: 'begin' and either 'end' or 'error.' See
-TaskLogger.execute for more information. The sql and params arguments are logged.</p>
+    <p>Adds an item to the top of the stack</p>
 </div>
 
 
@@ -448,7 +701,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MySqlLogger.js.html">MySqlLogger.js</a>, <a href="MySqlLogger.js.html#line19">line 19</a>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line32">line 32</a>
     </li></ul></dd>
     
 
@@ -492,85 +745,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
 
         <tr>
             
-                <td class="name"><code>logger</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>object</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>connection</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>Connection</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>mysql2 Connection object</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sql</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>string</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>SQL statement to execute</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>params</code></td>
+                <td class="name"><code>item</code></td>
             
 
             <td class="type">
@@ -587,7 +762,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
             
 
             <td class="description last">
-                <p>SQL statement placeholder arguments</p>
+                
                 
             </td>
         </tr>
@@ -620,7 +795,7 @@ TaskLogger.execute for more information. The sql and params arguments are logged
     </dt>
     <dd>
         
-<span class="param-type"><code>Promise</code></span>
+<span class="param-type"><code>number</code></span>
 
 
     </dd>
@@ -628,8 +803,185 @@ TaskLogger.execute for more information. The sql and params arguments are logged
 
 
 <div class="param-desc">
-    <p>Returns the return value of connection.query(sql, params)</p>
+    <p>The new length of the stack</p>
 </div>
+
+    
+</div>
+
+
+
+</div>
+        
+            
+<div class="section-method">
+
+    
+
+    <h4 class="name" id="top"><span class="type-signature"></span>top<span class="signature">(offset<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {*}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Returns an item relative to the top of the stack</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Stack.js.html">Stack.js</a>, <a href="Stack.js.html#line56">line 56</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>offset</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><code>number</code></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
+            
+
+            <td class="description last">
+                <p>An index relative to the top of the stack. 0 for the top of the stack; 1 for the item
+below the top of the stack; 2 for the second item below the top of the stack; etc..</p>
+                
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="section-returns">
+<h5>Returns:</h5>
+
+        
+
+<dl class="param-type">
+    <dt>
+        Type:
+    </dt>
+    <dd>
+        
+<span class="param-type"><code>*</code></span>
+
+
+    </dd>
+</dl>
+
 
     
 </div>

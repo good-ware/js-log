@@ -1,5 +1,15 @@
 # @goodware/log Release History
 
+## 3.4.0 2020-07-04
+
+### New features:
+
+- [#24](https://github.com/good-ware/js-log/issues/24) Context stack
+
+### Bug fixes:
+
+- [#41](https://github.com/good-ware/js-log/issues/41) AWS logstream name output when restart() is called
+
 ## 3.3.6-3.3.8 2020-06-19
 
 - Fix colorization for plain console

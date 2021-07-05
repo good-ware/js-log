@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>MySqlLogger.js - Documentation</title>
+    <title>Stack.js - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -29,7 +29,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">MySqlLogger.js</h1>
+    <h1 class="page-title">Stack.js</h1>
     
 
     
@@ -39,65 +39,83 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const Defaults = require('./Defaults');
-const TaskLogger = require('./TaskLogger');
-const GeneratorLogger = require('./GeneratorLogger');
-
-/**
- * @description Logs the start and completion or error of a MySql database command
- * @hideconstructor
+            <pre class="prettyprint source linenums"><code>/**
+ * A stack with some extra error handling. Items stored in the stack can have any type.
  */
-class MySqlLogger {
+class Stack {
   /**
-   * @description Creates two log entries for a Connection.query() execution: 'begin' and either 'end' or 'error.' See
-   * TaskLogger.execute for more information. The sql and params arguments are logged.
-   * @param {object} logger
-   * @param {Connection} connection mysql2 Connection object
-   * @param {string} sql SQL statement to execute
-   * @param {*} params SQL statement placeholder arguments
-   * @returns {Promise} Returns the return value of connection.query(sql, params)
+   * @constructor
    */
-  static query(logger, connection, sql, params) {
-    const summary = ` ${sql}`.replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
-    return TaskLogger.execute(
-      logger.child('mysql'),
-      () => connection.query(sql, params),
-      { sql, params, message: `SQL Begin:${summary}` },
-      `SQL End:${summary}`,
-      `SQL:${summary}`
-    );
+  constructor() {
+    this.stack = [];
   }
 
   /**
-   * @description Creates a 'begin' log entry. The SQL statement and params are logged. Returns the value returned by
-   * the older mysql package's (instead of the mysql2 package) connection.query method for stream-based data access.
-   * @param {object} logger
-   * @param {object} connection A mysql2 Connection object
-   * @param {string} sql A SQL statement to execute
-   * @param {*} params Placeholder arguments for the sql statement
-   * @returns {object} Returns an object with two properties:
-   * emitter: The return value of conection.connection.query(). It has on() methods.
-   * logger: The return value of GeneratorLogger.begin() with the following additional properties:
-   * 1. {String} sql
-   * 2. {*[]} params
-   * 3. {String} summary: A summarized version of the sql argument
-   * See GeneratorLogger.begin() for more information.
+   * Removes all items
    */
-  static emitQuery(logger, connection, sql, params) {
-    const summary = ` ${sql}`.replace(/\s+/g, ' ').substr(0, Defaults.maxMessageLength);
-    const emitter = connection.connection.query(sql, params);
-    const logObj = GeneratorLogger.begin(
-      logger.child('mysql'),
-      { sql, params, message: `SQL Begin:${summary}` },
-      `SQL End:${summary}`,
-      `SQL:${summary}`
-    );
-    Object.assign(logObj, { sql, params, summary });
-    return { emitter, logger: logObj };
+  clear() {
+    this.stack = [];
+  }
+
+  /**
+   * Returns the number of items in the stack
+   * @returns {number}
+   */
+  get length() {
+    return this.stack.length;
+  }
+
+  /**
+   * Adds an item to the top of the stack
+   * @param {*} item
+   * @returns {number} The new length of the stack
+   */
+  push(item) {
+    return this.stack.push(item);
+  }
+
+  /**
+   * Removes items from the top of the stack
+   * @param {number} [to] If negative, remove the item at the top of the stack only. Otherwise, remove items from the
+   * top of the stack until its length is equal to the specified value.
+   * @returns {*} The last item removed from the stack
+   */
+  pop(to = -1) {
+    const { stack } = this;
+    if (!stack.length) throw new Error('out of range');
+    if (to &lt; 0) return stack.pop();
+    if (to >= stack.length) throw new Error('out of range');
+    return stack.splice(to)[0];
+  }
+
+  /**
+   * Returns an item relative to the top of the stack
+   * @param {number} [offset] An index relative to the top of the stack. 0 for the top of the stack; 1 for the item
+   * below the top of the stack; 2 for the second item below the top of the stack; etc..
+   * @returns {*}
+   */
+  top(offset = 0) {
+    const { stack } = this;
+    const { length } = stack;
+    if (offset &lt; 0 || offset >= length) throw new Error('out of range');
+    return stack[length - offset - 1];
+  }
+
+  /**
+   * Returns an item relative to the bottom of the stack
+   * @param {number} [offset] An index relative to the bottom of the stack. 0 for the bottom of the stack; 1 for the
+   * item above the bottom of the stack; 2 for the second item above the bottom of the stack; etc..
+   * @returns {*}
+   */
+  bottom(offset = 0) {
+    const { stack } = this;
+    const { length } = stack;
+    if (offset &lt; 0 || offset >= length) throw new Error('out of range');
+    return stack[offset];
   }
 }
 
-module.exports = MySqlLogger;
+module.exports = Stack;
 </code></pre>
         </article>
     </section>
