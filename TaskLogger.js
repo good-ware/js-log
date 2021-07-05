@@ -53,8 +53,8 @@ class TaskLogger {
       result = await task({ logger, taskId });
     } catch (error) {
       let msg = errorMessage;
-      if (errorHandler) msg = errorHandler(error, logger, errorMessage);
-      if (msg) logger.log('error', msg, { error });
+      if (errorHandler) msg = errorHandler(error, logger, errorMessage) || errorMessage;
+      logger.log('error', msg, { error });
       throw error;
     }
     logger.log('end', endMessage || beginMessage);

@@ -1584,7 +1584,7 @@ ${error}`);
    * @param {string} [name]
    * @returns {Stack}
    */
-  stack(name = 'default') {
+  stack(name) {
     let { stacks } = this.props;
     if (!stacks) this.props.stacks = stacks = {};
     let stack = stacks[name];
