@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 // const why = require('why-is-node-running');
 const Loggers = require('../index');
+const TaskLogger = require('../TaskLogger');
 
 // For debugging info, run with:
 // WINSTON_CLOUDWATCH_DEBUG=true node logger.js
@@ -67,6 +68,32 @@ async function go(colors) {
 
   // =================
   // Ready for testing
+  //
+
+  // An error is provided and the message is blank
+  {
+    const count = unitTest.entries.length;
+    loggers.error(undefined, new Error('abc'));
+    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
+    const error = new Error('x');
+    loggers.info(undefined, { error });
+    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+  }
+
+  // An error is provided and the message is blank; context data is provided
+  {
+    const count = unitTest.entries.length;
+    const error = new Error('x');
+    loggers.info(undefined, { error, x: 5 });
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (!entry.groupId) throw new Error();
+  }
 
   // ============ logger() tests begin
   // eslint-disable-next-line no-self-compare
@@ -97,8 +124,9 @@ async function go(colors) {
     loggers.logger('dog').silly('a'); // logLevel is specified via silly()
     if (count !== unitTest.entries.length) throw new Error();
     loggers.logger('dog').log('a'); // Use the tags for dog's logger
+    // Nothing was logged to thie console?
     if (count === unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.data.dog !== 'woof') throw new Error();
   }
   // ============ logger() tests end
@@ -116,7 +144,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log(new Error());
     if (count === unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
 
@@ -185,28 +213,28 @@ async function go(colors) {
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'error') throw new Error();
     if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
   }
   {
     logger.info(new Error('err'), 'message');
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
   }
   {
     logger.child().log(new Error('err'), 'message');
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'error') throw new Error();
     if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
   }
   {
     logger.child().info(new Error('err'), 'message');
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
   }
 
   // Test passing category to logLevel
@@ -236,7 +264,7 @@ async function go(colors) {
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'error') throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
     if (entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
@@ -245,7 +273,7 @@ async function go(colors) {
   {
     logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
@@ -255,7 +283,7 @@ async function go(colors) {
     logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.tags.includes('info')) throw new Error();
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
@@ -264,7 +292,7 @@ async function go(colors) {
   {
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
@@ -273,7 +301,7 @@ async function go(colors) {
   {
     logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (!entry.data.error) throw new Error();
+    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
@@ -338,7 +366,6 @@ async function go(colors) {
     if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (entry.message !== 'Error: 5') throw new Error();
-    if (!entry.data.stack) throw new Error();
   }
 
   // Error
@@ -694,7 +721,7 @@ async function go(colors) {
     if (item.data.extra !== 2) throw new Error();
     if (item.message !== 'outer error') throw new Error();
     if (!item.stack) throw new Error();
-    if (item.data.error !== 'Error: inner error') throw new Error();
+    // if (item.data.error !== 'Error: inner error') throw new Error();
     item = unitTest.entries[unitTest.entries.length - 1];
   }
 
@@ -711,12 +738,11 @@ async function go(colors) {
     logger.info(['logStack'], 'A message');
     const item = unitTest.entries[unitTest.entries.length - 1];
     if (!item.stack) throw new Error();
-    if (item.logStack) throw new Error();
   }
   {
     logger.info(new Error());
     const item = unitTest.entries[unitTest.entries.length - 1];
-    if (item.stack) throw new Error();
+    if (!item.stack) throw new Error();
   }
   {
     logger.error(['logStack'], new Error());
@@ -798,6 +824,21 @@ async function go(colors) {
     if (stack.length) throw new Error();
   }
 
+  // ==========
+  // TaskLogger
+  try {
+    TaskLogger.execute(
+      loggers,
+      () => {
+        throw new Error('x');
+      },
+      'begin',
+      'end'
+    );
+  } catch (error) {
+    //
+  }
+
   // ===============
   // Stop the logger
   if (!loggers.ready) throw new Error('ready failed');
@@ -808,10 +849,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 169 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 171 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
-    if (len !== 32) throw new Error(len);
-    if (unitTest.dataCount !== 108 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (len !== 37) throw new Error(len);
+    if (unitTest.dataCount !== 38 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

@@ -16,6 +16,7 @@ const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 const WinstonCloudWatch = require('winston-cloudwatch');
+
 const Stack = require('./Stack');
 
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
@@ -78,14 +79,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry {}
+class LogEntry { }
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs {}
+class LogArgs { }
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -126,12 +127,11 @@ class Loggers {
    * @todo
    * 1. When console data is requested but colors are disabled, output data without colors using a new formatter
    * 2. Add a new data prop to output to the plain console
-   * 3. Document level-named methods take a tag name as a string if the first argument has no space
-   * 4. Document defaultTagAllowLevel
-   * 5. Document custom levels and colors
-   * 6. Test redaction
-   * 7. Document redaction
-   * 8. Move Logger to another module - see
+   * 3. Document defaultTagAllowLevel
+   * 4. Document custom levels and colors
+   * 5. Test redaction
+   * 6. Document redaction
+   * 7. Move Logger to another module - see
    *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
    */
   /**
@@ -304,9 +304,8 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
-      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-    }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+      }`;
   }
 
   /**
@@ -833,8 +832,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
   static defaultMeta(category) {
     // Do not add more fields here. category is needed by the custom formatter for logging uncaught exceptions.
     return {
-      category, // The category of the Winston logger, not the category
-      // provided to log() etc.
+      category, // The category of the Winston logger, not the category provided to log() etc.
     };
   }
 
@@ -869,7 +867,6 @@ ${directories.join('\n')}  [warn ${myName}]`);
     }
     // ========================================================
     // This is the uncaught exception handler. Reroute to log()
-    // ========================================================
     const { category } = info; // From defaultMeta
     delete info.category;
     let { level } = info;
@@ -912,7 +909,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
       }
     }
     const spaces = message ? '  ' : '';
-    return `${ms} ${message}${spaces}${colorBegin}[${tags.join(' ')} ${category} ${id}]${colorEnd}`;
+    return `${ms} ${message}${spaces}${colorBegin}[${tags.join(' ')} ${category}  ${id}]${colorEnd}`;
   }
 
   /**
@@ -954,6 +951,9 @@ ${directories.join('\n')}  [warn ${myName}]`);
 
     // Plain console
     const checkTags = winston.format((info) => {
+      // ================================
+      // Don't log embedded error objects
+      // TODO: make this configurable
       if (info.depth) return false;
       return this.checkTags('console', info);
     })();
@@ -2075,7 +2075,8 @@ ${stack}`);
       }
     }
 
-    // undefined values are placeholders for ordering and are deleted at the end of this method
+    // undefined values are placeholders for ordering and are deleted at the end of this method.
+    // false values are not removed.
     Object.assign(entry, {
       message: undefined,
       level,
@@ -2092,6 +2093,7 @@ ${stack}`);
       service: this.options.service,
       version: this.options.version,
       commitSha: undefined,
+      logStack: false, // Set and removed by send()
       stack: false, // Set and removed by send()
       data: undefined,
       transports: info.transports,
@@ -2145,31 +2147,29 @@ ${stack}`);
       }
     });
 
-    // Promote data to meta
+    // Copy keys in 'data' to meta
     const { data } = state;
     if (data) {
       this.props.metaKeys.forEach((key) => {
         const value = data[key];
+
         if (value !== null && value !== undefined) {
           const type = typeof value;
           key = this.props.meta[key]; // Rename object key to meta key
           if (type === 'string') {
             if (value.length) {
               entry[key] = value;
+              delete data[key];
             }
           } else if (scalars[type]) {
             entry[key] = value;
+            delete data[key];
           }
         }
-
-        if (key === 'message') delete data[key];
       });
 
-      if (Loggers.hasKeys(data)) entry.data = data;
+      entry.data = data;
     }
-
-    // Transports don't like empty messages
-    if (entry.message === null || entry.message === undefined) entry.message = '';
 
     // Remove meta keys that have undefined values
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
@@ -2183,8 +2183,7 @@ ${stack}`);
     // Add stack trace?
     let addStack = !depth && this.props.logStackLevels[info.level];
 
-    // Turn tags into an array and put the level in the front without modifying
-    // the object in entry.tags
+    // Turn tags into an array and put the level in the front without modifying the object in entry.tags
     if (tags) {
       // Make sure meta tags are deleted
 
@@ -2208,8 +2207,14 @@ ${stack}`);
       entry.tags = [level];
     }
 
-    // Set the stack meta
-    if (addStack) entry.stack = new Error(entry.message).stack.replace('Error: ', '').replace(stripStack, '');
+    // Set the logStack meta
+    if (addStack) {
+      let msg;
+      if (entry.message) {
+        msg = entry.message.replace(/^Error(\n|: )/, '');
+      }
+      entry.logStack = new Error(msg).stack.replace(/^Error(\n|: )/, '').replace(stripStack, '');
+    }
 
     return entry;
   }
@@ -2258,11 +2263,13 @@ ${stack}`);
       }
     }
 
+    let firstError = '';
+
     const { data } = entry;
     if (data) {
       if (addContext) {
-        // ==========================
-        // Add Errors to errors array
+        // ======================================================================
+        // Add Errors to errors array and remove the object reference from 'data'
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in data) {
           const value = data[key];
@@ -2285,58 +2292,78 @@ ${stack}`);
             delete context[key];
           }
 
-          // Error->string
-          data[key] = this.objectToString(value);
+          delete data[key];
+
+          // Prefer 'error'
+          if (!firstError || key === 'error') firstError = data[key];
         }
       }
 
-      // ===============================================
-      // If the entry's message is empty, use data.error
-      if (!entry.message && scalars[typeof data.error]) entry.message = data.error;
-
       // =================================================================
       // Convert data to JSON. It removes keys that have undefined values.
-      entry.data = JSON.parse(prune(data, this.options.message.depth, this.options.message.arrayLength));
+      const newData = JSON.parse(prune(data, this.options.message.depth, this.options.message.arrayLength));
+      if (Loggers.hasKeys(newData)) {
+        entry.data = newData;
+      } else {
+        delete entry.data;
+      }
     }
 
     // ====================================================================
     // Remove falsey values from entry that were set to false by logEntry()
-    if (!entry.stack) delete entry.stack;
+    if (!entry.logStack) delete entry.logStack;
+    if (!entry.stack) {
+      if (entry.logStack) {
+        entry.stack = entry.logStack;
+        delete entry.logStack;
+      } else {
+        delete entry.stack;
+      }
+    }
+
+    // ==========================================================================
+    // If there is nothing interesting to log besides errors, only log the errors
+    const skip = !entry.message && contextMessages.length && !contextData && !(data && Loggers.hasKeys(data));
 
     // ===================
     // Set groupId meta
-    if ((contextData || contextMessages.length) && !groupId) groupId = entry.id;
-    if (groupId) {
-      entry.groupId = groupId;
-    } else {
-      delete entry.groupId;
+    if (!groupId) {
+      if (contextData || errors.length) {
+        groupId = entry.groupId = entry.id;
+      } else {
+        // delete entry.groupId;
+      }
     }
 
-    // =================
-    // Set depth meta
-    if (depth) {
-      entry.depth = depth;
-    } else {
-      delete entry.depth;
-    }
+    if (!skip) {
+      // If the entry's message is empty, use data.error or the message of another provided error
+      if (!entry.message) entry.message = firstError;
 
-    // =========================================================
-    // Only CloudWatch's error logger can be used while stopping
-    if (this.props.stopping && category !== logCategories.cloudWatch) {
-      const stack = new Error().stack.replace(stripStack, '');
-      // eslint-disable-next-line no-console
-      console.warn(`Stopping  [warn ${myName}]
+      // =================
+      // Set depth meta
+      if (depth) {
+        entry.depth = depth;
+      } else {
+        delete entry.depth;
+      }
+
+      // =========================================================
+      // Only CloudWatch's error logger can be used while stopping
+      if (this.props.stopping && category !== logCategories.cloudWatch) {
+        const stack = new Error().stack.replace(stripStack, '');
+        // eslint-disable-next-line no-console
+        console.warn(`Stopping  [warn ${myName}]
 ${util.inspect(entry)}
 ${stack}`);
-      return;
+      } else {
+        logger.log(level, entry);
+      }
     }
 
-    logger.log(level, entry);
-
-    if (contextData) this.send(info, contextData, undefined, errors, depth + 1, groupId);
+    if (contextData) this.send(info, contextData, undefined, errors, depth + !skip, groupId);
 
     contextMessages.forEach((contextMessage) => {
-      this.send(info, contextMessage, context, errors, depth + 1, groupId);
+      this.send(info, contextMessage, context, errors, depth + !skip, groupId);
     });
   }
 
@@ -2373,11 +2400,11 @@ ${stack}`);
       // eslint-disable-next-line no-console
       console.warn(`Stopped  [warn ${myName}]
 ${util.inspect({
-  category,
-  tags,
-  message,
-  context,
-})}
+        category,
+        tags,
+        message,
+        context,
+      })}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
@@ -2393,7 +2420,7 @@ ${new Error('Stopped').stack}`);
  *  example, given the tuple a: 'b', both.a is copied to meta.b. The 'both' object is not altered; its keys are also
  *  copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the tuple b: 'b'.
  */
-Loggers.defaultMetaKeys = {};
+Loggers.defaultMetaKeys = { stack: undefined };
 
 /**
  * @description These follow npm levels wich are defined at
