@@ -91,7 +91,7 @@ async function go(colors) {
     const error = new Error('x');
     loggers.info(undefined, { error, x: 5 });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.groupId) throw new Error();
   }
 
@@ -136,7 +136,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log('warn', new Error());
     if (count === unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.console.entries.length - 1];
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'warn') throw new Error();
   }
   // Add level 'error' because no tag is specified
@@ -851,7 +851,7 @@ async function go(colors) {
     // These values must be tweaked whenever more entries are logged
     if (unitTest.entries.length !== 171 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
-    if (len !== 37) throw new Error(len);
+    if (len !== 38) throw new Error(len);
     if (unitTest.dataCount !== 38 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
   }
 

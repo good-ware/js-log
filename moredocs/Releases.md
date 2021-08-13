@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.4.3 2020-08-12
+
+- Bug fixes for the depth and groupId meta keys
+
 ## 3.4.2 2020-07-31
 
 - Add new meta key 'stack' because it is supported by the data-enabled console

@@ -2,7 +2,7 @@
 /* eslint-disable no-multi-assign */
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
-const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12
+const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
 const hostId = require('hostid');
 const mkdirp = require('mkdirp-sync');
 const humanizeDuration = require('humanize-duration');
@@ -79,14 +79,14 @@ const logCategories = {
  * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
-class LogEntry { }
+class LogEntry {}
 
 /**
  * @private
  * @ignore
  * @description Internal class for identifying the output of transformArgs()
  */
-class LogArgs { }
+class LogArgs {}
 
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
@@ -304,8 +304,9 @@ class Loggers {
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
       now.getHours()
-    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${!tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
-      }`;
+    )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
+      !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
+    }`;
   }
 
   /**
@@ -2228,7 +2229,7 @@ ${stack}`);
    * @param {*} [context]
    * @param {Error[]} [errors] Errors already logged, to avoid recursion
    * @param {Number} [depth] Recursion depth (defaults to 0)
-   * @param {string} [groupId]
+   * @param {String} [groupId]
    */
   send(info, message, context, errors = [], depth = 0, groupId) {
     const { category, logger, level } = info;
@@ -2325,25 +2326,19 @@ ${stack}`);
     // If there is nothing interesting to log besides errors, only log the errors
     const skip = !entry.message && contextMessages.length && !contextData && !(data && Loggers.hasKeys(data));
 
-    // ===================
-    // Set groupId meta
-    if (!groupId) {
-      if (contextData || errors.length) {
-        groupId = entry.groupId = entry.id;
-      } else {
-        // delete entry.groupId;
-      }
-    }
-
     if (!skip) {
+      // ========================================================================================
       // If the entry's message is empty, use data.error or the message of another provided error
       if (!entry.message) entry.message = firstError;
 
-      // =================
-      // Set depth meta
-      if (depth) {
-        entry.depth = depth;
+      // ==========================
+      // Set groupId and depth meta
+      const more = depth + !!contextData + contextMessages.length;
+      if (more) {
+        entry.groupId = groupId || entry.id;
+        entry.depth = depth + 1;
       } else {
+        delete entry.groupId;
         delete entry.depth;
       }
 
@@ -2360,10 +2355,10 @@ ${stack}`);
       }
     }
 
-    if (contextData) this.send(info, contextData, undefined, errors, depth + !skip, groupId);
+    if (contextData) this.send(info, contextData, undefined, errors, depth + !skip, entry.id);
 
     contextMessages.forEach((contextMessage) => {
-      this.send(info, contextMessage, context, errors, depth + !skip, groupId);
+      this.send(info, contextMessage, context, errors, depth + !skip, entry.id);
     });
   }
 
@@ -2400,11 +2395,11 @@ ${stack}`);
       // eslint-disable-next-line no-console
       console.warn(`Stopped  [warn ${myName}]
 ${util.inspect({
-        category,
-        tags,
-        message,
-        context,
-      })}
+  category,
+  tags,
+  message,
+  context,
+})}
 ${new Error('Stopped').stack}`);
     } else {
       const info = this.isLevelEnabled(tags, category);
