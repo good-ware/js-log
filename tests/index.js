@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax */
 // const why = require('why-is-node-running');
 const Loggers = require('../index');
 const TaskLogger = require('../TaskLogger');
@@ -53,14 +52,14 @@ async function go(colors) {
   // Configuration for tags that affect logging levels - end
   // =========================================================
 
-  // =============================
-  // Create the 'loggers' instance
+  // =========================
+  // Create a Loggers instance
   loggers = new Loggers(config.logging);
 
-  const hasCloudWatch = loggers.props.cloudWatch ? 1 : 0;
+  const hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
 
-  // ============================
-  // Create the 'logger' instance
+  // =====================
+  // Create a child logger
   const logger = loggers.logger();
   const { unitTest } = loggers;
 
@@ -454,47 +453,41 @@ async function go(colors) {
 
   // =========================================
   // Tag filtering
-  for (const i of [1, 2]) {
-    const extra = hasCloudWatch && i === 1 ? 1 : 0;
-    // Repeat to test switch caching
-    // Default category
+  // Repeat to test switch caching
+  [1, 2].forEach(() => {
+    // SQL tag
     {
       const entries = unitTest.entries.length;
       loggers.log(['info', 'sql'], 'SQL info');
       if (entries !== unitTest.entries.length) throw new Error();
     }
-
     {
       const entries = unitTest.entries.length;
       loggers.log(['error', 'sql'], 'SQL error');
       if (entries === unitTest.entries.length) throw new Error();
     }
-
     {
       const entries = unitTest.entries.length;
       loggers.log(['warn', 'sql'], 'SQL warn');
       if (entries === unitTest.entries.length) throw new Error();
     }
 
+    // Barber tag
     {
       const entries = unitTest.entries.length;
       loggers.log(['info', 'barber'], 'Barber message');
       if (entries === unitTest.entries.length) throw new Error();
     }
-
     {
       const entries = unitTest.entries.length;
       loggers.log(['error', 'barber'], 'Barber error');
       if (entries === unitTest.entries.length) throw new Error();
     }
-
     {
       const entries = unitTest.file.entries.length;
       loggers.log(['warn', 'barber'], 'Barber warn');
       if (entries !== unitTest.file.entries.length) throw new Error();
     }
-
-    // Barber category
     {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
@@ -503,7 +496,6 @@ async function go(colors) {
       // Did not write to file
       if (fileEntries !== unitTest.file.entries.length) throw new Error();
     }
-
     {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
@@ -512,13 +504,15 @@ async function go(colors) {
       if (fileEntries === unitTest.file.entries.length) throw new Error();
     }
 
-    // Nurse category
+    // Nurse tag
     {
       const consoleEntries = unitTest.console.entries.length;
       const fileEntries = unitTest.file.entries.length;
-      loggers.log(['more', 'nurse'], 'Nurse more', null, 'nurse');
-      if (consoleEntries + extra !== unitTest.console.entries.length) throw new Error();
-      if (fileEntries + extra !== unitTest.file.entries.length) throw new Error();
+      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
+      loggers.log(['info', 'nurse'], 'nurse info', null, 'nurse');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if (fileEntries !== unitTest.file.entries.length) throw new Error();
+      if (hasCloudWatch + cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -533,21 +527,25 @@ async function go(colors) {
       if (consoleEntries !== unitTest.console.entries.length) throw new Error();
     }
 
-    // Doctor category
+    // Doctor category with sql tag
     {
+      const fileEntries = unitTest.file.entries.length;
       logger.logger('doctor').more(['sql'], 'xyz');
       const entry = unitTest.entries[unitTest.entries.length - 1];
       if (entry.message !== 'xyz') throw new Error();
       if (entry.level !== 'more') throw new Error();
+      // Log to file because 'other' defined at category level
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
     }
+
+    // Doctor tag
     {
       const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
+      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
       // Do not log to console
       logger.more(['doctor'], 'Doctor more', null, 'doctor');
-      if (consoleEntries + extra !== unitTest.console.entries.length) throw new Error();
-      // Log to file because 'other' defined at category level
-      if (fileEntries + extra === unitTest.file.entries.length) throw new Error();
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if (cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
     }
     {
       const consoleEntries = unitTest.console.entries.length;
@@ -563,13 +561,13 @@ async function go(colors) {
       if (fileEntries === unitTest.file.entries.length) throw new Error();
       if (consoleEntries !== unitTest.console.entries.length) throw new Error();
     }
-  }
+  });
 
   // Test overriding level - coordinator
   {
     const entries = unitTest.console.entries.length;
     logger.silly('a message', null, 'coordinator');
-    if (entries + hasCloudWatch !== unitTest.console.entries.length) throw new Error();
+    if (entries !== unitTest.console.entries.length) throw new Error();
     logger.silly('coordinator', 'Silly changed to info', null, 'coordinator');
     if (entries === unitTest.console.entries.length) throw new Error();
   }
@@ -849,10 +847,10 @@ async function go(colors) {
 
   {
     // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 171 + 10 * hasCloudWatch) throw new Error(unitTest.entries.length);
+    if (unitTest.entries.length !== 171 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
     if (len !== 38) throw new Error(len);
-    if (unitTest.dataCount !== 38 + 10 * hasCloudWatch) throw new Error(unitTest.dataCount);
+    if (unitTest.dataCount !== 38) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

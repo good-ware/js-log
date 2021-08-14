@@ -1349,6 +1349,10 @@ ${error}`)
           this.initCloudWatch();
           const { uploadRate } = awsOptions;
 
+          // Remove invalid characters from log group name
+          // See https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
+          logGroupName = logGroupName.replace(/[^a-z0-9_/.#-]/gi, '');
+
           // log group ends with a slash
           logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
 
