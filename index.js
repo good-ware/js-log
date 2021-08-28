@@ -529,14 +529,14 @@ age of files to keep in days, followed by the chracter 'd'.`),
         depth: Joi.number()
           .integer()
           .min(1)
-          .default(3)
+          .default(5)
           .description(
             'Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.'
           ),
         max: Joi.number()
           .integer()
           .min(1)
-          .default(25)
+          .default(20)
           .description(
             'Errors reference other errors. This is the maximum number of errors to log when logging one message.'
           ),
@@ -547,12 +547,12 @@ age of files to keep in days, followed by the chracter 'd'.`),
         arrayLength: Joi.number()
           .integer()
           .min(1)
-          .default(25)
+          .default(20)
           .description('The maximum number of elements to process when converting an array to a string'),
         depth: Joi.number()
           .integer()
           .min(1)
-          .default(10)
+          .default(20)
           .description('The maximum depth to traverse when converting an object to a string'),
       }).default({}),
 
@@ -1641,7 +1641,7 @@ ${error}`);
 
     // First argument is an Error object?
     if (tags instanceof Error) {
-      if (!message) {
+      if (!message && typeof(message) !== 'number') {
         message = tags;
       } else {
         context = this.context(context, tags);
@@ -2329,6 +2329,7 @@ ${stack}`);
     // ==========================================================================
     // If there is nothing interesting to log besides errors, only log the errors
     const skip = !entry.message && contextMessages.length && !contextData && !(data && Loggers.hasKeys(data));
+    ++depth;
 
     if (!skip) {
       // ========================================================================================
@@ -2337,10 +2338,10 @@ ${stack}`);
 
       // ==========================
       // Set groupId and depth meta
-      const more = depth + !!contextData + contextMessages.length;
+      const more = groupId || contextData || contextMessages.length;
       if (more) {
         entry.groupId = groupId || entry.id;
-        entry.depth = depth + 1;
+        entry.depth = depth;
       } else {
         delete entry.groupId;
         delete entry.depth;
@@ -2359,10 +2360,10 @@ ${stack}`);
       }
     }
 
-    if (contextData) this.send(info, contextData, undefined, errors, depth + !skip, entry.id);
+    if (contextData) this.send(info, contextData, undefined, errors, depth, groupId || entry.id);
 
     contextMessages.forEach((contextMessage) => {
-      this.send(info, contextMessage, context, errors, depth + !skip, entry.id);
+      this.send(info, contextMessage, context, errors, depth, groupId || entry.id);
     });
   }
 

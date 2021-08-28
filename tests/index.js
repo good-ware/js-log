@@ -68,20 +68,19 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
-
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
     if (count + 1 !== unitTest.entries.length) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     const error = new Error('x');
     loggers.info(undefined, { error });
     if (count + 1 !== unitTest.entries.length) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
 
   // An error is provided and the message is blank; context data is provided
@@ -849,8 +848,8 @@ async function go(colors) {
     // These values must be tweaked whenever more entries are logged
     if (unitTest.entries.length !== 171 + hasCloudWatch) throw new Error(unitTest.entries.length);
     const len = Object.keys(unitTest.groupIds).length;
-    if (len !== 38) throw new Error(len);
-    if (unitTest.dataCount !== 38) throw new Error(unitTest.dataCount);
+    if (len !== 36) throw new Error(len);
+    if (unitTest.dataCount !== 36) throw new Error(unitTest.dataCount);
   }
 
   if (!onRan) throw new Error();

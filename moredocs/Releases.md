@@ -1,5 +1,13 @@
 # @goodware/log Release History
 
+## 3.4.5 2020-08-27
+
+- Change object-to-string depth default to 20 from 10
+
+## 3.4.5 2020-08-25
+
+- More bug fixes for the depth and groupId meta keys
+
 ## 3.4.3 2020-08-12
 
 - Bug fixes for the depth and groupId meta keys
