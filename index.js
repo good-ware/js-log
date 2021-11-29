@@ -1,3 +1,4 @@
+/* eslint-disable no-promise-executor-return */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-multi-assign */
 /* eslint-disable no-param-reassign */
@@ -407,7 +408,7 @@ class Loggers {
   static hasKeys(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     if (object.constructor !== Object) return true;
-    // eslint-disable-next-line no-restricted-syntax, guard-for-in
+    // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
     for (const prop in object) return true;
     return false;
   }
@@ -910,7 +911,10 @@ ${directories.join('\n')}  [warn ${myName}]`);
       }
     }
     const spaces = message ? '  ' : '';
-    return `${ms} ${message}${spaces}${colorBegin}[${tags.join(' ')} ${category}  ${id}]${colorEnd}`;
+    const t2 = tags.slice(1);
+    t2.unshift(category);
+    return `${colorBegin}${ms} ${message}${spaces}${colorBegin}[${level} ${colorBegin}${t2.join(' ')}  ${
+      id}]${colorEnd}`;
   }
 
   /**
@@ -2205,9 +2209,9 @@ ${stack}`);
         delete tags.logStack;
       }
 
-      // Move the level to the front of the tags array
+      // Move the level to the front of the tags array and sort the remaining tags
       const tags2 = Object.keys(tags).filter((tag) => tags[tag] && tag !== level);
-      entry.tags = [level, ...tags2];
+      entry.tags = [level, ...tags2.sort()];
     } else {
       entry.tags = [level];
     }
@@ -2235,7 +2239,7 @@ ${stack}`);
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, context, errors = [], depth = 0, groupId) {
+  send(info, message, context, errors = [], depth = 0, groupId = undefined) {
     const { category, logger, level } = info;
     const entry = this.logEntry(info, message, context, depth);
 

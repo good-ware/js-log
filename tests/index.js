@@ -1,3 +1,4 @@
+/* eslint-disable no-promise-executor-return */
 // const why = require('why-is-node-running');
 const Loggers = require('../index');
 const TaskLogger = require('../TaskLogger');
