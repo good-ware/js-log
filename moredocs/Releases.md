@@ -2,11 +2,13 @@
 
 ## 3.4.8-9 2021-11-30
 
-Documentation changes
+= Documentation changes
+= Reduce size of package zip file via .npmignore
+- Add engines: to package.json
 
 ## 3.4.7 2021-11-30
 
-Modify console output to colorize the entire line and log the level, category, and sorted tags
+- Modify console output to colorize the entire line and log the level, category, and sorted tags
 
 ## 3.4.5 2021-08-27
 

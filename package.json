@@ -11,6 +11,9 @@
     "prepub": "npm test && npm run format && npm run lint && npm run docs",
     "test": "node tests"
   },
+  "engines": {
+    "node": ">=8.0"
+  },
   "main": "index.js",
   "repository": {
     "type": "git",
