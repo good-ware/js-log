@@ -6,7 +6,7 @@
 - [npm](https://www.npmjs.com/package/@goodware/log)
 - [git](https://github.com/good-ware/js-log)
 - [API Docs](https://good-ware.github.io/js-log/)
-- [RunKit Notebook Example](https://runkit.com/dev-guy/goodware-log-example)
+- [RunKit Notebook Example](https://runkit.com/dev-guy/exploring-goodware-log)
 
 ## Requirements
 
