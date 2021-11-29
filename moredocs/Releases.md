@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 3.4.8-9 2021-11-30
+
+Documentation changes
+
 ## 3.4.7 2021-11-30
 
 Modify console output to colorize the entire line and log the level, category, and sorted tags
