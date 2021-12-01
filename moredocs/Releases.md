@@ -1,10 +1,11 @@
 # @goodware/log Release History
 
-## 3.4.8-9 2021-11-30
+## 3.4.8 - 3.4.10 2021-12-1
 
 = Documentation changes
 = Reduce size of package zip file via .npmignore
 - Add engines: to package.json
+- Brief console output logs entire line in one color
 
 ## 3.4.7 2021-11-30
 
