@@ -913,7 +913,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
     const spaces = message ? '  ' : '';
     const t2 = tags.slice(1);
     t2.unshift(category);
-    return `${colorBegin}${ms} ${message}${spaces}${colorBegin}[${tags[0]} ${t2.join(' ')}  ${
+    return `${colorBegin}${ms} ${colorEnd}${message}${colorBegin}${spaces}[${tags[0]} ${t2.join(' ')}  ${
       id}]${colorEnd}`;
   }
 

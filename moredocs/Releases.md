@@ -1,6 +1,6 @@
 # @goodware/log Release History
 
-## 3.4.8 - 3.4.10 2021-12-1
+## 3.4.8 - 3.4.11 2021-12-1
 
 = Documentation changes
 = Reduce size of package zip file via .npmignore
