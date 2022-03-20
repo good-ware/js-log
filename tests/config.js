@@ -18,7 +18,8 @@ let config = {
       data: true,
     },
     cloudWatch: {
-      // region: 'us-west-2', // set AWS_DEFAULT_REGION environment variable
+      // To test CloudWatch Logs, set AWS_DEFAULT_REGION environment variable
+      // region: 'us-west-2',
       logGroup: `/${env}/goodware/log`,
     },
     categories: {
@@ -26,6 +27,13 @@ let config = {
         console: {
           level: 'info',
           data: false,
+        },
+      },
+      briefConsoleNoErrors: {
+        console: {
+          level: 'info',
+          data: false,
+          childErrors: false,
         },
       },
       dataConsole: {

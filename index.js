@@ -450,7 +450,7 @@ class Loggers {
       level: onOffDefaultLevelEnum,
       colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
       data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
-      errors: Joi.boolean().default(true).description('If true, logs embedded errors'),
+      childErrors: Joi.boolean().default(true).description('If true, logs child error objects'),
     });
 
     // File settings
@@ -932,7 +932,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
    */
   createConsoleTransport(level, handleExceptions, settings) {
     if (!settings) settings = this.options.console;
-    const { colors, data, errors } = settings;
+    const { colors, data, childErrors } = settings;
 
     if (data) {
       // Fancy console
@@ -960,7 +960,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
 
     // Plain console
     const checkTags = winston.format((info) => {
-      if (!errors && info.depth) return false;
+      if (!childErrors && info.depth > 1) return false;
       return this.checkTags('console', info);
     })();
 
@@ -1071,9 +1071,9 @@ ${error}`);
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     // eslint-disable-next-line no-underscore-dangle
-    if (error.__type !== 'InvalidParameterException') {
-      this.log(error, undefined, undefined, logCategories.cloudWatch);
-    }
+    if (error.__type === 'InvalidParameterException') return;
+
+    this.log(error, undefined, undefined, logCategories.cloudWatch);
   }
 
   /**
@@ -2266,7 +2266,7 @@ ${stack}`);
       }
     }
 
-    let firstError = '';
+    let firstError;
 
     const { data } = entry;
     if (data) {
@@ -2295,10 +2295,9 @@ ${stack}`);
             delete context[key];
           }
 
-          delete data[key];
-
           // Prefer 'error'
           if (!firstError || key === 'error') firstError = data[key];
+          delete data[key];
         }
       }
 
@@ -2334,13 +2333,12 @@ ${stack}`);
     }
 
     const skip = noMessage && !(data && Loggers.hasKeys(data));
-
-    ++depth;
+    if (!skip || depth) ++depth;
 
     if (!skip) {
       // ========================================================================================
       // If the entry's message is empty, use data.error or the message of another provided error
-      if (noMessage) entry.message = firstError;
+      if (noMessage && firstError) entry.message = firstError.toString();
 
       // ==========================
       // Set groupId and depth meta

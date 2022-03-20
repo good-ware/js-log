@@ -79,6 +79,12 @@ async function go(colors) {
   }
   {
     const count = unitTest.entries.length;
+    loggers.error(null, { a: 5, error: new Error('err') });
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
     const error = new Error('x');
     loggers.info(undefined, { error });
     if (count + 1 !== unitTest.entries.length) throw new Error();
@@ -174,6 +180,12 @@ async function go(colors) {
   {
     const count = unitTest.console.entries.length;
     loggers.error(new Error('fail'), null, 'briefConsole');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs a message without an error (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', 'Message', new Error('fail'), 'briefConsoleNoErrors');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs a message and an error (specify category)
@@ -893,12 +905,15 @@ async function go(colors) {
 
   logger.info(`I've stopped and I can't get up`);
 
-  // ===================================
-  // Check the number of logged messages
+  // ====================================================================
+  // Check the number of logged messages. If this is off when CloudWatch
+  // Logs is enabled, search ../index.js for InvalidParameterException.
+  // That check probably isn't working and winston-cloudwatch is throwing
+  // an error when the transport is disabled for particular tags.
   {
     const { length } = unitTest.entries;
     // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 171 + hasCloudWatch;
+    const expectedEntries = 175 + hasCloudWatch;
 
     if (length !== expectedEntries) {
       throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
@@ -909,7 +924,7 @@ async function go(colors) {
   // Check the number of logged messages with child errors
   {
     // This value must be tweaked whenever more entries are logged
-    const expectedErrors = 38;
+    const expectedErrors = 40;
     const { length } = Object.keys(unitTest.groupIds);
     if (length !== expectedErrors) throw new Error(`Group ids: ${colors} ${length} !== ${expectedErrors}`);
   }
@@ -918,7 +933,7 @@ async function go(colors) {
   // Check the number of logged messages with data/context
   {
     // This value must be tweaked whenever more entries are logged
-    const expectedData = 36;
+    const expectedData = 38;
     const { dataCount } = unitTest;
     if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
   }

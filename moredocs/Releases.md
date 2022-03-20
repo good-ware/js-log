@@ -1,8 +1,12 @@
 # @goodware/log Release History
 
-## 4.0.0 2022-03-19
+## 4.0.0 - 4.0.1 2022-03-20
+
+### Breaking Changes
 
 This version might not work in NodeJS versions < 12 (lts/erbium)!
+
+### Changes
 
 - Upgrade to winston-cloudwatch v4
 - Replace aws-sdk with @asw-sdk-client/cloudwatch-logs as a dependency required by winston-cloudwatch
