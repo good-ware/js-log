@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-const { nanoid } = require('nanoid');
+const { ulid } = require('ulid');
 
 /**
  * @description Logs the start of a generator and returns an object for logging the progress, end, and error of it
@@ -26,7 +26,7 @@ class GeneratorLogger {
    *     b) taskId
    */
   static begin(logger, beginMessage, endMessage, errorMessage) {
-    const taskId = nanoid();
+    const taskId = ulid();
     logger = logger.child(taskId);
     logger.log('begin', beginMessage);
 

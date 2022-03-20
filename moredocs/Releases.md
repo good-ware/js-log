@@ -1,9 +1,19 @@
 # @goodware/log Release History
 
+## 4.0.0 2022-03-19
+
+This version might not work in NodeJS versions < 12 (lts/erbium)!
+
+- Upgrade to winston-cloudwatch v4
+- Replace aws-sdk with @asw-sdk-client/cloudwatch-logs as a dependency required by winston-cloudwatch
+- Replace nano with ulid
+- Fix: [#49](https://github.com/good-ware/js-log/issues/49)
+- Fix: [#46](https://github.com/good-ware/js-log/issues/46)
+
 ## 3.4.8 - 3.4.11 2021-12-1
 
-= Documentation changes
-= Reduce size of package zip file via .npmignore
+- Documentation changes
+- Reduce size of package zip file via .npmignore
 - Add engines: to package.json
 - Brief console output logs entire line in one color
 
@@ -145,7 +155,7 @@ Documentation changes
 ### New Features
 
 - Add id (meta key) to log entries
-- Use nanoid instead of uuid
+- Use ulid instead of uuid
 
 ## 2.0.2 2021-06-04
 
