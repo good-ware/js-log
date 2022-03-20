@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-const { nanoid } = require('nanoid');
+const { ulid } = require('ulid');
 
 /**
  * @description Logs the start and the completion or error of a task whether synchronous or asynchronous
@@ -44,7 +44,7 @@ class TaskLogger {
    * @returns {Promise} Resolves to the value returned or rejects using exception thrown by the task
    */
   static async execute(logger, task, beginMessage, endMessage, errorMessage, errorHandler) {
-    const taskId = nanoid();
+    const taskId = ulid();
     logger = logger.child(taskId);
     logger.log('begin', beginMessage);
 

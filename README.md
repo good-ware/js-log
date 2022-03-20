@@ -10,7 +10,7 @@
 
 ## Requirements
 
-- NodeJS 8 and higher
+If you are using CloudWatch logs as a transport, NodeJS 12 (LTS/erbium) or higher is required. Otherwise, any LTS version is sufficent.
 
 ## Installation
 
@@ -26,9 +26,7 @@ This package extends Winston3 with additional features such as tag-based filteri
 
 1. HAPI-style tags: Log entries can be filtered by tags on a per-transport basis
 2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
-3. Safely logs large objects and arrays - even those with circular references
-   3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple
-   log entries via uuid
+3. Safely logs large objects and arrays - even those with circular references 3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
 4. Promotes object properties to a configurable subset of 'meta' properties
 5. Reliable flushing
 6. Does not interfere with other code that uses Winston
@@ -269,8 +267,7 @@ message and 'context' are shallow copied and combined into a new object called '
 
 If both.error is truthy and both.message is falsey, both.message is set to `both.error.asString()`.
 
-Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta key contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is
-specified via the 'maxErrors' options setting.
+Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta key contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified via the 'maxErrors' options setting.
 
 The following example produces three three log entries. error3 will be logged first, followed by error2, followed by error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'
 
@@ -360,7 +357,7 @@ If an AWS region is not specified, the environment variables are used in the fol
 
 ## Begin/End/Error Utility Classes
 
-Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is added to both log entries with the same uuid generated for the operation. If an exception is thrown, an error is logged. These functions are implemented as static methods.
+Utility functions are provided for logging begin and end messages for common operations (database, http, etc.). Begin log entries are tagged with 'begin.' End log entries are tagged with 'end.' The operationId property is added to both log entries with the same unique identifier generated for the operation. If an exception is thrown, an error is logged. These functions are implemented as static methods.
 
 The following classes are available:
 

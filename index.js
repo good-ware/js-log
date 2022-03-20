@@ -8,7 +8,7 @@ const hostId = require('hostid');
 const mkdirp = require('mkdirp-sync');
 const humanizeDuration = require('humanize-duration');
 const Joi = require('joi');
-const { nanoid } = require('nanoid');
+const { ulid } = require('ulid');
 const prune = require('json-prune');
 const util = require('util');
 const path = require('path');
@@ -28,6 +28,8 @@ const addErrorSymbol = Symbol.for('error');
 // Developer Notes
 //
 // 1. typeof(null) === 'object'. Use instanceof Object instead.
+// 2. This code uses 'in' instead of Object.keys because protoptype fields
+//    are useful to log
 // =============================================================================
 
 const { format } = winston;
@@ -448,6 +450,7 @@ class Loggers {
       level: onOffDefaultLevelEnum,
       colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
       data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
+      childErrors: Joi.boolean().default(true).description('If true, logs child error objects'),
     });
 
     // File settings
@@ -913,8 +916,9 @@ ${directories.join('\n')}  [warn ${myName}]`);
     const spaces = message ? '  ' : '';
     const t2 = tags.slice(1);
     t2.unshift(category);
-    return `${colorBegin}${ms} ${colorEnd}${message}${colorBegin}${spaces}[${tags[0]} ${t2.join(' ')}  ${
-      id}]${colorEnd}`;
+    return `${colorBegin}${ms} ${colorEnd}${message}${colorBegin}${spaces}[${tags[0]} ${t2.join(
+      ' '
+    )} ${id}]${colorEnd}`;
   }
 
   /**
@@ -928,7 +932,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
    */
   createConsoleTransport(level, handleExceptions, settings) {
     if (!settings) settings = this.options.console;
-    const { colors, data } = settings;
+    const { colors, data, childErrors } = settings;
 
     if (data) {
       // Fancy console
@@ -956,10 +960,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
 
     // Plain console
     const checkTags = winston.format((info) => {
-      // ================================
-      // Don't log embedded error objects
-      // TODO: make this configurable
-      if (info.depth) return false;
+      if (!childErrors && info.depth > 1) return false;
       return this.checkTags('console', info);
     })();
 
@@ -1069,7 +1070,9 @@ ${error}`);
     // TODO: Submit feature request. See cwTransportShortCircuit
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
-    if (error.code === 'InvalidParameterException') return;
+    // eslint-disable-next-line no-underscore-dangle
+    if (error.__type === 'InvalidParameterException') return;
+
     this.log(error, undefined, undefined, logCategories.cloudWatch);
   }
 
@@ -1149,12 +1152,6 @@ ${error}`);
    */
   async close() {
     if (this.unitTest && !this.unitTest.flush) {
-      // Test uncaught exception
-      setTimeout(() => {
-        throw new Error('Expected error: Uncaught exception while stopping');
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1));
-
       // This unhandled Promise rejection is handled after this method finishes by the default handler
       Promise.reject(new Error('Expected error: Rejected promise while stopping'));
     }
@@ -1202,10 +1199,6 @@ ${error}`)
     if (this.unitTest) {
       // Test error handlers after closing loggers
       if (this.unitTest.flush) process.exit();
-
-      setImmediate(() => {
-        throw new Error('Expected error: Uncaught exception while stopping 2');
-      });
 
       await new Promise((resolve) => setTimeout(resolve, 1));
     }
@@ -1645,7 +1638,7 @@ ${error}`);
 
     // First argument is an Error object?
     if (tags instanceof Error) {
-      if (!message && typeof(message) !== 'number') {
+      if (!message && typeof message !== 'number') {
         message = tags;
       } else {
         context = this.context(context, tags);
@@ -2094,7 +2087,7 @@ ${stack}`);
       tags: false,
       ...this.props.userMeta,
       category: info.category, // Overwritten by defaultMeta
-      id: nanoid(),
+      id: ulid(),
       groupId: false, // Set and removed by send()
       depth: 0, // Set and removed by send()
       stage: this.options.stage,
@@ -2122,9 +2115,10 @@ ${stack}`);
 
     // Combine message and context
     [message, context].forEach((item) => {
-      if (!item) return;
-
+      if (item === null || item === undefined) return;
       const type = typeof item;
+
+      if (type === 'string' && !item.length) return;
       if (type === 'function') return;
 
       if (type === 'object') {
@@ -2272,7 +2266,7 @@ ${stack}`);
       }
     }
 
-    let firstError = '';
+    let firstError;
 
     const { data } = entry;
     if (data) {
@@ -2301,15 +2295,14 @@ ${stack}`);
             delete context[key];
           }
 
-          delete data[key];
-
           // Prefer 'error'
           if (!firstError || key === 'error') firstError = data[key];
+          delete data[key];
         }
       }
 
-      // =================================================================
-      // Convert data to JSON. It removes keys that have undefined values.
+      // =======================================================================
+      // Prune data. This unfortunately removes keys that have undefined values.
       const newData = JSON.parse(prune(data, this.options.message.depth, this.options.message.arrayLength));
       if (Loggers.hasKeys(newData)) {
         entry.data = newData;
@@ -2332,18 +2325,24 @@ ${stack}`);
 
     // ==========================================================================
     // If there is nothing interesting to log besides errors, only log the errors
-    const skip = !entry.message && contextMessages.length && !contextData && !(data && Loggers.hasKeys(data));
-    ++depth;
+    let noMessage;
+    {
+      // eslint-disable-next-line no-shadow
+      const { message } = entry;
+      noMessage = message === undefined;
+    }
+
+    const skip = noMessage && !(data && Loggers.hasKeys(data));
+    if (!skip || depth) ++depth;
 
     if (!skip) {
       // ========================================================================================
       // If the entry's message is empty, use data.error or the message of another provided error
-      if (!entry.message) entry.message = firstError;
+      if (noMessage && firstError) entry.message = firstError.toString();
 
       // ==========================
       // Set groupId and depth meta
-      const more = groupId || contextData || contextMessages.length;
-      if (more) {
+      if (groupId || contextData || contextMessages.length) {
         entry.groupId = groupId || entry.id;
         entry.depth = depth;
       } else {
@@ -2364,6 +2363,7 @@ ${stack}`);
       }
     }
 
+    // Log child errors
     if (contextData) this.send(info, contextData, undefined, errors, depth, groupId || entry.id);
 
     contextMessages.forEach((contextMessage) => {

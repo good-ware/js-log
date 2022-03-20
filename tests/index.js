@@ -69,11 +69,18 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
+
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
     if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
+    loggers.error(null, { a: 5, error: new Error('err') });
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
   {
@@ -155,7 +162,6 @@ async function go(colors) {
     loggers.silly('msg', {}, 'briefConsole');
     if (count !== unitTest.console.entries.length) throw new Error();
   }
-
   // Outputs message (default category)
   {
     const count = unitTest.console.entries.length;
@@ -163,6 +169,60 @@ async function go(colors) {
     if (count === unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.id) throw new Error();
+  }
+  // Outputs no message, overriding level
+  {
+    const count = unitTest.console.entries.length;
+    loggers.silly(new Error('fail'), null, 'briefConsole');
+    if (count !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs error (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.error(new Error('fail'), null, 'briefConsole');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs a message without an error (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', 'Message', new Error('fail'), 'briefConsoleNoErrors');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs a message and an error (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', 'Message', new Error('fail'), 'briefConsole');
+    if (count + 2 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Outputs an error (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', '', new Error('fail'), 'briefConsole');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Message can be 0 (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', 0, null, 'briefConsole');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // Message can be false (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', false, null, 'briefConsole');
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+  }
+  // No Message when null (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', null, null, 'briefConsole');
+    if (count !== unitTest.console.entries.length) throw new Error();
+  }
+  // No Message when undefined (specify category)
+  {
+    const count = unitTest.console.entries.length;
+    loggers.log('error', undefined, null, 'briefConsole');
+    if (count !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message without data
   {
@@ -238,7 +298,7 @@ async function go(colors) {
 
   // Test passing category to logLevel
   {
-    logger.info(['extra'], null, null, 'dragon');
+    logger.info(['extra'], 'A message', null, 'dragon');
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.category !== 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
@@ -367,11 +427,11 @@ async function go(colors) {
     if (entry.message !== 'Error: 5') throw new Error();
   }
 
-  // Error
+  // Blank message, Error provided
   {
     logger.error('', new Error('5'));
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
-    if (entry.message !== 'Error: 5') throw new Error();
+    if (entry.message !== 'Error: 5') throw new Error(JSON.stringify(entry));
   }
 
   const tags = loggers.tags('message');
@@ -845,12 +905,37 @@ async function go(colors) {
 
   logger.info(`I've stopped and I can't get up`);
 
+  // ====================================================================
+  // Check the number of logged messages. If this is off when CloudWatch
+  // Logs is enabled, search ../index.js for InvalidParameterException.
+  // That check probably isn't working and winston-cloudwatch is throwing
+  // an error when the transport is disabled for particular tags.
   {
-    // These values must be tweaked whenever more entries are logged
-    if (unitTest.entries.length !== 171 + hasCloudWatch) throw new Error(unitTest.entries.length);
-    const len = Object.keys(unitTest.groupIds).length;
-    if (len !== 36) throw new Error(len);
-    if (unitTest.dataCount !== 36) throw new Error(unitTest.dataCount);
+    const { length } = unitTest.entries;
+    // This value must be tweaked whenever more entries are logged
+    const expectedEntries = 175 + hasCloudWatch;
+
+    if (length !== expectedEntries) {
+      throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
+    }
+  }
+
+  // =====================================================
+  // Check the number of logged messages with child errors
+  {
+    // This value must be tweaked whenever more entries are logged
+    const expectedErrors = 40;
+    const { length } = Object.keys(unitTest.groupIds);
+    if (length !== expectedErrors) throw new Error(`Group ids: ${colors} ${length} !== ${expectedErrors}`);
+  }
+
+  // =====================================================
+  // Check the number of logged messages with data/context
+  {
+    // This value must be tweaked whenever more entries are logged
+    const expectedData = 38;
+    const { dataCount } = unitTest;
+    if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
   }
 
   if (!onRan) throw new Error();
@@ -886,7 +971,11 @@ async function test() {
   }
 
   if (loggers) {
-    await loggers.stop();
+    try {
+      await loggers.stop();
+    } catch (err) {
+      error = err;
+    }
     loggers = undefined;
   }
 
