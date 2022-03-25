@@ -1,5 +1,12 @@
 # @goodware/log Release History
 
+## 5.0.0 2022-03-24
+
+### Breaking Changes
+
+- winston is a peer dependency to reduce the size of node_modules and must be installed separately
+- @asw-sdk-client/cloudwatch-logs and winston-cloudwatch are peer dependencies to reduce the size of node_modules. If you intend to write to AWS CloudWatch Logs, install these dependencies.
+
 ## 4.0.0 - 4.0.1 2022-03-20
 
 ### Breaking Changes

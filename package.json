@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "scripts": {
     "docs": "rm -rf docs ; node_modules/.bin/jsdoc --configure .jsdoc.json --verbose -R README.md *.js",
@@ -30,7 +30,6 @@
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.54.1",
     "ansi-regex": "^5.0.0",
     "hostid": "^1.1.0",
     "humanize-duration": "^3.27.0",
@@ -38,10 +37,13 @@
     "json-prune": "^1.1.0",
     "mkdirp-sync": "^0.0.3",
     "ulid": "^2.3.0",
-    "winston": "^3.6.0",
-    "winston-cloudwatch": "^4.0.0",
     "winston-console-format": "^1.0.0",
     "winston-daily-rotate-file": "^4.5.0"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.54.1",
+    "winston": "^3.6.0",
+    "winston-cloudwatch": "^4.0.0"
   },
   "devDependencies": {
     "deepmerge": "*",
@@ -54,6 +56,9 @@
     "minami": "*",
     "prettier": "*",
     "request-promise": "*",
-    "why-is-node-running": "*"
+    "why-is-node-running": "*",
+    "@aws-sdk/client-cloudwatch-logs": "^3.54.1",
+    "winston": "^3.6.0",
+    "winston-cloudwatch": "^4.0.0"
   }
 }
