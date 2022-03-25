@@ -16,7 +16,8 @@ const path = require('path');
 const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
-const WinstonCloudWatch = require('winston-cloudwatch');
+
+let WinstonCloudWatch;
 
 const Stack = require('./Stack');
 
@@ -164,6 +165,7 @@ class Loggers {
       categoryTags: {},
       hasCategoryTags: {},
       logLevel: {},
+      cloudWatchLogGroups: {},
     };
 
     this.props = props;
@@ -990,11 +992,6 @@ ${directories.join('\n')}  [warn ${myName}]`);
       stream = `${stream} ${this.props.hostId}`;
       stream = stream.replace(/:/g, '');
       this.props.cloudWatchStream = stream;
-
-      if (this.options.say.cloudWatch) {
-        // eslint-disable-next-line no-console
-        console.log(`AWS CloudWatch Logs stream names: ${stream}  [info ${myName}]`);
-      }
     }
   }
 
@@ -1362,6 +1359,17 @@ ${error}`)
           };
 
           // TODO: add more options supported by winston-cloudwatch
+          // eslint-disable-next-line global-require
+          if (!WinstonCloudWatch) WinstonCloudWatch = require('winston-cloudwatch');
+
+          if (this.options.say.cloudWatch && !this.props.cloudWatchLogGroups[logGroupName]) {
+            this.props.cloudWatchLogGroups[logGroupName] = true;
+            // eslint-disable-next-line no-console
+            console.log(
+              `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
+            );
+          }
+
           const transport = new WinstonCloudWatch({
             messageFormatter: checkTags,
             logStreamName: this.props.cloudWatchStream,

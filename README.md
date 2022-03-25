@@ -10,11 +10,15 @@
 
 ## Requirements
 
-If you are using CloudWatch logs as a transport, NodeJS 12 (LTS/erbium) or higher is required. Otherwise, any LTS version is sufficent.
+If you plan to write to AWS CloudWatch Logs, NodeJS 12 (LTS/erbium) or higher is required. Otherwise, any LTS version is sufficent.
 
 ## Installation
 
-`npm i --save @goodware/log`
+`npm i --save winston @goodware/log`
+
+If you will write to AWS CloudWatch Logs, also run:
+
+`npm i --save @aws-sdk/client-cloudwatch-logs winston-cloudwatch`
 
 ## Introduction
 
