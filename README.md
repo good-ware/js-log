@@ -16,9 +16,7 @@ If you plan to write to AWS CloudWatch Logs, NodeJS 12 (LTS/erbium) or higher is
 
 `npm i --save @goodware/log`
 
-If you will write to AWS CloudWatch Logs, also run:
-
-`npm i --save @aws-sdk/client-cloudwatch-logs winston-cloudwatch`
+If you don't intend to write to AWS CloudWatch Logs, you can reduce the size of node_modules by installing modules using `npm ci --no-optional`.
 
 ## Introduction
 

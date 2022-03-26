@@ -1,17 +1,18 @@
 # @goodware/log Release History
 
-## 5.0.0 - 5.0.1 2022-03-25
-
 ### Breaking Changes
 
-- @asw-sdk-client/cloudwatch-logs and winston-cloudwatch are peer dependencies to reduce the size of node_modules. If you intend to write to AWS CloudWatch Logs, install these dependencies.
 - log() etc. methods return undefined for easier testing via REPL, RunKit, etc.
+
+## 5.0.0 - 5.0.2 2022-03-26
+
+- @asw-sdk-client/cloudwatch-logs and winston-cloudwatch are optional dependencies
 
 ## 4.0.0 - 4.0.1 2022-03-20
 
 ### Breaking Changes
 
-This version might not work in NodeJS versions < 12 (lts/erbium)!
+Due to winston-cloudwatch, this version might not work in NodeJS versions < 12 (lts/erbium)!
 
 ### Changes
 

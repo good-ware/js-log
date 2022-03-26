@@ -18,6 +18,7 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 
 let WinstonCloudWatch;
+let noCloudWatch;
 
 const Stack = require('./Stack');
 
@@ -1297,6 +1298,9 @@ ${error}`)
     let logger;
 
     if (category === logCategories.cloudWatch) {
+      // ======================================================================
+      // Write winston-cloudwatch errors to the console and, optionally, a file
+      if (!WinstonCloudWatch) throw new Error('winston-cloudwatch is not installed'); // This can't happen
       logger = this.createCloudWatchErrorLoggers();
     } else {
       if (this.props.stopping) throw new Error('Stopping');
@@ -1305,131 +1309,183 @@ ${error}`)
       const settings = options.categories[category] || {};
 
       const transports = [];
-      let level;
 
-      // ==========
+      // ============================
       // CloudWatch
-      let awsOptions = { ...options.cloudWatch };
-      level = settings.cloudWatch;
-      if (level instanceof Object) {
-        Object.assign(awsOptions, level);
-        level = undefined;
-      }
-      if (!level) ({ level } = awsOptions);
-      if (!level) level = 'off';
-      else if (level === 'default') {
-        level = options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'warn';
+      // Lazy load winston-cloudwatch
+      if (!WinstonCloudWatch && !noCloudWatch) {
+        try {
+          // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+          WinstonCloudWatch = require('winston-cloudwatch');
+        } catch (error) {
+          noCloudWatch = true;
+        }
       }
 
-      if (level !== 'off') {
-        let { logGroup: logGroupName } = awsOptions;
-        if (!awsOptions.region) {
-          awsOptions.region = process.env.AWS_CLOUDWATCH_LOGS_REGION;
-          if (!awsOptions.region) {
-            awsOptions.region = process.env.AWS_CLOUDWATCH_REGION;
-            if (!awsOptions.region) awsOptions.region = process.env.AWS_DEFAULT_REGION;
-          }
+      if (WinstonCloudWatch) {
+        let awsOptions = { ...options.cloudWatch };
+        let level = settings.cloudWatch;
+        if (level instanceof Object) {
+          Object.assign(awsOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = awsOptions);
+        if (!level) level = 'off';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'warn';
         }
 
-        if (!awsOptions.region) {
-          // eslint-disable-next-line no-console
-          console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
-        } else if (!logGroupName) {
-          // eslint-disable-next-line no-console
-          console.warn(` Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
-        } else {
-          this.initCloudWatch();
-          const { uploadRate } = awsOptions;
-
-          // Remove invalid characters from log group name
-          // See https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
-          logGroupName = logGroupName.replace(/[^a-z0-9_/.#-]/gi, '');
-
-          // log group ends with a slash
-          logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
-
-          awsOptions = { region: awsOptions.region };
-
-          const checkTags = (info) => {
-            // TODO: Submit feature request. See cwTransportShortCircuit
-            if (!this.checkTags('cloudWatch', info)) return '';
-            return JSON.stringify(info);
-          };
-
-          // TODO: add more options supported by winston-cloudwatch
-          // eslint-disable-next-line global-require
-          if (!WinstonCloudWatch) WinstonCloudWatch = require('winston-cloudwatch');
-
-          if (this.options.say.cloudWatch && !this.props.cloudWatchLogGroups[logGroupName]) {
-            this.props.cloudWatchLogGroups[logGroupName] = true;
-            // eslint-disable-next-line no-console
-            console.log(
-              `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
-            );
+        if (level !== 'off') {
+          let { logGroup: logGroupName } = awsOptions;
+          if (!awsOptions.region) {
+            awsOptions.region = process.env.AWS_CLOUDWATCH_LOGS_REGION;
+            if (!awsOptions.region) {
+              awsOptions.region = process.env.AWS_CLOUDWATCH_REGION;
+              if (!awsOptions.region) awsOptions.region = process.env.AWS_DEFAULT_REGION;
+            }
           }
 
-          const transport = new WinstonCloudWatch({
-            messageFormatter: checkTags,
-            logStreamName: this.props.cloudWatchStream,
-            createLogGroup: true,
-            createLogStream: true,
-            logGroupName,
-            awsOptions,
-            level,
-            errorHandler: (error) => this.cloudWatchError(error),
-            uploadRate,
-            handleExceptions: category === logCategories.unhandled,
-          });
+          if (!awsOptions.region) {
+            // eslint-disable-next-line no-console
+            console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+          } else if (!logGroupName) {
+            // eslint-disable-next-line no-console
+            console.warn(` Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+          } else {
+            this.initCloudWatch();
+            const { uploadRate } = awsOptions;
 
-          this.props.cloudWatchTransports.push(transport);
-          transports.push(transport);
+            // Remove invalid characters from log group name
+            // See https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
+            logGroupName = logGroupName.replace(/[^a-z0-9_/.#-]/gi, '');
+
+            // log group ends with a slash
+            logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
+
+            awsOptions = { region: awsOptions.region };
+
+            const checkTags = (info) => {
+              // TODO: Submit feature request. See cwTransportShortCircuit
+              if (!this.checkTags('cloudWatch', info)) return '';
+              return JSON.stringify(info);
+            };
+
+            // TODO: add more options supported by winston-cloudwatch
+
+            if (this.options.say.cloudWatch && !this.props.cloudWatchLogGroups[logGroupName]) {
+              this.props.cloudWatchLogGroups[logGroupName] = true;
+              // eslint-disable-next-line no-console
+              console.log(
+                `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
+              );
+            }
+
+            const transport = new WinstonCloudWatch({
+              messageFormatter: checkTags,
+              logStreamName: this.props.cloudWatchStream,
+              createLogGroup: true,
+              createLogStream: true,
+              logGroupName,
+              awsOptions,
+              level,
+              errorHandler: (error) => this.cloudWatchError(error),
+              uploadRate,
+              handleExceptions: category === logCategories.unhandled,
+            });
+
+            this.props.cloudWatchTransports.push(transport);
+            transports.push(transport);
+          }
         }
       }
 
       // ====
       // File
-      let fileOptions = { ...options.file };
-      level = settings.file;
-      if (level instanceof Object) {
-        Object.assign(fileOptions, level);
-        level = undefined;
-      }
-      if (!level) ({ level } = fileOptions);
-      if (!level) level = 'off';
-      else if (level === 'default') {
-        level = options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'info';
-      }
+      {
+        const fileOptions = { ...options.file };
+        let level = settings.file;
+        if (level instanceof Object) {
+          Object.assign(fileOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = fileOptions);
+        if (!level) level = 'off';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'info';
+        }
 
-      if (level !== 'off') {
-        const logsDirectory = this.createLogsDirectory(fileOptions);
+        if (level !== 'off') {
+          const logsDirectory = this.createLogsDirectory(fileOptions);
 
-        if (logsDirectory) {
-          let filename = path.join(logsDirectory, `${category}-%DATE%`);
-          const dir = path.dirname(filename);
+          if (logsDirectory) {
+            let filename = path.join(logsDirectory, `${category}-%DATE%`);
+            const dir = path.dirname(filename);
 
-          if (dir !== logsDirectory)
-            try {
-              mkdirp(dir);
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
-${error}`);
-              filename = null;
+            if (dir !== logsDirectory)
+              try {
+                mkdirp(dir);
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
+  ${error}`);
+                filename = null;
+              }
+
+            if (filename) {
+              const checkTags = winston.format((info) => this.checkTags('file', info))();
+              const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
+              const transport = new winston.transports.DailyRotateFile({
+                filename,
+                extension: '.log',
+                datePattern,
+                utc,
+                zippedArchive,
+                maxSize,
+                maxFiles,
+                format: format.combine(checkTags, format.json()),
+                level,
+                handleExceptions: category === logCategories.unhandled,
+              });
+
+              transports.push(transport);
             }
+          }
+        }
+      }
 
-          if (filename) {
-            const checkTags = winston.format((info) => this.checkTags('file', info))();
+      // ==========
+      // Error file
+      {
+        const fileOptions = { ...options.errorFile };
+        let level = settings.errorFile;
+        if (level instanceof Object) {
+          Object.assign(fileOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = fileOptions);
+        if (!level) level = 'off';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'error';
+        }
+
+        if (level !== 'off') {
+          const logsDirectory = this.createLogsDirectory(fileOptions);
+
+          if (logsDirectory) {
+            const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
             const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
             const transport = new winston.transports.DailyRotateFile({
-              filename,
+              filename: `${logsDirectory}/${category}-error-%DATE%`,
               extension: '.log',
               datePattern,
-              utc,
               zippedArchive,
+              utc,
               maxSize,
               maxFiles,
               format: format.combine(checkTags, format.json()),
@@ -1442,69 +1498,32 @@ ${error}`);
         }
       }
 
-      // ==========
-      // Error file
-      fileOptions = { ...options.errorFile };
-      level = settings.errorFile;
-      if (level instanceof Object) {
-        Object.assign(fileOptions, level);
-        level = undefined;
-      }
-      if (!level) ({ level } = fileOptions);
-      if (!level) level = 'off';
-      else if (level === 'default') {
-        level = options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'error';
-      }
-
-      if (level !== 'off') {
-        const logsDirectory = this.createLogsDirectory(fileOptions);
-
-        if (logsDirectory) {
-          const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
-          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
-          const transport = new winston.transports.DailyRotateFile({
-            filename: `${logsDirectory}/${category}-error-%DATE%`,
-            extension: '.log',
-            datePattern,
-            zippedArchive,
-            utc,
-            maxSize,
-            maxFiles,
-            format: format.combine(checkTags, format.json()),
-            level,
-            handleExceptions: category === logCategories.unhandled,
-          });
-
-          transports.push(transport);
-        }
-      }
-
       // ===============================================
       // Console
       // Must be last because it's the default transport
-      const consoleOptions = { ...options.console };
-      level = settings.console;
-      if (level instanceof Object) {
-        Object.assign(consoleOptions, level);
-        level = undefined;
-      }
-      if (!level) ({ level } = consoleOptions);
-      if (!level) level = 'info';
-      else if (level === 'default') {
-        level = options.defaultLevel;
-      } else if (level === 'on') {
-        level = 'info';
-      }
+      {
+        const consoleOptions = { ...options.console };
+        let level = settings.console;
+        if (level instanceof Object) {
+          Object.assign(consoleOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = consoleOptions);
+        if (!level) level = 'info';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'info';
+        }
 
-      // Winston wants at least one transport (error file transport is intentionally ignored because it's only error) so
-      // console is always active. This has the added benefit of ensuring that the unhandled exception logger has
-      // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
-      if (!transports.length && level === 'off') level = 'error';
+        // Winston wants at least one transport (error file transport is intentionally ignored because it's only error)
+        // so console is always active. This has the added benefit of ensuring that the unhandled exception logger has
+        // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
+        if (!transports.length && level === 'off') level = 'error';
 
-      if (level !== 'off') {
-        transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
+        if (level !== 'off') {
+          transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
+        }
       }
 
       // All transports created
@@ -1527,8 +1546,6 @@ ${error}`);
    * @returns {object} A Winston logger
    */
   winstonLogger(category) {
-    if (this.props.stopped) throw new Error('Stopped');
-
     category = this.category(category);
     let logger = this.props.winstonLoggers[category];
     if (!logger) logger = this.createWinstonLoggers(category);
