@@ -700,14 +700,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @param {*} messageOrContext
    * @param {*} contextOrCategory
    * @param {*} category
-   * @returns {object} Returns 'logger' argument
    */
   static levelLog(logger, levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (tagsOrMessage instanceof Array) {
-      return logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
+      logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrContext, contextOrCategory, category);
+    } else {
+      logger.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
     }
-    return logger.log(levelObj, tagsOrMessage, messageOrContext, contextOrCategory, category);
   }
 
   /**
@@ -2381,10 +2381,9 @@ ${stack}`);
 
   /**
    * @description Sends a log entry using the default level
-   * @returns {Loggers} this
    */
   default(...args) {
-    return Loggers.levelLog(this, this.props.logLevel.default, ...args);
+    Loggers.levelLog(this, this.props.logLevel.default, ...args);
   }
 
   /**
@@ -2402,7 +2401,6 @@ ${stack}`);
    * @param {*} [message]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {object} this
    */
   log(tags, message, context, category) {
     ({ tags, message, context, category } = this.transformArgs(tags, message, context, category));
@@ -2422,8 +2420,6 @@ ${new Error('Stopped').stack}`);
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, context);
     }
-
-    return this;
   }
 }
 
@@ -2657,10 +2653,9 @@ class Logger {
    * @param {*} [message]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {object}
    */
   log(tags, message, context, category) {
-    return this.props.loggers.log(this.transformArgs(tags, message, context, category));
+    this.props.loggers.log(this.transformArgs(tags, message, context, category));
   }
 }
 

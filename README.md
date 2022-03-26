@@ -14,7 +14,7 @@ If you plan to write to AWS CloudWatch Logs, NodeJS 12 (LTS/erbium) or higher is
 
 ## Installation
 
-`npm i --save winston @goodware/log`
+`npm i --save @goodware/log`
 
 If you will write to AWS CloudWatch Logs, also run:
 
