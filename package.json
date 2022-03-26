@@ -23,10 +23,12 @@
     "winston",
     "logging",
     "aws",
+    "aws-lambda",
     "aws-cloudwatch-logs",
     "aws-cloudwatch",
     "cloudwatch-logs",
-    "cloudwatch"
+    "cloudwatch",
+    "winston-cloudwatch"
   ],
   "license": "BSD-2-Clause",
   "dependencies": {
