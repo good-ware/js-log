@@ -17,14 +17,14 @@ const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 
-let WinstonCloudWatch;
-let noCloudWatch;
-
 const Stack = require('./Stack');
 
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 const addErrorSymbol = Symbol.for('error');
+
+let WinstonCloudWatch;
+let noCloudWatch;
 
 // =============================================================================
 // Developer Notes

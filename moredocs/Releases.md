@@ -4,9 +4,10 @@
 
 - log() etc. methods return undefined for easier testing via REPL, RunKit, etc.
 
-## 5.0.0 - 5.0.2 2022-03-26
+## 5.0.0 - 5.0.3 2022-03-26
 
 - @asw-sdk-client/cloudwatch-logs and winston-cloudwatch are optional dependencies
+- Output all opened CloudWatch Logs group and stream names to the console
 
 ## 4.0.0 - 4.0.1 2022-03-20
 
