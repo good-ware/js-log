@@ -1,10 +1,16 @@
 # @goodware/log Release History
 
+## 5.0.4 2022-03-26
+
+Create log groups when missing.
+
+Note: Missing log groups will not be created until [PR#184](https://github.com/lazywithclass/winston-cloudwatch/pull/184) is released.
+
+## 5.0.0 - 5.0.3 2022-03-26
+
 ### Breaking Changes
 
 - log() etc. methods return undefined for easier testing via REPL, RunKit, etc.
-
-## 5.0.0 - 5.0.3 2022-03-26
 
 - @asw-sdk-client/cloudwatch-logs and winston-cloudwatch are optional dependencies
 - Output all opened CloudWatch Logs group and stream names to the console

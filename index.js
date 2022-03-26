@@ -1373,6 +1373,7 @@ ${error}`)
             };
 
             // TODO: add more options supported by winston-cloudwatch
+            // See https://github.com/lazywithclass/winston-cloudwatch/blob/e705a18220bc9be0564ad27b299127c6ee56a28b/typescript/winston-cloudwatch.d.ts
 
             if (this.options.say.cloudWatch && !this.props.cloudWatchLogGroups[logGroupName]) {
               this.props.cloudWatchLogGroups[logGroupName] = true;
@@ -1385,8 +1386,7 @@ ${error}`)
             const transport = new WinstonCloudWatch({
               messageFormatter: checkTags,
               logStreamName: this.props.cloudWatchStream,
-              createLogGroup: true,
-              createLogStream: true,
+              ensureLogGroup: true,
               logGroupName,
               awsOptions,
               level,
