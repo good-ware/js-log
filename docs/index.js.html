@@ -53,19 +53,17 @@ const { ulid } = require('ulid');
 const prune = require('json-prune');
 const util = require('util');
 const path = require('path');
-// Winston includes
 const winston = require('winston');
 require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 
 const Stack = require('./Stack');
-
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
-
-const addErrorSymbol = Symbol.for('error');
 
 let WinstonCloudWatch;
 let noCloudWatch;
+
+const addErrorSymbol = Symbol.for('error');
 
 // =============================================================================
 // Developer Notes
@@ -86,7 +84,6 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
  * doesn't work for unit tests.
  */
 const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
-// TODO: Use myName ^^
 
 /**
  * @private
@@ -1354,16 +1351,7 @@ ${error}`)
       // ============================
       // CloudWatch
       // Lazy load winston-cloudwatch
-      if (!WinstonCloudWatch &amp;&amp; !noCloudWatch) {
-        try {
-          // eslint-disable-next-line global-require, import/no-extraneous-dependencies
-          WinstonCloudWatch = require('winston-cloudwatch');
-        } catch (error) {
-          noCloudWatch = true;
-        }
-      }
-
-      if (WinstonCloudWatch) {
+      if (!noCloudWatch) {
         let awsOptions = { ...options.cloudWatch };
         let level = settings.cloudWatch;
         if (level instanceof Object) {
@@ -1393,51 +1381,64 @@ ${error}`)
             console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
           } else if (!logGroupName) {
             // eslint-disable-next-line no-console
-            console.warn(` Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+            console.warn(`Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
           } else {
-            this.initCloudWatch();
-            const { uploadRate } = awsOptions;
-
-            // Remove invalid characters from log group name
-            // See https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
-            logGroupName = logGroupName.replace(/[^a-z0-9_/.#-]/gi, '');
-
-            // log group ends with a slash
-            logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
-
-            awsOptions = { region: awsOptions.region };
-
-            const checkTags = (info) => {
-              // TODO: Submit feature request. See cwTransportShortCircuit
-              if (!this.checkTags('cloudWatch', info)) return '';
-              return JSON.stringify(info);
-            };
-
-            // TODO: add more options supported by winston-cloudwatch
-            // See https://github.com/lazywithclass/winston-cloudwatch/blob/e705a18220bc9be0564ad27b299127c6ee56a28b/typescript/winston-cloudwatch.d.ts
-
-            if (this.options.say.cloudWatch &amp;&amp; !this.props.cloudWatchLogGroups[logGroupName]) {
-              this.props.cloudWatchLogGroups[logGroupName] = true;
-              // eslint-disable-next-line no-console
-              console.log(
-                `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
-              );
+            if (!WinstonCloudWatch) {
+              try {
+                // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+                WinstonCloudWatch = require('@goodware/winston-cloudwatch');
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn(`winston-cloudwatch is not installed: ${error.message}  [warn ${myName}]`);
+                noCloudWatch = true;
+              }
             }
 
-            const transport = new WinstonCloudWatch({
-              messageFormatter: checkTags,
-              logStreamName: this.props.cloudWatchStream,
-              ensureLogGroup: true,
-              logGroupName,
-              awsOptions,
-              level,
-              errorHandler: (error) => this.cloudWatchError(error),
-              uploadRate,
-              handleExceptions: category === logCategories.unhandled,
-            });
+            if (WinstonCloudWatch) {
+              this.initCloudWatch();
+              const { uploadRate } = awsOptions;
 
-            this.props.cloudWatchTransports.push(transport);
-            transports.push(transport);
+              // Remove invalid characters from log group name
+              // See https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
+              logGroupName = logGroupName.replace(/[^a-z0-9_/.#-]/gi, '');
+
+              // log group ends with a slash
+              logGroupName = `${logGroupName.replace(/[/]+$/, '').replace(/[/][/]+$/g, '')}/`;
+
+              awsOptions = { region: awsOptions.region };
+
+              const checkTags = (info) => {
+                // TODO: Submit feature request. See cwTransportShortCircuit
+                if (!this.checkTags('cloudWatch', info)) return '';
+                return JSON.stringify(info);
+              };
+
+              // TODO: add more options supported by winston-cloudwatch
+              // See https://github.com/lazywithclass/winston-cloudwatch/blob/e705a18220bc9be0564ad27b299127c6ee56a28b/typescript/winston-cloudwatch.d.ts
+
+              if (this.options.say.cloudWatch &amp;&amp; !this.props.cloudWatchLogGroups[logGroupName]) {
+                this.props.cloudWatchLogGroups[logGroupName] = true;
+                // eslint-disable-next-line no-console
+                console.log(
+                  `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
+                );
+              }
+
+              const transport = new WinstonCloudWatch({
+                messageFormatter: checkTags,
+                logStreamName: this.props.cloudWatchStream,
+                ensureLogGroup: true,
+                logGroupName,
+                awsOptions,
+                level,
+                errorHandler: (error) => this.cloudWatchError(error),
+                uploadRate,
+                handleExceptions: category === logCategories.unhandled,
+              });
+
+              this.props.cloudWatchTransports.push(transport);
+              transports.push(transport);
+            }
           }
         }
       }
@@ -2730,7 +2731,7 @@ module.exports = Loggers;
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Sat Mar 26 2022 13:35:14 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Sat Mar 26 2022 22:53:47 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>
