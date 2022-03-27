@@ -1379,7 +1379,8 @@ ${error}`)
                 this.props.cloudWatchLogGroups[logGroupName] = true;
                 // eslint-disable-next-line no-console
                 console.log(
-                  `Writing to CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
+                  // eslint-disable-next-line max-len
+                  `Writing to AWS CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
                 );
               }
 
