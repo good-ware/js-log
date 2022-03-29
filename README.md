@@ -2,7 +2,7 @@
 
 ## Links
 
-- [Release History](https://good-ware.github.io/js-log/tutorial-Releases)
+- [Release History](https://good-ware.github.io/js-log/tutorial-CHANGELOG)
 - [npm](https://www.npmjs.com/package/@goodware/log)
 - [git](https://github.com/good-ware/js-log)
 - [API Docs](https://good-ware.github.io/js-log/)
@@ -356,6 +356,7 @@ If an AWS region is not specified, the environment variables are used in the fol
 1. AWS_CLOUDWATCH_LOGS_REGION
 2. AWS_CLOUDWATCH_REGION
 3. AWS_DEFAULT_REGION
+4. AWS_REGION
 
 ## Begin/End/Error Utility Classes
 

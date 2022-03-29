@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 5.0.7 2022-03-29
+
+Use AWS_REGION environment variable
+
 ## 5.0.5 - 5.0.6 2022-03-26
 
 Use @goodware/winston-cloudwatch until [PR#184](https://github.com/lazywithclass/winston-cloudwatch/pull/184) is released

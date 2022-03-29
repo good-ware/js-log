@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "5.0.6",
+  "version": "5.0.7",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "author": "devguy@devguy.com",
   "engines": {

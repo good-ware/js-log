@@ -1328,11 +1328,9 @@ ${error}`)
         if (level !== 'off') {
           let { logGroup: logGroupName } = awsOptions;
           if (!awsOptions.region) {
-            awsOptions.region = process.env.AWS_CLOUDWATCH_LOGS_REGION;
-            if (!awsOptions.region) {
-              awsOptions.region = process.env.AWS_CLOUDWATCH_REGION;
-              if (!awsOptions.region) awsOptions.region = process.env.AWS_DEFAULT_REGION;
-            }
+            const env = { process };
+            awsOptions.region =
+              env.AWS_CLOUDWATCH_LOGS_REGION || env.AWS_CLOUDWATCH_REGION || env.AWS_DEFAULT_REGION || env.AWS_REGION;
           }
 
           if (!awsOptions.region) {
