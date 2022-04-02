@@ -58,7 +58,7 @@ Any number of Loggers instances can exist at any given time. This is useful if, 
 
 Log messages via log(), default(), and methods that are named after logging levels (aka `level`()), such as info(). The list of available logging levels and the console color for each can be provided via options.
 
-Log entries are created from four components (all optional): 'tags', 'message', 'context', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and context() merge two objects into a single object. context() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
+Log entries are created from four components (all optional): 'tags', 'message', 'data', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and data() merge two objects into a single object. data() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
 
 Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
 
@@ -66,9 +66,9 @@ The concept of tags was borrowed from the HAPI project. Tags are a superset of l
 
 `level`() (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
 
-The values for 'message' and 'context' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'context' is an object that appears in the log entry's 'data' property.
+The values for 'message' and 'data' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'data' is an object that appears in the log entry's 'data' property.
 
-log(), default(), and `level`() optionally accept an Error object as the first parameter, followed by message, context, and category. 'error' is automatically added to the tags; however, 'level' for `level`() methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
+log(), default(), and `level`() optionally accept an Error object as the first parameter, followed by message, data, and category. 'error' is automatically added to the tags; however, 'level' for `level`() methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
 
 ### Winston Loggers
 
@@ -76,12 +76,12 @@ One Winston logger is created for each unique category name. winstonLogger() ret
 
 ### Child Loggers (flyweight)
 
-logger() and child() return objects with their own tags, context, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
+logger() and child() return objects with their own tags, data, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
 
 Child loggers and Loggers instances have the following methods:
 
 - tags(a, b) Combines a and b such that b's tags override a's tags. The result is combined with (and overrides) the child logger's tags.
-- context(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's context.
+- data(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's data.
 - category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
 Context can be 'built up' by chaining calls to logger() and/or child().
@@ -138,7 +138,7 @@ A logger implements the following interface:
 - loggers() For child loggers to access the Loggers object that created them
 - winstonLogger()
 - tags(), for combining tags
-- context(), for combining context objects
+- data(), for combining data objects
 - category() (mostly useful for retrieving the category assigned to Logger objects)
 - flush()
 - flushCloudWatchTransports()
@@ -180,7 +180,7 @@ When a level is not found in the provided tags, the default level, 'debug', is a
 
 ### level methods
 
-Methods that are named after logging levels, such as error(). log(tags, message, context, category) is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level method is an array, the parameter list is (tags, message, context, category). Otherwise, it's (message, context, category).
+Methods that are named after logging levels, such as error(). log(tags, message, data, category) is an alternative to the level methods. Level methods accept variant parameters. If the first parameter to a level method is an array, the parameter list is (tags, message, data, category). Otherwise, it's (message, data, category).
 
 ### level filtering
 
@@ -252,10 +252,10 @@ Uniquely identifies the system that is running node
 
 Identifies the environment in which node is running, such as 'dev' or 'prod'
 
-### context
+### data
 
-An optional string, array, or object to log with message. Two 'context' objects are combined via the static
-method context(a, b) in which b's keys override a's keys if they overlap.
+An optional string, array, or object to log with message. Two 'data' objects are combined via the static
+method data(a, b) in which b's keys override a's keys if they overlap.
 
 ### message
 
@@ -263,7 +263,7 @@ A scalar, array, or object to log. If an object is provided, its 'message' prope
 
 ### both
 
-message and 'context' are shallow copied and combined into a new object called 'both.' If message's keys overlap with those in 'context,' 'context' is logged separately; both log entries will have the same groupId meta value.
+message and 'data' are shallow copied and combined into a new object called 'both.' If message's keys overlap with those in 'data,' 'data' is logged separately; both log entries will have the same groupId meta value.
 
 ### Errors
 
@@ -333,7 +333,7 @@ CONSOLE_COLORS
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-When 'data' is true, the maximum amount of information is sent to the console, including meta, context, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the
+When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the
 
 ```shell
 CONSOLE_DATA

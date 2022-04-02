@@ -1,5 +1,11 @@
 # @goodware/log Release History
 
+## 6.0.0 2022-04-02
+
+## Breaking Changes
+
+- 'context' parameter renamed to 'data' to sync up with console.data configuration and CloudWatch JSON output
+
 ## 5.0.7 2022-03-29
 
 Use AWS_REGION environment variable

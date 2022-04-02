@@ -69,12 +69,11 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
-
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
-    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
   {
@@ -87,11 +86,11 @@ async function go(colors) {
     const count = unitTest.entries.length;
     const error = new Error('x');
     loggers.info(undefined, { error });
-    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
 
-  // An error is provided and the message is blank; context data is provided
+  // An error is provided and the message is blank; data data is provided
   {
     const count = unitTest.entries.length;
     const error = new Error('x');
@@ -198,7 +197,7 @@ async function go(colors) {
   {
     const count = unitTest.console.entries.length;
     loggers.log('error', '', new Error('fail'), 'briefConsole');
-    if (count + 1 !== unitTest.console.entries.length) throw new Error();
+    if (count + 2 !== unitTest.console.entries.length) throw new Error();
   }
   // Message can be 0 (specify category)
   {
@@ -212,17 +211,17 @@ async function go(colors) {
     loggers.log('error', false, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
-  // No Message when null (specify category)
+  // Message when null (specify category)
   {
     const count = unitTest.console.entries.length;
     loggers.log('error', null, null, 'briefConsole');
-    if (count !== unitTest.console.entries.length) throw new Error();
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
-  // No Message when undefined (specify category)
+  // Message when undefined (specify category)
   {
     const count = unitTest.console.entries.length;
     loggers.log('error', undefined, null, 'briefConsole');
-    if (count !== unitTest.console.entries.length) throw new Error();
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message without data
   {
@@ -241,7 +240,7 @@ async function go(colors) {
     if (entry[Symbol.for('message')].indexOf('data:') < 0) throw new Error();
   }
 
-  // Pass an object to child(). context is a string.
+  // Pass an object to child(). data is a string.
   // log({message: { error: Error })
   {
     logger.log({ message: { error: new Error('err') } });
@@ -365,14 +364,14 @@ async function go(colors) {
     if (!entry.data.a) throw new Error();
   }
 
-  // Pass an object to child(). context is a string.
+  // Pass an object to child(). data is a string.
   {
     // logging-level methods override tags
-    loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
+    loggers.child({ tags: 'error', data: 'doo' }).info('Yabba dabba');
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
     const { data, level } = obj;
     if (level !== 'info') throw new Error();
-    if (data.context !== 'doo') throw new Error();
+    if (data.data !== 'doo') throw new Error();
   }
 
   // message is an object 1
@@ -393,9 +392,9 @@ async function go(colors) {
     if (!entry.data.b) throw new Error();
   }
 
-  // log level method with context and tags
+  // log level method with data and tags
   {
-    logger.error({ tags: ['d'], a: 1, b: 2, context: { d: 5 } });
+    logger.error({ tags: ['d'], a: 1, b: 2, data: { d: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.data.a) throw new Error();
@@ -403,7 +402,7 @@ async function go(colors) {
     if (!entry.data.d) throw new Error();
   }
 
-  // Child context is passed to logger()
+  // Child data is passed to logger()
   {
     loggers.logger('a').child(null, { b: 5 }).child(null, { a: 1 }).logger('b').info('hi');
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
@@ -696,8 +695,8 @@ async function go(colors) {
   }
 
   {
-    const contextLogger = loggers.child('cxt', { cxtExtra: 5 }, 'logger');
-    contextLogger.debug('logging with context logger');
+    const dataLogger = loggers.child('cxt', { cxtExtra: 5 }, 'logger');
+    dataLogger.debug('logging with data logger');
     if (unitTest.entries[unitTest.entries.length - 1].data.cxtExtra !== 5) throw new Error();
   }
 
@@ -913,11 +912,9 @@ async function go(colors) {
   {
     const { length } = unitTest.entries;
     // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 175 + hasCloudWatch;
+    const expectedEntries = 192 + hasCloudWatch;
 
-    if (length !== expectedEntries) {
-      throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
-    }
+    if (length !== expectedEntries) throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
   }
 
   // =====================================================
@@ -930,7 +927,7 @@ async function go(colors) {
   }
 
   // =====================================================
-  // Check the number of logged messages with data/context
+  // Check the number of logged messages with data/data
   {
     // This value must be tweaked whenever more entries are logged
     const expectedData = 38;
