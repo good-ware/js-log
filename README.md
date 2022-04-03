@@ -10,7 +10,7 @@
 
 ## Requirements
 
-If you plan to write to AWS CloudWatch Logs, NodeJS 12 (LTS/erbium) or higher is required. Otherwise, any LTS version is sufficent.
+If you plan to write to AWS CloudWatch Logs, NodeJS 10 (LTS/dubnium) or higher is required. Otherwise, any LTS version is sufficent.
 
 ## Installation
 
@@ -84,7 +84,7 @@ Child loggers and Loggers instances have the following methods:
 - data(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's data.
 - category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
-Context can be 'built up' by chaining calls to logger() and/or child().
+Context can be built up by chaining calls to logger() and/or child().
 
 ```js
 loggers.logger('dog').child('dogTag').child(null, { userId: 101 }).logger('anotherCategory').debug('Wow!');

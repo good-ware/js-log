@@ -1,6 +1,6 @@
 # @goodware/log Release History
 
-## 6.0.0 2022-04-02
+## 6.0.0 - 6.0.1 2022-04-02
 
 ## Breaking Changes
 
