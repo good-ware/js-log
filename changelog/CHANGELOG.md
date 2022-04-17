@@ -3,9 +3,10 @@
 ## 6.0.2 - 6.0.3 2022-04-17
 
 - Replace ulid package with newer ulidx
-- Fix and change: Use AWS_CLOUDWATCH_LOGS_REGION or AWS_REGION environment variables
-- Replace mkdir-sync package with fs
-- Do not write to files if there is no writable directory
+- Fix and change: Use AWS_CLOUDWATCH_LOGS_REGION or AWS_REGION environment variables. AWS_CLOUDWATCH_REGION and AWS_DEFAULT_REGION are no longer used.
+- Replace mkdir-sync package with functions in the fs package
+- Add additional error handling when creating file transports
+- Add the current directory to the list of log file directories in case ./logs can not be created
 
 ## 6.0.0 - 6.0.1 2022-04-02
 
