@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "@goodware/.550b07a31814876abbdf296be4a668c5273a6e0a-audit.json",
+    "files": [
+        {
+            "date": 1650174671915,
+            "name": "@goodware/unhandled-2022-04-17-05.log",
+            "hash": "d1bbdb9d4647ee48b952f209d9912dfa"
+        },
+        {
+            "date": 1650175580416,
+            "name": "@goodware/unhandled-2022-04-17-06.log",
+            "hash": "87676ba2c52b7cf49b013e4c65316eeb"
+        }
+    ],
+    "hashType": "md5"
+}

@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-const { ulid } = require('ulid');
+const { ulid } = require('ulidx');
 
 /**
  * @description Logs the start of a generator and returns an object for logging the progress, end, and error of it
