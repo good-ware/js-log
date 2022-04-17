@@ -733,8 +733,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
     if (!logDirectory) {
       // eslint-disable-next-line no-console
-      console.warn(`Failed creating logs directory. Directories attempted:
-${directories.join('\n')}  [warn ${myName}]`);
+      console.error(`Failed creating log file directory. Directories attempted:  [error ${myName}]
+${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     }
 
     return logDirectory;
@@ -757,9 +757,9 @@ ${directories.join('\n')}  [warn ${myName}]`);
       const error = Error(`Invalid datatype provided for category (${type})`);
 
       const stack = error.stack.replace(stripStack, '');
-      this.log('warn', stack, undefined, reservedCategories.log);
+      this.log('error', stack, undefined, reservedCategories.log);
       // eslint-disable-next-line no-console
-      console.warn(`${stack}  [warn ${myName}]`);
+      console.error(`${stack}  [error ${myName}]`);
 
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
@@ -1046,8 +1046,8 @@ ${directories.join('\n')}  [warn ${myName}]`);
           );
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.warn(`Failed creating CloudWatch error file transport: ${filename}  [warn ${myName}]
-${error}  [warn ${myName}]`);
+          console.error(`Failed creating CloudWatch error file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
         }
       }
     }
@@ -1179,8 +1179,8 @@ ${error}  [warn ${myName}]`);
             .end();
         }).catch((error) =>
           // eslint-disable-next-line no-console
-          console.warn(`Failed closing '${category}'  [warn ${myName}]
-${error}`)
+          console.error(`Failed closing '${category}'  [error ${myName}]
+${error}  [error ${myName}]`)
         );
       })
     );
@@ -1363,8 +1363,8 @@ ${error}`)
               );
             } catch (error) {
               // eslint-disable-next-line no-console
-              console.warn(`Failed creating file transport: ${filename}  [warn ${myName}]
-${error}  [warn ${myName}]`);
+              console.error(`Failed creating file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
             }
           }
         }
@@ -1413,8 +1413,8 @@ ${error}  [warn ${myName}]`);
               );
             } catch (error) {
               // eslint-disable-next-line no-console
-              console.warn(`Failed creating error file transport: ${filename}  [warn ${myName}]
-${error}  [warn ${myName}]`);
+              console.error(`Failed creating error file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
               // Ignore the error - unable to write to the directory
             }
           }
@@ -1448,10 +1448,10 @@ ${error}  [warn ${myName}]`);
 
           if (!awsOptions.region) {
             // eslint-disable-next-line no-console
-            console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+            console.error(`Region was not specified for AWS CloudWatch Logs for '${category}'  [error ${myName}]`);
           } else if (!logGroupName) {
             // eslint-disable-next-line no-console
-            console.warn(`Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+            console.error(`Log group was not specified for AWS CloudWatch Logs for '${category}'  [error ${myName}]`);
           } else {
             if (!WinstonCloudWatch) {
               try {
@@ -1807,8 +1807,8 @@ ${error}  [warn ${myName}]`);
     if (this.props.stopped) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`Stopped  [warn ${myName}]
-${stack}`);
+      console.error(`Stopped  [error ${myName}]
+${stack}  [error ${myName}]`);
       return false;
     }
 
@@ -2391,9 +2391,9 @@ ${stack}`);
     if (this.props.stopping && category !== reservedCategories.cloudWatch) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`Stopping  [warn ${myName}]
-${util.inspect(entry)}
-${stack}`);
+      console.error(`Stopping  [error ${myName}]
+${util.inspect(entry)}  [error ${myName}]
+${stack}  [error ${myName}]`);
     } else {
       logger.log(level, entry);
     }
@@ -2432,14 +2432,14 @@ ${stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(`Stopped  [warn ${myName}]
+      console.error(`Stopped  [error ${myName}]
 ${util.inspect({
   category,
   tags,
   message,
   data,
-})}
-${new Error('Stopped').stack}`);
+})}  [error ${myName}]
+${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, data);
