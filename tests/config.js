@@ -18,7 +18,7 @@ let config = {
       data: true,
     },
     cloudWatch: {
-      // To test CloudWatch Logs, set AWS_DEFAULT_REGION environment variable
+      // To test CloudWatch Logs, set AWS_REGION environment variable
       // region: 'us-west-2',
       logGroup: `/${env}/goodware/log`,
     },

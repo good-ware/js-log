@@ -55,6 +55,8 @@ async function go(colors) {
 
   // =========================
   // Create a Loggers instance
+  // config.logging.logDirectoryNotFound = true;
+
   loggers = new Loggers(config.logging);
 
   const hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
@@ -69,6 +71,7 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
+
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
@@ -845,7 +848,7 @@ async function go(colors) {
   {
     const len = Object.keys(unitTest.groupIds).length;
     Promise.reject(new Error('Rejected promise'));
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    await new Promise((resolve) => setTimeout(resolve, 250));
 
     const len2 = Object.keys(unitTest.groupIds).length;
     if (len2 <= len) throw new Error(len2);
@@ -856,10 +859,10 @@ async function go(colors) {
   {
     const len = Object.keys(unitTest.groupIds).length;
 
-    setTimeout(() => {
+    setImmediate(() => {
       throw new Error('Unhandled exception');
-    }, 0.1);
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 250));
 
     const len2 = Object.keys(unitTest.groupIds).length;
     if (len2 <= len) throw new Error(len2);

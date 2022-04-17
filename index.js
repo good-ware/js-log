@@ -4,11 +4,11 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
 const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
+const fs = require('fs');
 const hostId = require('hostid');
-const mkdirp = require('mkdirp-sync');
 const humanizeDuration = require('humanize-duration');
 const Joi = require('joi');
-const { ulid } = require('ulid');
+const { ulid } = require('ulidx');
 const prune = require('json-prune');
 const util = require('util');
 const path = require('path');
@@ -70,9 +70,9 @@ const scalars = {
  * @ignore
  * @description Category names for internal loggers
  */
-const logCategories = {
+const reservedCategories = {
   unhandled: '@goodware/unhandled',
-  cloudWatch: '@goodware/cloudwatch-error',
+  cloudWatch: '@goodware/cloudwatch',
   log: '@goodware/log', // When the API is misused
 };
 
@@ -362,7 +362,7 @@ class Loggers {
   /**
    * @private
    * @ignore
-   * @description Converts an data value to an object
+   * @description Converts a 'data' argument to an object
    * @param {*} [data]
    * @returns {object|undefined}
    */
@@ -458,7 +458,7 @@ class Loggers {
       level: onOffDefaultLevelEnum,
       directories: Joi.array()
         .items(Joi.string())
-        .default(['logs', '/tmp/logs'])
+        .default(['logs', '/tmp/logs', '.'])
         .description('Use an empty array for read-only filesystems'),
       datePattern: Joi.string().default('YYYY-MM-DD-HH'),
       utc: Joi.boolean().default(true),
@@ -645,6 +645,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
         entries: [],
         groupIds: {},
         dataCount: 0,
+        throwErrorFileError: true,
       };
 
       transportNames.forEach((transport) => {
@@ -660,7 +661,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // process.on('uncaughtException') is dangerous and doesn't work for exceptions thrown in a function called by the
     // event loop -- e.g., setTimeout(() => {throw...})
     // Use the magic in Winston transports instead to catch uncaught exceptions
-    const unhandledLoggers = this.logger(logCategories.unhandled);
+    const unhandledLoggers = this.logger(reservedCategories.unhandled);
     if (unhandledLoggers.isLevelEnabled('error')) {
       // Create a real Winston logger that has a transport with handleExceptions: true
       unhandledLoggers.winstonLogger();
@@ -683,7 +684,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
         undefined,
         `Ready: ${service} v${version} ${stage} [${myName} v${myVersion}]`,
         undefined,
-        logCategories.log
+        reservedCategories.log
       );
     }
   }
@@ -712,36 +713,31 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @private
    * @ignore
    * @description Creates a directory for log files
-   * @param {object} options
+   * @param {string[]} directories
    * @returns {string} A directory path
    */
   // eslint-disable-next-line class-methods-use-this
-  createLogsDirectory(options) {
-    const { directories } = options;
-    let directory;
+  createLogDirectory({ directories }) {
+    let logDirectory;
 
-    if (
-      directories.length &&
-      !directories.every((dir) => {
-        try {
-          mkdirp(dir);
-          directory = dir;
-          return false;
-        } catch (error) {
-          return true; // Next iteration
-        }
-      })
-    ) {
-      // Directory exists
-      return directory;
+    directories.every((dir) => {
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.accessSync(dir, fs.constants.W_OK);
+      } catch (error) {
+        return true; // Next directory
+      }
+      logDirectory = dir;
+      return false; // Stop iterating
+    });
+
+    if (!logDirectory) {
+      // eslint-disable-next-line no-console
+      console.error(`Failed creating log file directory. Directories attempted:  [error ${myName}]
+${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     }
 
-    // Unable to create directories
-    // eslint-disable-next-line no-console
-    console.warn(`Failed creating logs directory. Directories attempted:
-${directories.join('\n')}  [warn ${myName}]`);
-
-    return undefined;
+    return logDirectory;
   }
 
   /**
@@ -761,9 +757,9 @@ ${directories.join('\n')}  [warn ${myName}]`);
       const error = Error(`Invalid datatype provided for category (${type})`);
 
       const stack = error.stack.replace(stripStack, '');
-      this.log('warn', stack, undefined, logCategories.log);
+      this.log('error', stack, undefined, reservedCategories.log);
       // eslint-disable-next-line no-console
-      console.warn(`${stack}  [warn ${myName}]`);
+      console.error(`${stack}  [error ${myName}]`);
 
       // Throw exception when unit testing
       if (this.options.unitTest) throw error;
@@ -906,6 +902,7 @@ ${directories.join('\n')}  [warn ${myName}]`);
     let colorBegin;
     let colorEnd;
     {
+      // Extract color codes from the level
       const codes = level.match(ansiRegex);
       if (codes) {
         [colorBegin, colorEnd] = codes;
@@ -1005,27 +1002,34 @@ ${directories.join('\n')}  [warn ${myName}]`);
     // Console
     transports.push(this.createConsoleTransport('error', false));
 
+    const { options } = this;
+    const { cloudWatch: category } = reservedCategories;
+
     // File
-    const fileOptions = this.options.errorFile;
-    const logsDirectory = this.createLogsDirectory(fileOptions);
+    const settings = options.categories[category] || {};
+    const fileOptions = { ...this.options.errorFile };
+    let level = settings.errorFile;
+    if (level instanceof Object) {
+      Object.assign(fileOptions, level);
+      level = undefined;
+    }
+    if (!level) ({ level } = fileOptions);
+    if (!level) level = 'off';
+    else if (level === 'default') {
+      level = options.defaultLevel;
+    } else if (level === 'on') {
+      level = 'error';
+    }
 
-    if (logsDirectory) {
-      let filename = path.join(logsDirectory, `${logCategories.cloudWatch}-%DATE%`);
-      const dir = path.dirname(filename);
+    if (level !== 'off') {
+      const logDirectory = this.createLogDirectory(fileOptions);
 
-      if (dir !== logsDirectory) {
+      if (logDirectory) {
+        const filename = path.join(logDirectory, `${category}-%DATE%`);
+
+        const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
+
         try {
-          mkdirp(dir);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
-${error}`);
-          filename = null;
-        }
-
-        if (filename) {
-          const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
-
           transports.push(
             new winston.transports.DailyRotateFile({
               filename,
@@ -1036,16 +1040,20 @@ ${error}`);
               maxSize,
               maxFiles,
               format: format.json(),
-              level: 'error',
+              level,
               handleExceptions: false,
             })
           );
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed creating CloudWatch error file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
         }
       }
     }
 
     return winston.createLogger({
-      defaultMeta: Loggers.defaultMeta(logCategories.cloudWatch),
+      defaultMeta: Loggers.defaultMeta(reservedCategories.cloudWatch),
       exitOnError: false,
       format: this.formatter(),
       levels: this.props.levelSeverity,
@@ -1060,15 +1068,16 @@ ${error}`);
    * @param {object} error
    */
   cloudWatchError(error) {
-    if (error.code === 'ThrottlingException') return;
-    if (error.code === 'DataAlreadyAcceptedException') return;
+    const { code } = error;
+    if (code === 'ThrottlingException' || code === 'DataAlreadyAcceptedException') return;
+
     // TODO: Submit feature request. See cwTransportShortCircuit
     // InvalidParameterException is thrown when the formatter provided to
     // winston-cloudwatch returns false
     // eslint-disable-next-line no-underscore-dangle
     if (error.__type === 'InvalidParameterException') return;
 
-    this.log(error, undefined, undefined, logCategories.cloudWatch);
+    this.log(error, undefined, undefined, reservedCategories.cloudWatch);
   }
 
   /**
@@ -1084,9 +1093,13 @@ ${error}`);
     // https://github.com/lazywithclass/winston-cloudwatch/issues/129
     // This ends up taking way too long if, say, the aws-sdk is not properly configured. Submit issue to
     // winston-cloudwatch.
+
+    // timeout = 1000; // For testing
+
     transport.flushTimeout = Date.now() + timeout;
     return new Promise((resolve) => {
       transport.kthxbye((error) => {
+        // error = new Error('testing this'); // For testing
         if (error) this.cloudWatchError(error);
         resolve();
       });
@@ -1112,6 +1125,7 @@ ${error}`);
       flushMessageTask = setTimeout(() => {
         const duration = humanizeDuration(flushTimeout);
         flushMessageSent = true;
+        flushMessageTask = undefined;
         // eslint-disable-next-line no-console
         console.log(`Waiting up to ${duration} to flush AWS CloudWatch Logs  [info ${myName}]`);
       }, 2500);
@@ -1156,7 +1170,7 @@ ${error}`);
     // Close loggers in the background except the CloudWatch error logger
     await Promise.all(
       Object.entries(this.props.winstonLoggers).map(([category, logger]) => {
-        if (!logger.writable || category === logCategories.cloudWatch) return Promise.resolve();
+        if (!logger.writable || category === reservedCategories.cloudWatch) return Promise.resolve();
         return new Promise((resolve, reject) => {
           logger
             .once('error', reject)
@@ -1165,8 +1179,8 @@ ${error}`);
             .end();
         }).catch((error) =>
           // eslint-disable-next-line no-console
-          console.warn(`Failed closing '${category}'  [warn ${myName}]
-${error}`)
+          console.error(`Failed closing '${category}'  [error ${myName}]
+${error}  [error ${myName}]`)
         );
       })
     );
@@ -1180,21 +1194,20 @@ ${error}`)
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
-        this.cloudWatchError(new Error('Testing CloudWatch error while stopping'));
+        this.cloudWatchError(new Error('Expected error: Testing CloudWatch error while stopping'));
         if (count === this.unitTest.entries.length) throw new Error('CloudWatch error handler failed');
       }
     }
 
     this.props.winstonLoggers = {};
 
-    const errorLogger = this.props.winstonLoggers[logCategories.cloudWatch];
+    const errorLogger = this.props.winstonLoggers[reservedCategories.cloudWatch];
 
     if (errorLogger && errorLogger.writable) errorLogger.close();
 
     if (this.unitTest) {
       // Test error handlers after closing loggers
       if (this.unitTest.flush) process.exit();
-
       await new Promise((resolve) => setTimeout(resolve, 1));
     }
 
@@ -1262,7 +1275,7 @@ ${error}`)
 
     if (!this.props.restarting && this.options.say.stopping) {
       const { service, stage, version } = this.options;
-      this.log(undefined, `Stopping: ${service} v${version} ${stage}`, undefined, logCategories.log);
+      this.log(undefined, `Stopping: ${service} v${version} ${stage}`, undefined, reservedCategories.log);
     }
 
     this.props.stopping = true;
@@ -1294,7 +1307,7 @@ ${error}`)
 
     let logger;
 
-    if (category === logCategories.cloudWatch) {
+    if (category === reservedCategories.cloudWatch) {
       // ======================================================================
       // Write winston-cloudwatch errors to the console and, optionally, a file
       if (!WinstonCloudWatch) throw new Error('winston-cloudwatch is not installed'); // This can't happen
@@ -1307,9 +1320,109 @@ ${error}`)
 
       const transports = [];
 
+      // ====
+      // File
+      {
+        const fileOptions = { ...options.file };
+        let level = settings.file;
+        if (level instanceof Object) {
+          Object.assign(fileOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = fileOptions);
+        if (!level) level = 'off';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'info';
+        }
+
+        if (level !== 'off') {
+          const logDirectory = this.createLogDirectory(fileOptions);
+
+          if (logDirectory) {
+            const filename = path.join(logDirectory, `${category}-%DATE%`);
+
+            const checkTags = winston.format((info) => this.checkTags('file', info))();
+            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
+
+            try {
+              transports.push(
+                new winston.transports.DailyRotateFile({
+                  filename,
+                  extension: '.log',
+                  datePattern,
+                  utc,
+                  zippedArchive,
+                  maxSize,
+                  maxFiles,
+                  format: format.combine(checkTags, format.json()),
+                  level,
+                  handleExceptions: category === reservedCategories.unhandled,
+                })
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error(`Failed creating file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
+            }
+          }
+        }
+      }
+
+      // ==========
+      // Error file
+      {
+        const fileOptions = { ...options.errorFile };
+        let level = settings.errorFile;
+        if (level instanceof Object) {
+          Object.assign(fileOptions, level);
+          level = undefined;
+        }
+        if (!level) ({ level } = fileOptions);
+        if (!level) level = 'off';
+        else if (level === 'default') {
+          level = options.defaultLevel;
+        } else if (level === 'on') {
+          level = 'error';
+        }
+
+        if (level !== 'off') {
+          const logDirectory = this.createLogDirectory(fileOptions);
+
+          if (logDirectory) {
+            const filename = path.join(logDirectory, `${category}-error-%DATE%`);
+
+            const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
+            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
+
+            try {
+              transports.push(
+                new winston.transports.DailyRotateFile({
+                  filename,
+                  extension: '.log',
+                  datePattern,
+                  zippedArchive,
+                  utc,
+                  maxSize,
+                  maxFiles,
+                  format: format.combine(checkTags, format.json()),
+                  level,
+                  handleExceptions: category === reservedCategories.unhandled,
+                })
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error(`Failed creating error file transport: ${filename}  [error ${myName}]
+${error}  [error ${myName}]`);
+              // Ignore the error - unable to write to the directory
+            }
+          }
+        }
+      }
+
       // ============================
       // CloudWatch
-      // Lazy load winston-cloudwatch
       if (!noCloudWatch) {
         let awsOptions = { ...options.cloudWatch };
         let level = settings.cloudWatch;
@@ -1327,21 +1440,22 @@ ${error}`)
 
         if (level !== 'off') {
           let { logGroup: logGroupName } = awsOptions;
+
           if (!awsOptions.region) {
-            const env = { process };
-            awsOptions.region =
-              env.AWS_CLOUDWATCH_LOGS_REGION || env.AWS_CLOUDWATCH_REGION || env.AWS_DEFAULT_REGION || env.AWS_REGION;
+            const { env } = process;
+            awsOptions.region = env.AWS_CLOUDWATCH_LOGS_REGION || env.AWS_REGION;
           }
 
           if (!awsOptions.region) {
             // eslint-disable-next-line no-console
-            console.warn(`Region was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+            console.error(`Region was not specified for AWS CloudWatch Logs for '${category}'  [error ${myName}]`);
           } else if (!logGroupName) {
             // eslint-disable-next-line no-console
-            console.warn(`Log group was not specified for AWS CloudWatch Logs for '${category}'  [warn ${myName}]`);
+            console.error(`Log group was not specified for AWS CloudWatch Logs for '${category}'  [error ${myName}]`);
           } else {
             if (!WinstonCloudWatch) {
               try {
+                // Lazy load winston-cloudwatch
                 // eslint-disable-next-line global-require, import/no-extraneous-dependencies
                 WinstonCloudWatch = require('@goodware/winston-cloudwatch');
               } catch (error) {
@@ -1391,109 +1505,12 @@ ${error}`)
                 level,
                 errorHandler: (error) => this.cloudWatchError(error),
                 uploadRate,
-                handleExceptions: category === logCategories.unhandled,
+                handleExceptions: category === reservedCategories.unhandled,
               });
 
               this.props.cloudWatchTransports.push(transport);
               transports.push(transport);
             }
-          }
-        }
-      }
-
-      // ====
-      // File
-      {
-        const fileOptions = { ...options.file };
-        let level = settings.file;
-        if (level instanceof Object) {
-          Object.assign(fileOptions, level);
-          level = undefined;
-        }
-        if (!level) ({ level } = fileOptions);
-        if (!level) level = 'off';
-        else if (level === 'default') {
-          level = options.defaultLevel;
-        } else if (level === 'on') {
-          level = 'info';
-        }
-
-        if (level !== 'off') {
-          const logsDirectory = this.createLogsDirectory(fileOptions);
-
-          if (logsDirectory) {
-            let filename = path.join(logsDirectory, `${category}-%DATE%`);
-            const dir = path.dirname(filename);
-
-            if (dir !== logsDirectory)
-              try {
-                mkdirp(dir);
-              } catch (error) {
-                // eslint-disable-next-line no-console
-                console.warn(`Failed creating directory '${dir}'  [warn ${myName}]
-  ${error}`);
-                filename = null;
-              }
-
-            if (filename) {
-              const checkTags = winston.format((info) => this.checkTags('file', info))();
-              const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
-              const transport = new winston.transports.DailyRotateFile({
-                filename,
-                extension: '.log',
-                datePattern,
-                utc,
-                zippedArchive,
-                maxSize,
-                maxFiles,
-                format: format.combine(checkTags, format.json()),
-                level,
-                handleExceptions: category === logCategories.unhandled,
-              });
-
-              transports.push(transport);
-            }
-          }
-        }
-      }
-
-      // ==========
-      // Error file
-      {
-        const fileOptions = { ...options.errorFile };
-        let level = settings.errorFile;
-        if (level instanceof Object) {
-          Object.assign(fileOptions, level);
-          level = undefined;
-        }
-        if (!level) ({ level } = fileOptions);
-        if (!level) level = 'off';
-        else if (level === 'default') {
-          level = options.defaultLevel;
-        } else if (level === 'on') {
-          level = 'error';
-        }
-
-        if (level !== 'off') {
-          const logsDirectory = this.createLogsDirectory(fileOptions);
-
-          if (logsDirectory) {
-            const checkTags = winston.format((info) => this.checkTags('errorFile', info))();
-            const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
-            const transport = new winston.transports.DailyRotateFile({
-              filename: `${logsDirectory}/${category}-error-%DATE%`,
-              extension: '.log',
-              datePattern,
-              zippedArchive,
-              utc,
-              maxSize,
-              maxFiles,
-              format: format.combine(checkTags, format.json()),
-              level,
-              handleExceptions: category === logCategories.unhandled,
-            });
-
-            transports.push(transport);
           }
         }
       }
@@ -1522,7 +1539,9 @@ ${error}`)
         if (!transports.length && level === 'off') level = 'error';
 
         if (level !== 'off') {
-          transports.push(this.createConsoleTransport(level, category === logCategories.unhandled, consoleOptions));
+          transports.push(
+            this.createConsoleTransport(level, category === reservedCategories.unhandled, consoleOptions)
+          );
         }
       }
 
@@ -1788,8 +1807,8 @@ ${error}`)
     if (this.props.stopped) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`Stopped  [warn ${myName}]
-${stack}`);
+      console.error(`Stopped  [error ${myName}]
+${stack}  [error ${myName}]`);
       return false;
     }
 
@@ -2140,7 +2159,8 @@ ${stack}`);
 
     // Combine message and data
     [message, data].forEach((item) => {
-      if (item === null || item === undefined) return;
+      // TODO This is why it is not possible to log null and blank string
+      if (item === undefined || item === null) return;
       const type = typeof item;
 
       if (type === 'string' && !item.length) return;
@@ -2252,11 +2272,11 @@ ${stack}`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} [message]
    * @param {*} [data]
-   * @param {Error[]} [errors] Errors already logged, to avoid recursion
+   * @param {Set<Error>} [errors] Errors already logged, to avoid recursion. Not using WeakSet because .size is needed
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, data, errors = [], depth = 0, groupId = undefined) {
+  send(info, message, data, errors = new Set(), depth = 0, groupId = undefined) {
     const { category, logger, level } = info;
     const entry = this.logEntry(info, message, data, depth);
 
@@ -2264,7 +2284,7 @@ ${stack}`);
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
 
     // If message is an Error, don't log it again
-    if (message instanceof Error && !errors.includes(message)) errors.push(message);
+    if (message instanceof Error) errors.add(message);
 
     /**
      * Objects added to dataMesages are sent to this method
@@ -2284,7 +2304,7 @@ ${stack}`);
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in dataData) {
           const value = dataData[key];
-          if (value instanceof Error && !errors.includes(value)) errors.push(value);
+          if (value instanceof Error) errors.add(value);
         }
       }
     }
@@ -2304,12 +2324,12 @@ ${stack}`);
           if (!(value instanceof Error)) continue;
 
           // Check for circular references
-          if (errors.length < this.options.errors.max && !errors.includes(value)) {
-            errors.push(value);
+          if (errors.size < this.options.errors.max && !errors.has(value)) {
+            errors.add(value);
             dataMessages.push(value);
           }
 
-          // Remove the key from the data data. Otherwise the error will reappear in the next call to send()
+          // Remove key from data - otherwise the error will reappear in the next call to send()
           if (data && key in data) {
             if (!dataCopied) {
               data = { ...data };
@@ -2327,6 +2347,7 @@ ${stack}`);
       // =======================================================================
       // Prune data. This unfortunately removes keys that have undefined values.
       const newData = JSON.parse(prune(entryData, this.options.message.depth, this.options.message.arrayLength));
+
       if (Loggers.hasKeys(newData)) {
         entry.data = newData;
       } else {
@@ -2367,22 +2388,19 @@ ${stack}`);
 
     // =========================================================
     // Only CloudWatch's error logger can be used while stopping
-    if (this.props.stopping && category !== logCategories.cloudWatch) {
+    if (this.props.stopping && category !== reservedCategories.cloudWatch) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
-      console.warn(`Stopping  [warn ${myName}]
-${util.inspect(entry)}
-${stack}`);
+      console.error(`Stopping  [error ${myName}]
+${util.inspect(entry)}  [error ${myName}]
+${stack}  [error ${myName}]`);
     } else {
       logger.log(level, entry);
     }
 
     // Log child errors
     if (dataData) this.send(info, dataData, undefined, errors, depth, groupId || entry.id);
-
-    dataMessages.forEach((dataMessage) => {
-      this.send(info, dataMessage, data, errors, depth, groupId || entry.id);
-    });
+    dataMessages.forEach((dataMessage) => this.send(info, dataMessage, data, errors, depth, groupId || entry.id));
   }
 
   /**
@@ -2414,14 +2432,14 @@ ${stack}`);
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
-      console.warn(`Stopped  [warn ${myName}]
+      console.error(`Stopped  [error ${myName}]
 ${util.inspect({
   category,
   tags,
   message,
   data,
-})}
-${new Error('Stopped').stack}`);
+})}  [error ${myName}]
+${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
       const info = this.isLevelEnabled(tags, category);
       if (info) this.send(info, message, data);

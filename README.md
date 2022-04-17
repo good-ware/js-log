@@ -354,9 +354,7 @@ CloudWatch transports are configured with a log group name and an optional AWS r
 If an AWS region is not specified, the environment variables are used in the following order:
 
 1. AWS_CLOUDWATCH_LOGS_REGION
-2. AWS_CLOUDWATCH_REGION
-3. AWS_DEFAULT_REGION
-4. AWS_REGION
+2. AWS_REGION
 
 ## Begin/End/Error Utility Classes
 

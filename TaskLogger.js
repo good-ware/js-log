@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-const { ulid } = require('ulid');
+const { ulid } = require('ulidx');
 
 /**
  * @description Logs the start and the completion or error of a task whether synchronous or asynchronous
