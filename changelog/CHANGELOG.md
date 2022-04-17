@@ -1,9 +1,9 @@
 # @goodware/log Release History
 
-## 6.0.2 2022-04-17
+## 6.0.2 - 6.0.3 2022-04-17
 
 - Replace ulid package with newer ulidx
-- Fix bug that caused AWS_CLOUDWATCH_LOGS_REGION and AWS_REGION environment variable to not be used
+- Fix and change: Use AWS_CLOUDWATCH_LOGS_REGION or AWS_REGION environment variables
 - Replace mkdir-sync package with fs
 - Do not write to files if there is no writable directory
 

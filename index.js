@@ -645,7 +645,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
         entries: [],
         groupIds: {},
         dataCount: 0,
-        throwErrorFileError : true,
+        throwErrorFileError: true,
       };
 
       transportNames.forEach((transport) => {
@@ -717,12 +717,12 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @returns {string} A directory path
    */
   // eslint-disable-next-line class-methods-use-this
-  createLogDirectory({directories}) {
+  createLogDirectory({ directories }) {
     let logDirectory;
 
     directories.every((dir) => {
       try {
-        fs.mkdirSync(dir, {recursive:true});
+        fs.mkdirSync(dir, { recursive: true });
         fs.accessSync(dir, fs.constants.W_OK);
       } catch (error) {
         return true; // Next directory
@@ -730,7 +730,13 @@ Enable the tag for log entries with severity levels equal to or greater than the
       logDirectory = dir;
       return false; // Stop iterating
     });
-    
+
+    if (!logDirectory) {
+      // eslint-disable-next-line no-console
+      console.warn(`Failed creating logs directory. Directories attempted:
+${directories.join('\n')}  [warn ${myName}]`);
+    }
+
     return logDirectory;
   }
 
@@ -896,6 +902,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
     let colorBegin;
     let colorEnd;
     {
+      // Extract color codes from the level
       const codes = level.match(ansiRegex);
       if (codes) {
         [colorBegin, colorEnd] = codes;
@@ -1024,21 +1031,23 @@ Enable the tag for log entries with severity levels equal to or greater than the
 
         try {
           transports.push(
-          new winston.transports.DailyRotateFile({
-            filename,
-            extension: '.log',
-            datePattern,
-            utc,
-            zippedArchive,
-            maxSize,
-            maxFiles,
-            format: format.json(),
-            level: 'error',
-            handleExceptions: false,
-          })
+            new winston.transports.DailyRotateFile({
+              filename,
+              extension: '.log',
+              datePattern,
+              utc,
+              zippedArchive,
+              maxSize,
+              maxFiles,
+              format: format.json(),
+              level,
+              handleExceptions: false,
+            })
           );
-        } catch(error) {
-          // Ignore the error - unable to write to the directory
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.warn(`Failed creating CloudWatch error file transport: ${filename}  [warn ${myName}]
+${error}  [warn ${myName}]`);
         }
       }
     }
@@ -1060,8 +1069,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
    */
   cloudWatchError(error) {
     const { code } = error;
-    if (code === 'ThrottlingException'
-      || code === 'DataAlreadyAcceptedException') return;
+    if (code === 'ThrottlingException' || code === 'DataAlreadyAcceptedException') return;
 
     // TODO: Submit feature request. See cwTransportShortCircuit
     // InvalidParameterException is thrown when the formatter provided to
@@ -1186,7 +1194,7 @@ ${error}`)
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
-        this.cloudWatchError(new Error('Testing CloudWatch error while stopping'));
+        this.cloudWatchError(new Error('Expected error: Testing CloudWatch error while stopping'));
         if (count === this.unitTest.entries.length) throw new Error('CloudWatch error handler failed');
       }
     }
@@ -1340,23 +1348,27 @@ ${error}`)
 
             try {
               transports.push(
-            new winston.transports.DailyRotateFile({
-              filename,
-              extension: '.log',
-              datePattern,
-              utc,
-              zippedArchive,
-              maxSize,
-              maxFiles,
-              format: format.combine(checkTags, format.json()),
-              level,
-              handleExceptions: category === reservedCategories.unhandled,
-            }));
-        } catch(error) {
-          // Ignore the error - unable to write to the directory
+                new winston.transports.DailyRotateFile({
+                  filename,
+                  extension: '.log',
+                  datePattern,
+                  utc,
+                  zippedArchive,
+                  maxSize,
+                  maxFiles,
+                  format: format.combine(checkTags, format.json()),
+                  level,
+                  handleExceptions: category === reservedCategories.unhandled,
+                })
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.warn(`Failed creating file transport: ${filename}  [warn ${myName}]
+${error}  [warn ${myName}]`);
+            }
+          }
         }
       }
-    }}
 
       // ==========
       // Error file
@@ -1385,23 +1397,26 @@ ${error}`)
             const { maxSize, maxFiles, utc, zippedArchive, datePattern } = fileOptions;
 
             try {
-            transports.push(
-            new winston.transports.DailyRotateFile({
-              filename,
-              extension: '.log',
-              datePattern,
-              zippedArchive,
-              utc,
-              maxSize,
-              maxFiles,
-              format: format.combine(checkTags, format.json()),
-              level,
-              handleExceptions: category === reservedCategories.unhandled,
-            }));
-            } catch(error) {
+              transports.push(
+                new winston.transports.DailyRotateFile({
+                  filename,
+                  extension: '.log',
+                  datePattern,
+                  zippedArchive,
+                  utc,
+                  maxSize,
+                  maxFiles,
+                  format: format.combine(checkTags, format.json()),
+                  level,
+                  handleExceptions: category === reservedCategories.unhandled,
+                })
+              );
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.warn(`Failed creating error file transport: ${filename}  [warn ${myName}]
+${error}  [warn ${myName}]`);
               // Ignore the error - unable to write to the directory
             }
-
           }
         }
       }
@@ -1524,8 +1539,9 @@ ${error}`)
         if (!transports.length && level === 'off') level = 'error';
 
         if (level !== 'off') {
-          transports.push(this.createConsoleTransport(level, category === reservedCategories.unhandled,
-            consoleOptions));
+          transports.push(
+            this.createConsoleTransport(level, category === reservedCategories.unhandled, consoleOptions)
+          );
         }
       }
 
@@ -2256,11 +2272,11 @@ ${stack}`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} [message]
    * @param {*} [data]
-   * @param {Error[]} [errors] Errors already logged, to avoid recursion
+   * @param {Set<Error>} [errors] Errors already logged, to avoid recursion. Not using WeakSet because .size is needed
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, data, errors = [], depth = 0, groupId = undefined) {
+  send(info, message, data, errors = new Set(), depth = 0, groupId = undefined) {
     const { category, logger, level } = info;
     const entry = this.logEntry(info, message, data, depth);
 
@@ -2268,7 +2284,7 @@ ${stack}`);
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
 
     // If message is an Error, don't log it again
-    if (message instanceof Error && !errors.includes(message)) errors.push(message);
+    if (message instanceof Error) errors.add(message);
 
     /**
      * Objects added to dataMesages are sent to this method
@@ -2288,7 +2304,7 @@ ${stack}`);
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in dataData) {
           const value = dataData[key];
-          if (value instanceof Error && !errors.includes(value)) errors.push(value);
+          if (value instanceof Error) errors.add(value);
         }
       }
     }
@@ -2308,12 +2324,12 @@ ${stack}`);
           if (!(value instanceof Error)) continue;
 
           // Check for circular references
-          if (errors.length < this.options.errors.max && !errors.includes(value)) {
-            errors.push(value);
+          if (errors.size < this.options.errors.max && !errors.has(value)) {
+            errors.add(value);
             dataMessages.push(value);
           }
 
-          // Remove the key from the data data. Otherwise the error will reappear in the next call to send()
+          // Remove key from data - otherwise the error will reappear in the next call to send()
           if (data && key in data) {
             if (!dataCopied) {
               data = { ...data };
@@ -2331,6 +2347,7 @@ ${stack}`);
       // =======================================================================
       // Prune data. This unfortunately removes keys that have undefined values.
       const newData = JSON.parse(prune(entryData, this.options.message.depth, this.options.message.arrayLength));
+
       if (Loggers.hasKeys(newData)) {
         entry.data = newData;
       } else {
@@ -2383,10 +2400,7 @@ ${stack}`);
 
     // Log child errors
     if (dataData) this.send(info, dataData, undefined, errors, depth, groupId || entry.id);
-
-    dataMessages.forEach((dataMessage) => {
-      this.send(info, dataMessage, data, errors, depth, groupId || entry.id);
-    });
+    dataMessages.forEach((dataMessage) => this.send(info, dataMessage, data, errors, depth, groupId || entry.id));
   }
 
   /**
