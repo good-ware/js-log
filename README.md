@@ -103,14 +103,12 @@ loggers.logger('dog', loggers.child('dogTag'));
 
 Event handlers can be added to Loggers instances.
 
-The 'data' event can be used to transform logged data in complex ways. This event can be used to implement redaction beyond the provided configuration-based redaction.
+#### transform event
 
-Tranform event handlers are passed an object with the keys data, level, and tags. Currently only 'data' can be altered.
-
-In order to avoid side-effects, modify the 'data' property of the object passed to the event handler. The following example removes attributes for certain Error objects:
+The transform event can implement advanced redaction. Transform event handlers are passed an object with the keys data, level, and tags. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the object passed to the event handler. The following example removes attributes for certain Error objects:
 
 ```js
-loggers.on('data', (item) => {
+loggers.on('transform', () => {
   const { data } = item;
   if (!(data instanceof Error) || !data.response) return;
   // modify item.data instead of modifying data!
