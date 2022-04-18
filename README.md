@@ -103,7 +103,7 @@ loggers.logger('dog', loggers.child('dogTag'));
 
 Event handlers can be added to Loggers instances.
 
-The 'transform' event can be used to transform logged data in complex ways. This event can be used to implement redaction beyond the provided configuration-based redaction.
+The 'data' event can be used to transform logged data in complex ways. This event can be used to implement redaction beyond the provided configuration-based redaction.
 
 Tranform event handlers are passed an object with the keys data, level, and tags. Currently only 'data' can be altered.
 
