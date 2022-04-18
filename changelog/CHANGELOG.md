@@ -2,7 +2,7 @@
 
 ## 6.1.0 2022-04-17
 
-Added event-based input transformation
+Added 'transform' event
 
 ## 6.0.2 - 6.0.3 2022-04-17
 
