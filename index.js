@@ -1,29 +1,3 @@
-/* eslint-disable no-promise-executor-return */
-/* eslint-disable no-plusplus */
-/* eslint-disable no-multi-assign */
-/* eslint-disable no-param-reassign */
-/* eslint-disable-next-line max-classes-per-file */
-const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
-const fs = require('fs');
-const hostId = require('hostid');
-const humanizeDuration = require('humanize-duration');
-const Joi = require('joi');
-const { ulid } = require('ulidx');
-const prune = require('json-prune');
-const util = require('util');
-const path = require('path');
-const winston = require('winston');
-require('winston-daily-rotate-file'); // This looks weird but it's correct
-const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
-
-const Stack = require('./Stack');
-const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
-
-let WinstonCloudWatch;
-let noCloudWatch;
-
-const addErrorSymbol = Symbol.for('error');
-
 // =============================================================================
 // Developer Notes
 //
@@ -31,6 +5,37 @@ const addErrorSymbol = Symbol.for('error');
 // 2. This code uses 'in' instead of Object.keys because protoptype fields
 //    are useful to log
 // =============================================================================
+
+/* eslint-disable no-promise-executor-return */
+/* eslint-disable no-plusplus */
+/* eslint-disable no-multi-assign */
+/* eslint-disable no-param-reassign */
+/* eslint-disable-next-line max-classes-per-file */
+const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
+const EventEmitter = require('events');
+const fs = require('fs');
+const hostId = require('hostid');
+const humanizeDuration = require('humanize-duration');
+const Joi = require('joi');
+const path = require('path');
+const prune = require('json-prune');
+const { ulid } = require('ulidx');
+const util = require('util');
+
+// Winston3
+const winston = require('winston');
+require('winston-daily-rotate-file'); // This looks weird but it's correct
+const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
+
+// Local includes
+const Stack = require('./Stack');
+const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
+
+// Global variables
+let WinstonCloudWatch;
+let noCloudWatch;
+
+const addErrorSymbol = Symbol.for('error');
 
 const { format } = winston;
 
@@ -93,7 +98,7 @@ class LogArgs {}
 /**
  * @description Manages logger objects that can send log entries to the console, files, and AWS CloudWatch Logs
  */
-class Loggers {
+class Loggers extends EventEmitter {
   /**
    * Private Properties
    *  {object} options
@@ -105,7 +110,7 @@ class Loggers {
    *  {string} props.hostId
    *  {object[]} props.loggers
    *  {string[]} props.metaKeys
-   *  {object} props.meta {string} key -> {string} metaKey
+   *  {object} props.meta Maps to {string} metaKey
    *  {function} props.unhandledPromiseListener
    *  {function[]} props.stopWaiters
    *  {string[]} props.levels {string} with 'default'
@@ -144,11 +149,8 @@ class Loggers {
    * https://www.npmjs.com/package/winston#using-custom-logging-levels
    */
   constructor(options, levels = Loggers.defaultLevels) {
-    /**
-     * @private
-     * @ignore
-     * @description Internal properties
-     */
+    super();
+
     const props = {
       stopped: true,
       restarting: 0,
@@ -379,8 +381,8 @@ class Loggers {
    * @description Combines the keys of two data objects and returns a new object
    * @param {*} [data]
    * @param {*} [more]
-   * @returns {object} data if data and more are falsey. If data is truthy and more is falsey,
-   * returns data or data converted to an object. If more is truthy and data is falsey, returns
+   * @returns {object} data if data and more are falsy. If data is truthy and more is falsy,
+   * returns data or data converted to an object. If more is truthy and data is falsy, returns
    * more or more converted to an object. Otherwise, returns a new object with data and more
    * converted to objects and combined such that more's keys overwite data's keys.
    */
@@ -716,8 +718,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @param {string[]} directories
    * @returns {string} A directory path
    */
-  // eslint-disable-next-line class-methods-use-this
-  createLogDirectory({ directories }) {
+  static createLogDirectory({ directories }) {
     let logDirectory;
 
     directories.every((dir) => {
@@ -815,7 +816,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
    * @description Determines whether a log entry can be sent to a transport
    * @param {string} transportName
    * @param {object} info Log entry
-   * @returns {object} Either returns logEntry unaltered or a falsey value
+   * @returns {object} Either returns logEntry unaltered or a falsy value
    */
   checkTags(transportName, info) {
     if (info.transports && !info.transports.includes(transportName)) return false;
@@ -1022,7 +1023,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     }
 
     if (level !== 'off') {
-      const logDirectory = this.createLogDirectory(fileOptions);
+      const logDirectory = Loggers.createLogDirectory(fileOptions);
 
       if (logDirectory) {
         const filename = path.join(logDirectory, `${category}-%DATE%`);
@@ -1338,7 +1339,7 @@ ${error}  [error ${myName}]`)
         }
 
         if (level !== 'off') {
-          const logDirectory = this.createLogDirectory(fileOptions);
+          const logDirectory = Loggers.createLogDirectory(fileOptions);
 
           if (logDirectory) {
             const filename = path.join(logDirectory, `${category}-%DATE%`);
@@ -1388,7 +1389,7 @@ ${error}  [error ${myName}]`);
         }
 
         if (level !== 'off') {
-          const logDirectory = this.createLogDirectory(fileOptions);
+          const logDirectory = Loggers.createLogDirectory(fileOptions);
 
           if (logDirectory) {
             const filename = path.join(logDirectory, `${category}-error-%DATE%`);
@@ -2029,7 +2030,7 @@ ${stack}  [error ${myName}]`);
    * @ignore
    * @description Converts an object to a string
    * @param {*} value It must be truthy
-   * @returns {string} or a falsey value
+   * @returns {string} or a falsy value
    */
   objectToString(value) {
     if (value instanceof Array) {
@@ -2100,10 +2101,10 @@ ${stack}  [error ${myName}]`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} message
    * @param {*} data
-   * @param {Number} depth When falsey, create the 'root' log entry. When truthy, create a secondary entry that is in
+   * @param {Number} depth When falsy, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
-   * 1. When the level is in this.props.logStackLevels, the stack is added when falsey
-   * 2. The logStack and noLogStack meta tags are applied when falsey
+   * 1. When the level is in this.props.logStackLevels, the stack is added when falsy
+   * 2. The logStack and noLogStack meta tags are applied when falsy
    * @returns {object} A log entry
    */
   logEntry(info, message, data, depth) {
@@ -2170,6 +2171,16 @@ ${stack}  [error ${myName}]`);
         if (item instanceof Array) {
           this.copyData(level, tags, state, 'message', this.objectToString(item));
         } else {
+          const dataData = { data: item, level, tags };
+          try {
+            this.emit('transform', dataData);
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('A data event handler threw an exception');
+          }
+
+          ({ data: item } = dataData);
+
           // Object.keys is not used in order to get inherited properties
           // eslint-disable-next-line guard-for-in, no-restricted-syntax
           for (const key in item) {
@@ -2356,7 +2367,7 @@ ${stack}  [error ${myName}]`);
     }
 
     // ====================================================================
-    // Remove falsey values from entry that were set to false by logEntry()
+    // Remove falsy values from entry that were set to false by logEntry()
     if (!entry.logStack) delete entry.logStack;
     if (!entry.stack) {
       if (entry.logStack) {
@@ -2452,7 +2463,7 @@ ${new Error('Stopped').stack}  [error ${myName}]`);
  *  example, given the tuple a: 'b', both.a is copied to meta.b. The 'both' object is not altered; its keys are also
  *  copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the tuple b: 'b'.
  */
-Loggers.defaultMetaKeys = { stack: undefined };
+Loggers.defaultMetaKeys = { stack: undefined, correlationId: undefined };
 
 /**
  * @description These follow npm levels wich are defined at
