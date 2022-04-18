@@ -33,6 +33,7 @@ This package extends Winston3 with additional features such as tag-based filteri
 5. Reliable flushing
 6. Does not interfere with other code that uses Winston
 7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
+8. Transformation of logged data via events
 
 ## Transports Supported
 
@@ -96,6 +97,29 @@ A logger can be associated with a category by providing an object as the second 
 
 ```js
 loggers.logger('dog', loggers.child('dogTag'));
+```
+
+### Transforming Data via Events
+
+Event handlers can be added to Loggers instances.
+
+The 'transform' event can be used to transform logged data in complex ways. This event can be used to implement redaction beyond the provided configuration-based redaction.
+
+Tranform event handlers are passed an object with the keys data, level, and tags. Currently only 'data' can be altered.
+
+In order to avoid side-effects, modify the 'data' property of the object passed to the event handler. The following example removes attributes for certain Error objects:
+
+```js
+loggers.on('data', (item) => {
+  const { data } = item;
+  if (!(data instanceof Error) || !data.response) return;
+  // modify item.data instead of modifying data!
+  item.data = Object.assign(new Error(data.message), {
+    stack: data.stack,
+    message: data.message,
+    // All other properties are redacted
+  });
+});
 ```
 
 ### Stopping and Flushing

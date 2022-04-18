@@ -72,6 +72,33 @@ async function go(colors) {
   // Ready for testing
   //
 
+  // Transform data via events
+  loggers.once('data', (obj) => {
+    if (!obj.data.one) throw new Error();
+    // eslint-disable-next-line no-param-reassign
+    obj.data = { x: 'hi' };
+  });
+
+  loggers.once('data', (obj) => {
+    if (obj.data.x !== 'hi') throw new Error();
+  });
+
+  loggers.info('message', { one: true });
+  if (unitTest.entries[unitTest.entries.length - 1].data.x !== 'hi') throw new Error();
+
+  {
+    const listener = (obj) => {
+      const { data } = obj;
+      if (!(data instanceof Error)) return;
+      if (data.message !== 'xyz') throw new Error();
+      data.grungy = 5;
+    };
+    loggers.on('data', listener);
+    loggers.log(new Error('xyz'));
+    if (unitTest.entries[unitTest.entries.length - 1].data.grungy !== 5) throw new Error();
+    loggers.removeListener('data', listener);
+  }
+
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
@@ -915,7 +942,7 @@ async function go(colors) {
   {
     const { length } = unitTest.entries;
     // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 192 + hasCloudWatch;
+    const expectedEntries = 194 + hasCloudWatch;
 
     if (length !== expectedEntries) throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
   }
@@ -933,7 +960,7 @@ async function go(colors) {
   // Check the number of logged messages with data/data
   {
     // This value must be tweaked whenever more entries are logged
-    const expectedData = 38;
+    const expectedData = 40;
     const { dataCount } = unitTest;
     if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
   }
