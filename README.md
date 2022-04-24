@@ -108,7 +108,7 @@ Event handlers can be added to Loggers instances.
 The log event can implement advanced redaction. Event handlers are passed an object with data, level, and tags properties. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the object passed to the event handler. The following example removes attributes for certain Error objects:
 
 ```js
-loggers.on('log', () => {
+loggers.on('log', (item) => {
   const { data } = item;
   if (!(data instanceof Error) || !data.response) return;
   // modify item.data instead of modifying data!
