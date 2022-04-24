@@ -43,6 +43,12 @@ let config = {
         },
       },
     },
+    redact: {
+      passwordx: undefined,
+      password: {
+        recursive: false,
+      },
+    },
   },
 };
 

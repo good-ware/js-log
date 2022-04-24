@@ -72,33 +72,6 @@ async function go(colors) {
   // Ready for testing
   //
 
-  // Transform data via events
-  loggers.once('log', (obj) => {
-    if (!obj.data.one) throw new Error();
-    // eslint-disable-next-line no-param-reassign
-    obj.data = { x: 'hi' };
-  });
-
-  loggers.once('log', (obj) => {
-    if (obj.data.x !== 'hi') throw new Error();
-  });
-
-  loggers.info('message', { one: true });
-  if (unitTest.entries[unitTest.entries.length - 1].data.x !== 'hi') throw new Error();
-
-  {
-    const listener = (obj) => {
-      const { data } = obj;
-      if (!(data instanceof Error)) return;
-      if (data.message !== 'xyz') throw new Error();
-      data.grungy = 5;
-    };
-    loggers.on('log', listener);
-    loggers.log(new Error('xyz'));
-    if (unitTest.entries[unitTest.entries.length - 1].data.grungy !== 5) throw new Error();
-    loggers.removeListener('data', listener);
-  }
-
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
@@ -870,6 +843,49 @@ async function go(colors) {
   logger.error(err, err);
   logger.error({ message: 'another shared error', error: err }, err);
 
+  // =========================
+  // Transform data via events
+  loggers.once('log', (obj) => {
+    if (!obj.data.one) throw new Error();
+    // eslint-disable-next-line no-param-reassign
+    obj.data = { x: 'hi' };
+  });
+
+  loggers.once('log', (obj) => {
+    if (obj.data.x !== 'hi') throw new Error();
+  });
+
+  loggers.info('message', { one: true });
+  if (unitTest.entries[unitTest.entries.length - 1].data.x !== 'hi') throw new Error();
+
+  {
+    const listener = (obj) => {
+      const { data } = obj;
+      if (!(data instanceof Error)) return;
+      if (data.message !== 'xyz') throw new Error();
+      data.grungy = 5;
+    };
+    loggers.on('log', listener);
+    loggers.log(new Error('xyz'));
+    if (unitTest.entries[unitTest.entries.length - 1].data.grungy !== 5) throw new Error();
+    loggers.removeListener('data', listener);
+  }
+
+  // =========
+  // Redaction
+
+  // password is not recursive
+  loggers.error({ password: 5 });
+  if (unitTest.entries[unitTest.entries.length - 1].data?.password) throw new Error();
+  loggers.info({ b: { password: 5 } });
+  if (!unitTest.entries[unitTest.entries.length - 1].data?.b.password) throw new Error();
+
+  // passwordx is recursive
+  loggers.info({ passwordx: 5 });
+  if (unitTest.entries[unitTest.entries.length - 1].data?.passwordx) throw new Error();
+  loggers.error({ b: { passwordx: 5 }, foo: 1 });
+  if (unitTest.entries[unitTest.entries.length - 1].data?.b.passwordx) throw new Error();
+
   // ===========================
   // Unhandled promise rejection
   {
@@ -942,7 +958,7 @@ async function go(colors) {
   {
     const { length } = unitTest.entries;
     // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 194 + hasCloudWatch;
+    const expectedEntries = 198 + hasCloudWatch;
 
     if (length !== expectedEntries) throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
   }
@@ -960,7 +976,7 @@ async function go(colors) {
   // Check the number of logged messages with data/data
   {
     // This value must be tweaked whenever more entries are logged
-    const expectedData = 40;
+    const expectedData = 42;
     const { dataCount } = unitTest;
     if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
   }

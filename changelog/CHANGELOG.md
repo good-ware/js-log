@@ -1,5 +1,16 @@
 # @goodware/log Release History
 
+## 6.2.0 2022-04-24
+
+Breaking changes
+
+- Remove allowLevel and tags from redact options
+
+Changes
+
+- Add {boolean} recursive to redact options, defaults to true
+- Add documentation
+
 ## 6.1.1 2022-04-24
 
 Rename 'transform' event to 'log'

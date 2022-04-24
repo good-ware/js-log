@@ -99,25 +99,43 @@ A logger can be associated with a category by providing an object as the second 
 loggers.logger('dog', loggers.child('dogTag'));
 ```
 
+### Redaction
+
+The 'redact' option setting allows the removal of properties from data objects (top-level only or recursive). Input data is never changed - properties are removed from copies.
+
+The following would remove the password key from all input data.
+
+```js
+redact: {
+  password: undefined,
+}
+```
+
 ### Events
 
-Event handlers can be added to Loggers instances.
+Event listeners must be added to a Loggers instance. The standard `on()`, `once()`, etc. methods are supported.
 
 #### log event
 
-The log event can implement advanced redaction. Event handlers are passed an object with data, level, and tags properties. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the object passed to the event handler. The following example removes attributes for certain Error objects:
+The log event is called each time log-related method is called.
+
+Log event listeners can transform log entries to, for example, implement advanced redaction. Listeners are passed an object with data, level, and tags properties. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the input object. The following example removes attributes from certain Error objects:
 
 ```js
 loggers.on('log', (item) => {
   const { data } = item;
+  // only process Errors with response properties
   if (!(data instanceof Error) || !data.response) return;
-  // modify item.data instead of modifying data!
-  item.data = Object.assign(new Error(data.message), {
-    stack: data.stack,
-    message: data.message,
-    // All other properties are redacted
-  });
+  // modify item's data property instead of modifying item.data
+  const copy = { ...data };
+  delete copy.response;
+  item.data = copy;
 });
+
+const error = new Error('An http error occured');
+error.response = 'I will be redacted';
+error.statusCode = 404;
+loggers.log(error);
 ```
 
 ### Stopping and Flushing
