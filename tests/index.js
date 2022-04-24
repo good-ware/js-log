@@ -875,16 +875,16 @@ async function go(colors) {
   // Redaction
 
   // password is not recursive
-  loggers.error({ password: 5 });
-  if (unitTest.entries[unitTest.entries.length - 1].data?.password) throw new Error();
+  loggers.error({ password: 5, foo: 1 });
+  if (unitTest.entries[unitTest.entries.length - 1].data.password) throw new Error();
   loggers.info({ b: { password: 5 } });
-  if (!unitTest.entries[unitTest.entries.length - 1].data?.b.password) throw new Error();
+  if (!unitTest.entries[unitTest.entries.length - 1].data.b.password) throw new Error();
 
   // passwordx is recursive
-  loggers.info({ passwordx: 5 });
-  if (unitTest.entries[unitTest.entries.length - 1].data?.passwordx) throw new Error();
+  loggers.info({ passwordx: 5, foo: 1 });
+  if (unitTest.entries[unitTest.entries.length - 1].data.passwordx) throw new Error();
   loggers.error({ b: { passwordx: 5 }, foo: 1 });
-  if (unitTest.entries[unitTest.entries.length - 1].data?.b.passwordx) throw new Error();
+  if (unitTest.entries[unitTest.entries.length - 1].data.b.passwordx) throw new Error();
 
   // ===========================
   // Unhandled promise rejection
@@ -976,7 +976,7 @@ async function go(colors) {
   // Check the number of logged messages with data/data
   {
     // This value must be tweaked whenever more entries are logged
-    const expectedData = 42;
+    const expectedData = 44;
     const { dataCount } = unitTest;
     if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
   }

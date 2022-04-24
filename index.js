@@ -286,12 +286,9 @@ class Loggers extends EventEmitter {
     }, {});
 
     this.props.recursiveRedact = Object.entries(options.redact).reduce((prev, [key, value]) => {
-      if (value.recursive) {
-        if (!prev) prev = [];
-        prev.push(key);
-      }
+      if (value.recursive) prev.push(key);
       return prev;
-    });
+    }, []);
 
     // =========================
     // Add logging-level methods
@@ -2364,7 +2361,7 @@ ${stack}  [error ${myName}]`);
 
       {
         const { recursiveRedact } = this.props;
-        if (recursiveRedact) deepCleaner(newData, recursiveRedact);
+        if (recursiveRedact.length) deepCleaner(newData, recursiveRedact);
       }
 
       if (Loggers.hasKeys(newData)) {
