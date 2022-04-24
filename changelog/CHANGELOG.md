@@ -1,6 +1,6 @@
 # @goodware/log Release History
 
-## 6.2.0 2022-04-24
+## 6.2.0 - 6.2.1 2022-04-24
 
 Breaking changes
 
@@ -9,7 +9,8 @@ Breaking changes
 Changes
 
 - Add {boolean} recursive to redact options, defaults to true
-- Add documentation
+- Add documentation for redact
+- Add documentation for log events
 
 ## 6.1.1 2022-04-24
 
