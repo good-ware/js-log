@@ -2173,7 +2173,7 @@ ${stack}  [error ${myName}]`);
         } else {
           const dataData = { data: item, level, tags };
           try {
-            this.emit('transform', dataData);
+            this.emit('log', dataData);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error('A data event handler threw an exception');

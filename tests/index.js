@@ -73,13 +73,13 @@ async function go(colors) {
   //
 
   // Transform data via events
-  loggers.once('transform', (obj) => {
+  loggers.once('log', (obj) => {
     if (!obj.data.one) throw new Error();
     // eslint-disable-next-line no-param-reassign
     obj.data = { x: 'hi' };
   });
 
-  loggers.once('transform', (obj) => {
+  loggers.once('log', (obj) => {
     if (obj.data.x !== 'hi') throw new Error();
   });
 
@@ -93,7 +93,7 @@ async function go(colors) {
       if (data.message !== 'xyz') throw new Error();
       data.grungy = 5;
     };
-    loggers.on('transform', listener);
+    loggers.on('log', listener);
     loggers.log(new Error('xyz'));
     if (unitTest.entries[unitTest.entries.length - 1].data.grungy !== 5) throw new Error();
     loggers.removeListener('data', listener);
