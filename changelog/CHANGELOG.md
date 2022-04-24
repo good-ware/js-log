@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 6.1.1 2022-04-24
+
+Rename 'transform' event to 'log'
+
 ## 6.1.0 2022-04-17
 
 Added 'transform' event
