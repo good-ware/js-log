@@ -868,7 +868,7 @@ async function go(colors) {
     loggers.on('log', listener);
     loggers.log(new Error('xyz'));
     if (unitTest.entries[unitTest.entries.length - 1].data.grungy !== 5) throw new Error();
-    loggers.removeListener('data', listener);
+    loggers.removeListener('log', listener);
   }
 
   // =========

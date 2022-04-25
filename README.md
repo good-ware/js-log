@@ -16,8 +16,6 @@ If you plan to write to AWS CloudWatch Logs, NodeJS 10 (LTS/dubnium) or higher i
 
 `npm i --save @goodware/log`
 
-If you don't intend to write to AWS CloudWatch Logs, you can reduce the size of node_modules by installing modules using `npm ci --no-optional`.
-
 ## Introduction
 
 This package extends Winston3 with additional features such as tag-based filtering. It is intended for NodeJS runtimes including AWS Lambda. The package can log scalars, objects (even with cyclical references), arrays, and graphs of Error objects quickly and reliably. Log entries can be sent to the following transports: console (via winston-console-format), files (via winston-daily-rotate-file) in JSON format, and CloudWatch Logs (via winston-cloudwatch) in JSON format.

@@ -20,7 +20,7 @@ let config = {
     cloudWatch: {
       // To test CloudWatch Logs, set AWS_REGION environment variable
       // region: 'us-west-2',
-      logGroup: `/${env}/goodware/log`,
+      logGroup: `/${env}/goodware/log2`,
     },
     categories: {
       briefConsole: {

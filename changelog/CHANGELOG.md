@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 6.2.2 2022-04-24
+
+Use winston-cloudwatch version 6
+
 ## 6.2.0 - 6.2.1 2022-04-24
 
 Breaking changes

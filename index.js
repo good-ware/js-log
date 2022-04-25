@@ -1470,8 +1470,8 @@ ${error}  [error ${myName}]`);
             if (!WinstonCloudWatch) {
               try {
                 // Lazy load winston-cloudwatch
-                // eslint-disable-next-line global-require, import/no-extraneous-dependencies
-                WinstonCloudWatch = require('@goodware/winston-cloudwatch');
+                // eslint-disable-next-line global-require
+                WinstonCloudWatch = require('winston-cloudwatch');
               } catch (error) {
                 // eslint-disable-next-line no-console
                 console.warn(`winston-cloudwatch is not installed: ${error.message}  [warn ${myName}]`);
@@ -2195,7 +2195,7 @@ ${stack}  [error ${myName}]`);
           const { stack } = item;
           if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
 
-          // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar
+          // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
           const msg = this.objectToString(item);
 
           if (msg) this.copyData(level, tags, state, 'message', msg);
