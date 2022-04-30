@@ -113,14 +113,14 @@ redact: {
 
 Event listeners must be added to a Loggers instance. The standard `on()`, `once()`, etc. methods are supported.
 
-#### log event
+#### data event
 
-The log event is called each time log-related method is called.
+The data event is called each time log-related method is called.
 
 Log event listeners can transform log entries to, for example, implement advanced redaction. Listeners are passed an object with data, level, and tags properties. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the input object. The following example removes attributes from certain Error objects:
 
 ```js
-loggers.on('log', (item) => {
+loggers.on('data', (item) => {
   const { data } = item;
   // only process Errors with response properties
   if (!(data instanceof Error) || !data.response) return;

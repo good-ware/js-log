@@ -1,5 +1,11 @@
 # @goodware/log Release History
 
+## 6.2.3 2022-04-30
+
+Breaking changes
+
+- Rename 'log' event to 'data'
+
 ## 6.2.2 2022-04-24
 
 Use winston-cloudwatch version 6
