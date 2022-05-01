@@ -2171,7 +2171,7 @@ ${stack}  [error ${myName}]`);
         if (item instanceof Array) {
           this.copyData(level, tags, state, 'message', this.objectToString(item));
         } else {
-          const dataData = { data: item, level, tags };
+          const dataData = { category: entry.category, data: item, level, tags };
           try {
             this.emit('data', dataData);
           } catch (error) {

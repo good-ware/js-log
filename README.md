@@ -115,22 +115,20 @@ Event listeners must be added to a Loggers instance. The standard `on()`, `once(
 
 #### data event
 
-The data event is called each time log-related method is called.
-
-Log event listeners can transform log entries to, for example, implement advanced redaction. Listeners are passed an object with data, level, and tags properties. Currently only 'data' can be altered. In order to avoid side-effects, modify the 'data' property of the input object. The following example removes attributes from certain Error objects:
+The data event is called each time log-related method is called and is mainly intended for transforming data objects for redaction use cases. Listeners are passed an object with data, category, level, and tags properties. The input object's data property can be modified by listeners since listeners' return values are ignored. Alternatively, the data object can be directly altered but mutate input data at your own risk. The following example removes attributes from certain Error objects:
 
 ```js
 loggers.on('data', (item) => {
   const { data } = item;
   // only process Errors with response properties
   if (!(data instanceof Error) || !data.response) return;
-  // modify item's data property instead of modifying item.data
+  // modify item's data property instead of modifying the error object
   const copy = { ...data };
   delete copy.response;
   item.data = copy;
 });
 
-const error = new Error('An http error occured');
+const error = new Error('An http error occurred');
 error.response = 'I will be redacted';
 error.statusCode = 404;
 loggers.log(error);
@@ -140,7 +138,7 @@ loggers.log(error);
 
 `stop()` is a heavyweight asynchronous method that safely closes all transports. It can be reversed via `start().` `restart()` is also available.
 
-Only CloudWatch Logs transports can be flushed without stopping them. `flush()` is therefore an alias for `restart().` Use flushCloudWatchTransports() when you only need to flush CloudWatch Logs transports because it's substantially faster.
+Only CloudWatch Logs transports can be flushed without stopping them. `flush()` is therefore an alias for `restart().` Use `flushCloudWatchTransports()` when you only need to flush CloudWatch Logs transports because it's substantially faster.
 
 ### Unhandled exceptions and Promise rejections
 

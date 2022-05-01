@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 6.2.4 2022-05-01
+
+Add category propert to data event object
+
 ## 6.2.3 2022-04-30
 
 Breaking changes
