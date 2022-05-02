@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 6.3.0 2022-05-01
+
+Add commitSha to options
+
 ## 6.2.5 2022-05-01
 
 - Add 'log' event

@@ -515,6 +515,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
       stage: Joi.string(),
       service: Joi.string(),
       version: Joi.string(),
+      commitSha: Joi.string(),
 
       // Defaults
       defaultCategory: Joi.string().default('general'),
@@ -690,14 +691,11 @@ Enable the tag for log entries with severity levels equal to or greater than the
     this.props.starting = false;
 
     if (!this.props.restarting && options.say.ready) {
-      let { service, stage, version } = options;
-      if (service === undefined) service = '';
-      if (stage === undefined) stage = '';
-      if (version === undefined) version = '';
+      const { service = '', stage = '', version = '', commitSha = '' } = options;
 
       this.log(
         undefined,
-        `Ready: ${service} v${version} ${stage} [${myName} v${myVersion}]`,
+        `Ready: ${service} ${stage} v${version} ${commitSha} [${myName} v${myVersion}]`,
         undefined,
         reservedCategories.log
       );
@@ -1234,12 +1232,9 @@ ${error}  [error ${myName}]`)
     this.props.stopped = true;
 
     if (!this.props.restarting && this.options.say.stopped) {
-      let { service, stage, version } = this.options;
-      if (service === undefined) service = '';
-      if (stage === undefined) stage = '';
-      if (version === undefined) version = '';
+      const { service = '', stage = '', version = '', commitSha = '' } = this.options;
       // eslint-disable-next-line no-console
-      console.log(`Stopped: ${service} v${version} ${stage}  [info ${myName} v${myVersion}]`);
+      console.log(`Stopped: ${service} ${stage} v${version} ${commitSha}  [info ${myName} v${myVersion}]`);
     }
   }
 
@@ -2139,7 +2134,7 @@ ${stack}  [error ${myName}]`);
       hostId: this.props.hostId,
       service: this.options.service,
       version: this.options.version,
-      commitSha: undefined,
+      commitSha: this.options.commitSha,
       logStack: false, // Set and removed by send()
       stack: false, // Set and removed by send()
       data: undefined,
