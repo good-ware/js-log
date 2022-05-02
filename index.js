@@ -2402,6 +2402,15 @@ ${stack}  [error ${myName}]`);
       delete entry.depth;
     }
 
+    // ==============
+    // Send log event
+    try {
+      this.emit('log', entry);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`A log event listener failed: ${error}`);
+    }
+
     // =========================================================
     // Only CloudWatch's error logger can be used while stopping
     if (this.props.stopping && category !== reservedCategories.cloudWatch) {

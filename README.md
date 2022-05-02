@@ -113,9 +113,13 @@ redact: {
 
 Event listeners must be added to a Loggers instance. The standard `on()`, `once()`, etc. methods are supported.
 
-#### data event
+#### data Event
 
-The data event is called each time log-related method is called and is mainly intended for transforming data objects for redaction use cases. Listeners are passed an object with data, category, level, and tags properties. The input object's data property can be modified by listeners since listeners' return values are ignored. Alternatively, the data object can be directly altered but mutate input data at your own risk. The following example removes attributes from certain Error objects:
+'data' events are emitted (potentially multiple times) when one log-related method is called. The data event is intended for redacting properties from data objects. These events are emitted once for each object to be logged, including traversed Error objects.
+
+Event listeners' return values are ignored. Event listeners are sent an event object consisting of category, level, data, and tags properties. Listeners can modify the event object's data property. Alternatively, the data object can be modified, but mutate input data at your own risk!
+
+The following example removes the response attribute from Error objects:
 
 ```js
 loggers.on('data', (item) => {
@@ -133,6 +137,12 @@ error.response = 'I will be redacted';
 error.statusCode = 404;
 loggers.log(error);
 ```
+
+### log Event
+
+'log' events are emitted prior to calling Winston's log() method. Due to error object traversal, multiple log events can be emitted when one log-related method is called. Because of transport tag filtering, the entry might not be logged.
+
+Event listeners are sent a log entry object consisting of consisting of id, groupId, category, level, tags, message, and data properties. Listeners can modify event objects.
 
 ### Stopping and Flushing
 

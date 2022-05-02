@@ -871,6 +871,16 @@ async function go(colors) {
     loggers.removeListener('data', listener);
   }
 
+  {
+    let called;
+    loggers.once('log', (entry) => {
+      if (entry.message !== 'hello') throw new Error();
+      called = true;
+    });
+    loggers.info('hello');
+    if (!called) throw new Error();
+  }
+
   // =========
   // Redaction
 
@@ -958,7 +968,7 @@ async function go(colors) {
   {
     const { length } = unitTest.entries;
     // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 198 + hasCloudWatch;
+    const expectedEntries = 199 + hasCloudWatch;
 
     if (length !== expectedEntries) throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
   }
