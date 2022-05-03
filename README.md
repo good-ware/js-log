@@ -156,7 +156,7 @@ While a Loggers instance is active, uncaught exceptions and unhandled Promise re
 
 ### Adding Stack Traces of API Callers
 
-When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.
+When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta property is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.
 
 ## Concepts
 
@@ -199,11 +199,11 @@ An object that is sent to a transport. A log entry consists of meta and data.
 
 ### meta
 
-The top-level keys of a log entry. Meta keys contain scalar values except for tags and transports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, id, groupId, depth, hostId, stage, version, service, stack, and transports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.
+The top-level keys of a log entry. Meta properties contain scalar values except for tags and transports which are arrays. Meta properties are: timestamp, ms (elpased time between log entries), level, message, tags, category, id, groupId, depth, hostId, stage, version, service, stack, and transports. Certain properties in 'both' can be copied to meta properties, optionally renaming them, via the 'metaProperties' options setting.
 
 ### data
 
-The keys remaining in 'both' after meta keys are removed (see 'both' below)
+The keys remaining in 'both' after meta properties are removed (see 'both' below)
 
 ### level (severity)
 
@@ -251,7 +251,7 @@ Use the meta tag's value as a log entry's logging level
 
 #### logStack
 
-Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when the log entry's level is 'error.'
+Whether to add the current stack to meta. When true, populates the 'stack' meta property. This is the default behavior when the log entry's level is 'error.'
 
 ### tag-based filtering
 
@@ -305,7 +305,7 @@ method data(a, b) in which b's keys override a's keys if they overlap.
 
 ### message
 
-A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaKeys' options setting. Properties are copied to meta if their values are scalar and their names are specified in metaKeys.
+A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaProperties' options setting. Properties are copied to meta if their values are scalar and their names are specified in metaProperties.
 
 ### both
 
@@ -315,7 +315,7 @@ message and 'data' are shallow copied and combined into a new object called 'bot
 
 If both.error is truthy and both.message is falsey, both.message is set to `both.error.asString()`.
 
-Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta key contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified via the 'maxErrors' options setting.
+Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta property contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified via the 'maxErrors' options setting.
 
 The following example produces three three log entries. error3 will be logged first, followed by error2, followed by error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'
 
@@ -379,7 +379,7 @@ CONSOLE_COLORS
 
 environment variable such that blank, 0, and 'false' are false and all other values are true.
 
-When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the
+When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, and stack traces. When it is false, a subset of meta properties are sent to the console with the log entry's message. To override the value for 'data', set the
 
 ```shell
 CONSOLE_DATA

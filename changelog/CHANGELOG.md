@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 7.0.0 2022-05-03
+
+Rename metaKeys option to metaProperties
+
 ## 6.3.0 2022-05-01
 
 Add commitSha to options

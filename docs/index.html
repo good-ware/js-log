@@ -150,7 +150,7 @@ loggers.log(error);
 <h3>Unhandled exceptions and Promise rejections</h3>
 <p>While a Loggers instance is active, uncaught exceptions and unhandled Promise rejections are logged using the category @log/unhandled. The process is not terminated after logging uncaught exceptions.</p>
 <h3>Adding Stack Traces of API Callers</h3>
-<p>When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta key is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.</p>
+<p>When a log entry's level is one of the values specified in the 'logStackLevels' options setting, the 'stack' meta property is set to the stack trace of the caller of the logging method (such as info()). This behavior is manually enabled and disabled via the 'logStack' meta tag.</p>
 <h2>Concepts</h2>
 <h3>options</h3>
 <p>An object provided to Loggers' constructor. Options are described by optionsObject.</p>
@@ -182,9 +182,9 @@ loggers.log(error);
 <h3>log entry</h3>
 <p>An object that is sent to a transport. A log entry consists of meta and data.</p>
 <h3>meta</h3>
-<p>The top-level keys of a log entry. Meta keys contain scalar values except for tags and transports which are arrays. Meta keys are: timestamp, ms (elpased time between log entries), level, message, tags, category, id, groupId, depth, hostId, stage, version, service, stack, and transports. Certain properties in 'both' can be copied to meta keys, optionally renaming them, via the 'metaKeys' options setting.</p>
+<p>The top-level keys of a log entry. Meta properties contain scalar values except for tags and transports which are arrays. Meta properties are: timestamp, ms (elpased time between log entries), level, message, tags, category, id, groupId, depth, hostId, stage, version, service, stack, and transports. Certain properties in 'both' can be copied to meta properties, optionally renaming them, via the 'metaProperties' options setting.</p>
 <h3>data</h3>
-<p>The keys remaining in 'both' after meta keys are removed (see 'both' below)</p>
+<p>The keys remaining in 'both' after meta properties are removed (see 'both' below)</p>
 <h3>level (severity)</h3>
 <p>Levels are associated with natural numbers. Per Winston's convention, a lower value indicates greater severity. Therefore, 0 means &quot;most severe.&quot;</p>
 <p>Levels and their colors can be specified via the second argument provided to the constructor using the same object that is provided when creating a Winston logger.</p>
@@ -212,7 +212,7 @@ loggers.log(error);
 <h4>logLevel</h4>
 <p>Use the meta tag's value as a log entry's logging level</p>
 <h4>logStack</h4>
-<p>Whether to add the current stack to meta. When true, populates the 'stack' meta key. This is the default behavior when the log entry's level is 'error.'</p>
+<p>Whether to add the current stack to meta. When true, populates the 'stack' meta property. This is the default behavior when the log entry's level is 'error.'</p>
 <h3>tag-based filtering</h3>
 <p>Tags can be used to filter messages beyond logging levels. Tags that are named after logging levels do not participate in tag filtering. All tags are enabled by default. When using tag filtering, when the log entry's severity level is 'warn' higher, tags are enabled; however, this behavior can be overidden via the 'allowLevel' setting. Tags are enabled and disabled on a per-category basis. The 'default' category specifies the default behavior for unlisted categories.</p>
 <p>The following example enables the tag 'sql' for only two categories: one and two. Category 'one' changes the level to 'more' and sends log entries only to the file and console transports. Category 'two' sends log entries to all transports.</p>
@@ -253,12 +253,12 @@ loggers.log(error);
 <p>An optional string, array, or object to log with message. Two 'data' objects are combined via the static
 method data(a, b) in which b's keys override a's keys if they overlap.</p>
 <h3>message</h3>
-<p>A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaKeys' options setting. Properties are copied to meta if their values are scalar and their names are specified in metaKeys.</p>
+<p>A scalar, array, or object to log. If an object is provided, its 'message' property is moved to meta and other properties can be copied to meta. The list of keys to copy to meta is altered via the 'metaProperties' options setting. Properties are copied to meta if their values are scalar and their names are specified in metaProperties.</p>
 <h3>both</h3>
 <p>message and 'data' are shallow copied and combined into a new object called 'both.' If message's keys overlap with those in 'data,' 'data' is logged separately; both log entries will have the same groupId meta value.</p>
 <h3>Errors</h3>
 <p>If both.error is truthy and both.message is falsey, both.message is set to <code>both.error.asString()</code>.</p>
-<p>Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta key contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified via the 'maxErrors' options setting.</p>
+<p>Error objects that are discovered in the top-level keys of both are logged separately, in a parent-child fashion, and recursively. This allows the stack trace and other details of every Error in a chain to be logged using applicable redaction rules. Each log entry contains the same groupId meta value. The data properties of parent entries contain the result of converting Error strings. For example, if both.error is an Error object, data.error will contain the Error object converted to a string. This process is performed recursively. Circular references are handled gracefully. The depth meta property contains a number, starting from 1, that indicates the recursion depth from both. The maximum recursion depth is specified via the 'maxErrorDepth' options setting. The maximum number of errors to log is specified via the 'maxErrors' options setting.</p>
 <p>The following example produces three three log entries. error3 will be logged first, followed by error2, followed by error1. error1's corresponding log entry contains a data.cause key with a string value of 'Error: error2.'</p>
 <pre class="prettyprint source lang-js"><code>const error = new Error('error1');
 const error2 = new Error('error2');
@@ -308,7 +308,7 @@ logger.log('error', error);
 <pre class="prettyprint source lang-shell"><code>CONSOLE_COLORS
 </code></pre>
 <p>environment variable such that blank, 0, and 'false' are false and all other values are true.</p>
-<p>When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, and stack traces. When it is false, a subset of meta keys are sent to the console with the log entry's message. To override the value for 'data', set the</p>
+<p>When 'data' is true, the maximum amount of information is sent to the console, including meta, data, embedded errors, and stack traces. When it is false, a subset of meta properties are sent to the console with the log entry's message. To override the value for 'data', set the</p>
 <pre class="prettyprint source lang-shell"><code>CONSOLE_DATA
 </code></pre>
 <p>environment variable such that blank, 0, and 'false' are false and all other values are true.</p>
@@ -365,7 +365,7 @@ TaskLogger.execute(logger, async () => 'Some data', 'Doing it').then((value) => 
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Sun May 01 2022 22:26:39 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Tue May 03 2022 08:24:21 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>
