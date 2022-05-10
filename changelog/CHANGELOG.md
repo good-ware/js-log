@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 7.0.1 2022-05-10
+
+Do not log error twice
+
 ## 7.0.0 2022-05-03
 
 Rename metaKeys option to metaProperties

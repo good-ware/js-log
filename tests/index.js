@@ -72,10 +72,45 @@ async function go(colors) {
   // Ready for testing
   //
 
+  // loggers.log('info');
+  // loggers.log(new Error('1'));
+  // loggers.log(new Error('1'), {a: 5});
+  // loggers.log(new Error('1'), {a: 5},'category');
+  // loggers.log('hi', {a:5},new Error('1'));
+  // loggers.log({a:5},new Error('1'));
+  // loggers.log(null, new Error('1'));
+  // loggers.log('info', new Error('1'));
+  // loggers.log('info', {a:5},new Error('1'));
+  // loggers.log('info', {a:5}, {error:new Error('1')});
+  // loggers.log('info', 'whw', {error: new Error('1'), error2: new Error('2'), a: 5});
+  // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5});
+  // Log as error
+  // loggers.log('info', new Error('1'), {a: 5});
+  // Log as error
+  // loggers.log('info', undefined, new Error('1'));
+  // Log as default
+  // loggers.log({error: false}, new Error('1'));
+  // loggers.log('info', null, new Error('1'));
+  // loggers.log('info', null, new Error('1'));
+  // loggers.log('info', {error: new Error('1')});
+  // loggers.log('info', {message: 'a', error: new Error('1')});
+  //loggers.log('info', {message: {a: 5, error: new Error('2')}, error: new Error('1')});
+  // loggers.log('info', {message: {a: 5, error: new Error('2')}}, {error: new Error('1')});
+  // loggers.log('info', {message: {a: 5, error: new Error('2')}}, new Error('1'));
+  // loggers.log('info', 'message', {a: 5, error: new Error('1')});
+  // loggers.log('info', {error: new Error('1'), error2: new Error('2')});
+  // process.exit()
+
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
+    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
+    loggers.error(null, new Error('abc'));
     if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
@@ -88,7 +123,7 @@ async function go(colors) {
   {
     const count = unitTest.entries.length;
     const error = new Error('x');
-    loggers.info(undefined, { error });
+    loggers.info(null, { error });
     if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }

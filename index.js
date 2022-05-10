@@ -36,8 +36,6 @@ const { name: myName, version: myVersion } = require('./package.json'); // Disca
 let WinstonCloudWatch;
 let noCloudWatch;
 
-const addErrorSymbol = Symbol.for('error');
-
 const { format } = winston;
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
@@ -1690,88 +1688,47 @@ ${error}  [error ${myName}]`);
   transformArgs(tags, message, data, category) {
     if (tags instanceof LogArgs) return tags;
 
-    // This method doesn't call this.category(category) so Logger::transformArgs call call this method and override
+    // This method doesn't call this.category(category) so Logger::transformArgs method can't override
     // the category
 
     // First argument is an Error object?
     if (tags instanceof Error) {
-      if (!message && typeof message !== 'number') {
-        message = tags;
-      } else {
-        data = this.data(data, tags);
-      }
+      category = data;
+      if (message !== undefined) data = message;
+      else data = undefined;
+      message = tags;
       tags = undefined;
     }
     // log() called?
     else if (
-      !message &&
-      !data &&
-      !category &&
-      tags instanceof Object &&
-      !(tags instanceof Array) &&
-      (tags.tags || tags.message || tags.data || tags.category || tags.error instanceof Object)
+      message === undefined
+      && data === undefined
+      && !category
+      && tags instanceof Object &&
+      !(tags instanceof Array)
     ) {
-      message = tags;
-      let messageCopied;
-      if ('tags' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        tags = message.tags;
-        delete message.tags;
-      } else {
-        tags = undefined;
-      }
-      if ('data' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        data = message.data;
-        delete message.data;
-      }
-      if ('category' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        if (typeof message.category === 'string') category = message.category;
-        delete message.category;
-      }
+      // tags can't be an Error instance - it was checked above
+      const copy = {...tags};
+      tags = undefined;
+      ({ tags } = copy); delete copy.tags;
+      ({ message } = copy); delete copy.message;
+      ({ category } = copy); delete copy.category;
+      data = copy;
     }
     // logLevel() called?
     else if (
-      !data &&
-      !category &&
-      message instanceof Object &&
-      !(message instanceof Array) &&
-      (message.tags || message.message || message.data || message.error)
+      data === undefined
+      && !category
+      && message instanceof Object
+      && !(message instanceof Array)
     ) {
-      let messageCopied;
-      if ('tags' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        tags = this.tags(tags, message.tags);
-        delete message.tags;
-      }
-      if ('data' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        data = message.data;
-        delete message.data;
-      }
-      if ('category' in message) {
-        if (!messageCopied) {
-          message = { ...message };
-          messageCopied = true;
-        }
-        if (typeof message.category === 'string') category = message.category;
-        delete message.category;
+      if (!(message instanceof Error)) {
+        const copy = {...message};
+        message = undefined;
+        tags = this.tags(tags, copy.tags); delete copy.tags;
+        ({ message } = copy); delete copy.message;
+        ({ category } = copy); delete copy.category;
+        data = copy;
       }
     }
 
@@ -1789,18 +1746,14 @@ ${error}  [error ${myName}]`);
     tags = this.tags(tags);
 
     // Add 'error' tag if an error was provided in message or data
-    if (!tags.error) {
-      let addError;
-
-      if (message instanceof Object) {
-        addError = message instanceof Error || message.error instanceof Error;
-        if (!addError) addError = message.message instanceof Error;
-        if (!addError && message.message instanceof Object) addError = message.message.error instanceof Error;
-      }
-      if (!addError && data instanceof Object) addError = data instanceof Error || data.error instanceof Error;
-      if (addError) tags[addErrorSymbol] = true;
+    if (!('error' in tags) // can turn it off
+       && ( message instanceof Error
+        || ( message instanceof Object && message.error instanceof Error )
+        || data instanceof Error
+        || ( data instanceof Object && data.error instanceof Error ))) {
+          tags.error = true;
     }
-
+      
     return Object.assign(new LogArgs(), {
       tags,
       message,
@@ -1870,16 +1823,6 @@ ${stack}  [error ${myName}]`);
             }
           }
         });
-      }
-    }
-
-    // Add error tag when Error is provided as the message
-    if (tags[addErrorSymbol]) {
-      delete tags[addErrorSymbol];
-      if (!tags.error) {
-        tags.error = true;
-        tagNames.unshift('error');
-        if (!level) level = 'error';
       }
     }
 
@@ -2158,15 +2101,16 @@ ${stack}  [error ${myName}]`);
     }
 
     // Combine message and data
-    [message, data].forEach((item) => {
-      // TODO This is why it is not possible to log null and blank string
-      if (item === undefined || item === null) return;
+    const items = [message];
+    if (data !== null && data !== undefined) items.push(data);
+
+    items.forEach((item) => {
       const type = typeof item;
 
       if (type === 'string' && !item.length) return;
       if (type === 'function') return;
 
-      if (type === 'object') {
+      if (item instanceof Object) {
         if (item instanceof Array) {
           this.copyData(level, tags, state, 'message', this.objectToString(item));
         } else {
@@ -2200,8 +2144,8 @@ ${stack}  [error ${myName}]`);
           if (msg) this.copyData(level, tags, state, 'message', msg);
         }
       } else {
-        // It's truthy and it's not an object
-        this.copyData(level, tags, state, 'message', item.toString());
+        // Copy message to data where it will be moved to meta
+        this.copyData(level, tags, state, 'message', (item === null || item === undefined) ? null : item.toString());
       }
     });
 
@@ -2211,19 +2155,17 @@ ${stack}  [error ${myName}]`);
       this.props.metaProperties.forEach((key) => {
         const value = entryData[key];
 
-        if (value !== null && value !== undefined) {
+        if (value !== undefined) {
           const type = typeof value;
           key = this.props.meta[key]; // Rename object key to meta property
           if (type === 'string') {
-            if (value.length) {
-              entry[key] = value;
-              delete entryData[key];
-            }
+            if (value.length) entry[key] = value;
           } else if (scalars[type]) {
             entry[key] = value;
-            delete entryData[key];
           }
         }
+
+        delete entryData[key];
       });
 
       entry.data = entryData;
@@ -2235,6 +2177,9 @@ ${stack}  [error ${myName}]`);
       const value = entry[key];
       if (value === undefined) delete entry[key];
     }
+
+    // If null is passed as message, log 'null'
+    if (message === null) entry.message = null;
 
     if (state.dataData) entry.dataData = state.dataData;
 
@@ -2286,7 +2231,7 @@ ${stack}  [error ${myName}]`);
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, data, errors = new Set(), depth = 0, groupId = undefined) {
+  send(info, message, data, errors = new Set(), depth = 0, groupId = undefined) { // eslint wants groupId=
     const { category, logger, level } = info;
     const entry = this.logEntry(info, message, data, depth);
 
@@ -2294,10 +2239,11 @@ ${stack}  [error ${myName}]`);
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
 
     // If message is an Error, don't log it again
+    // Not sure this does anything
     if (message instanceof Error) errors.add(message);
 
     /**
-     * Objects added to dataMesages are sent to this method
+     * Objects added to dataMessages are sent to this method
      */
     const dataMessages = [];
     let dataCopied;
@@ -2309,14 +2255,7 @@ ${stack}  [error ${myName}]`);
       delete entry.dataData;
       if (!addData) {
         dataData = undefined; // Avoid infinite recursion
-      } else {
-        // dataData might have errors from data - remove them so overlap doesn't happen again
-        // eslint-disable-next-line guard-for-in, no-restricted-syntax
-        for (const key in dataData) {
-          const value = dataData[key];
-          if (value instanceof Error) errors.add(value);
-        }
-      }
+      } 
     }
 
     let firstError;
@@ -2363,16 +2302,14 @@ ${stack}  [error ${myName}]`);
         if (recursiveRedact.length) deepCleaner(newData, recursiveRedact);
       }
 
-      if (Loggers.hasKeys(newData)) {
-        entry.data = newData;
-      } else {
-        delete entry.data;
-      }
+      if (Loggers.hasKeys(newData)) entry.data = newData;
+      else delete entry.data;
     }
 
     // ====================================================================
     // Remove falsy values from entry that were set to false by logEntry()
     if (!entry.logStack) delete entry.logStack;
+
     if (!entry.stack) {
       if (entry.logStack) {
         entry.stack = entry.logStack;
@@ -2382,48 +2319,46 @@ ${stack}  [error ${myName}]`);
       }
     }
 
-    // ==========================================================================
-    // If there is nothing interesting to log besides errors, only log the errors
-    const noMessage = !('message' in entry);
+    const noMessage = !('message' in entry) && !('data' in entry);
 
-    // ========================================================================================
-    // If the entry's message is empty, use data.error or the message of another provided error
-    if (noMessage && firstError) entry.message = firstError.toString();
     ++depth;
 
-    // ==========================
-    // Set groupId and depth meta
-    if (groupId || dataData || dataMessages.length) {
-      entry.groupId = groupId || entry.id;
-      entry.depth = depth;
-    } else {
-      delete entry.groupId;
-      delete entry.depth;
-    }
+    if (!noMessage || !firstError) {
+      // ==========================
+      // Set groupId and depth meta
+      if (depth > 1 ) {
+        entry.groupId = groupId || entry.id;
+        entry.depth = depth;
+      } else {
+        delete entry.groupId;
+        delete entry.depth;
+      }
 
-    // ==============
-    // Send log event
-    try {
-      this.emit('log', entry);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`A log event listener failed: ${error}`);
-    }
+      // ==============
+      // Send log event
+      try {
+        this.emit('log', entry);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`A log event listener failed: ${error}`);
+      }
 
-    // =========================================================
-    // Only CloudWatch's error logger can be used while stopping
-    if (this.props.stopping && category !== reservedCategories.cloudWatch) {
-      const stack = new Error().stack.replace(stripStack, '');
-      // eslint-disable-next-line no-console
-      console.error(`Stopping  [error ${myName}]
+      // =========================================================
+      // Only CloudWatch's error logger can be used while stopping
+      if (this.props.stopping && category !== reservedCategories.cloudWatch) {
+        const stack = new Error().stack.replace(stripStack, '');
+        // eslint-disable-next-line no-console
+        console.error(`Stopping  [error ${myName}]
 ${util.inspect(entry)}  [error ${myName}]
 ${stack}  [error ${myName}]`);
-    } else {
-      logger.log(level, entry);
+      } else {
+        logger.log(level, entry);
+      }
     }
 
     // Log child errors
     if (dataData) this.send(info, dataData, undefined, errors, depth, groupId || entry.id);
+
     dataMessages.forEach((dataMessage) => this.send(info, dataMessage, data, errors, depth, groupId || entry.id));
   }
 
