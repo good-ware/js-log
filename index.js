@@ -36,6 +36,8 @@ const { name: myName, version: myVersion } = require('./package.json'); // Disca
 let WinstonCloudWatch;
 let noCloudWatch;
 
+const addErrorSymbol = Symbol.for('error');
+
 const { format } = winston;
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
@@ -1746,12 +1748,12 @@ ${error}  [error ${myName}]`);
     tags = this.tags(tags);
 
     // Add 'error' tag if an error was provided in message or data
-    if (!('error' in tags) // can turn it off
+    if (!('error' in tags) // can turn it off with false
        && ( message instanceof Error
         || ( message instanceof Object && message.error instanceof Error )
         || data instanceof Error
         || ( data instanceof Object && data.error instanceof Error ))) {
-          tags.error = true;
+          tags[addErrorSymbol] = true;
     }
       
     return Object.assign(new LogArgs(), {
@@ -1825,7 +1827,17 @@ ${stack}  [error ${myName}]`);
         });
       }
     }
-
+    
+    // ===================================================
+    // Add error tag when Error is provided as the message
+    if (tags[addErrorSymbol]) {
+      delete tags[addErrorSymbol];
+      if (!tags.error) {
+        tags.error = true;
+        tagNames.unshift('error'); // error appears first
+        if (!level) level = 'error';
+      }
+    }
     if (!level) level = this.options.defaultLevel;
 
     let transports;
@@ -2016,20 +2028,19 @@ ${stack}  [error ${myName}]`);
    * state.currentData[key] to value.
    * @param {string} level
    * @param {object} tags
-   * @param {string} state An object with keys data, dataData, and currentData
    * @param {object} state An object with keys data, dataData, and currentData
    * @param {string} key
    * @param {*} value Value to store in the property named 'key'
    */
   copyData(level, tags, state, key, value) {
     // Check redaction (nonrecursive)
+    if ( value === undefined ) return;
     if (this.props.redact[key]) return;
 
     if (!state.currentData) {
       state.currentData = state.data = {};
     } else if (state.currentData === state.data && key in state.data && value !== state.data[key]) {
       // message and data overlap; their values differ
-      if (!value) return;
       state.currentData = state.dataData = {};
     }
 
@@ -2054,7 +2065,7 @@ ${stack}  [error ${myName}]`);
     const { level } = info;
 
     // Check for message returned by transformArgs as: { message: 'Foo', error: {} }
-    if (message instanceof Object && !(message instanceof Error) && !(message instanceof Array)) {
+    if (false && message instanceof Object && !(message instanceof Error) && !(message instanceof Array)) {
       const { message: realMessage } = message;
       if (realMessage) {
         const copy = { ...message };
@@ -2101,13 +2112,12 @@ ${stack}  [error ${myName}]`);
     }
 
     // Combine message and data
-    const items = [message];
+    const items = [];
+    if (message !== null && message !== undefined) items.push(message);
     if (data !== null && data !== undefined) items.push(data);
 
     items.forEach((item) => {
       const type = typeof item;
-
-      if (type === 'string' && !item.length) return;
       if (type === 'function') return;
 
       if (item instanceof Object) {
@@ -2140,8 +2150,7 @@ ${stack}  [error ${myName}]`);
 
           // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
           const msg = this.objectToString(item);
-
-          if (msg) this.copyData(level, tags, state, 'message', msg);
+          this.copyData(level, tags, state, 'message', msg);
         }
       } else {
         // Copy message to data where it will be moved to meta
@@ -2156,13 +2165,9 @@ ${stack}  [error ${myName}]`);
         const value = entryData[key];
 
         if (value !== undefined) {
-          const type = typeof value;
           key = this.props.meta[key]; // Rename object key to meta property
-          if (type === 'string') {
-            if (value.length) entry[key] = value;
-          } else if (scalars[type]) {
-            entry[key] = value;
-          }
+          if (scalars[typeof value]) entry[key] = value;
+          else if (value instanceof Date) entry[key] = value.toISOString();
         }
 
         delete entryData[key];
@@ -2410,7 +2415,7 @@ ${new Error('Stopped').stack}  [error ${myName}]`);
  * @description Default meta properties. Values are either undefined or a string containing the actual meta property
  *  name. For example, given the tuple a: 'b', both.a is copied to meta.b. The 'both' object is not altered; its
  *  properties are copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the
- * tuple b: 'b'.
+ *  tuple b: 'b'.
  */
 Loggers.defaultMetaKeys = { stack: undefined, correlationId: undefined };
 

@@ -72,6 +72,13 @@ async function go(colors) {
   // Ready for testing
   //
 
+  loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
+  process.exit();
+  // loggers.log('info', '', new Error('x'))
+  // loggers.log(null, undefined, new Error('x'))
+  // loggers.log(undefined, undefined, new Error('x'))
+  // loggers.log(undefined, new Error('x'))
+  // loggers.log('info', null, new Error('x'))
   // loggers.log('info');
   // loggers.log(new Error('1'));
   // loggers.log(new Error('1'), {a: 5});
@@ -84,6 +91,7 @@ async function go(colors) {
   // loggers.log('info', {a:5}, {error:new Error('1')});
   // loggers.log('info', 'whw', {error: new Error('1'), error2: new Error('2'), a: 5});
   // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5});
+  // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
   // Log as error
   // loggers.log('info', new Error('1'), {a: 5});
   // Log as error
@@ -182,7 +190,7 @@ async function go(colors) {
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'warn') throw new Error();
   }
-  // Add level 'error' because no tag is specified
+  // Add level 'error' because no level tag is specified
   {
     const count = unitTest.entries.length;
     logger.log(new Error());
@@ -434,6 +442,7 @@ async function go(colors) {
   {
     logger.error({ tags: ['d'], a: 1, b: 2, data: { d: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    process.exit()
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
