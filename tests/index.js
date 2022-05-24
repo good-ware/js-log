@@ -102,7 +102,7 @@ async function go(colors) {
   // loggers.log('info', null, new Error('1'));
   // loggers.log('info', {error: new Error('1')});
   // loggers.log('info', {message: 'a', error: new Error('1')});
-  //loggers.log('info', {message: {a: 5, error: new Error('2')}, error: new Error('1')});
+  // loggers.log('info', {message: {a: 5, error: new Error('2')}, error: new Error('1')});
   // loggers.log('info', {message: {a: 5, error: new Error('2')}}, {error: new Error('1')});
   // loggers.log('info', {message: {a: 5, error: new Error('2')}}, new Error('1'));
   // loggers.log('info', 'message', {a: 5, error: new Error('1')});

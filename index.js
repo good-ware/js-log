@@ -335,12 +335,12 @@ class Loggers extends EventEmitter {
   /**
    * @description Combines two sets of tags into a single object
    * @param {*} [tags]
-   * @param {*} [more]
-   * @returns {object} An object consisting of tags and more combined, one key per tag name whose truthy value
+   * @param {*} [moreTags]
+   * @returns {object} An object consisting of tags and moreTags combined, one key per tag name whose truthy value
    * indicates the tag is enabled
    */
   // eslint-disable-next-line class-methods-use-this
-  tags(tags, more) {
+  tags(tags, moreTags) {
     let newTags;
 
     if (tags instanceof Object) {
@@ -349,7 +349,7 @@ class Loggers extends EventEmitter {
         tags.forEach((tag) => {
           if (tag) newTags[tag] = true;
         });
-      } else if (!more) {
+      } else if (!moreTags) {
         return tags;
       } else {
         newTags = { ...tags };
@@ -357,23 +357,23 @@ class Loggers extends EventEmitter {
     } else if (tags) {
       newTags = {};
       newTags[tags] = true;
-    } else if (!more) return {};
+    } else if (!moreTags) return {};
 
-    if (more instanceof Object) {
-      if (more instanceof Array) {
+    if (moreTags instanceof Object) {
+      if (moreTags instanceof Array) {
         if (!newTags) newTags = {};
-        more.forEach((tag) => {
+        moreTags.forEach((tag) => {
           if (tag) newTags[tag] = true;
         });
       } else if (!newTags) {
-        return more;
+        return moreTags;
       } else {
         if (!newTags) newTags = {};
-        Object.assign(newTags, more);
+        Object.assign(newTags, moreTags);
       }
-    } else if (more) {
+    } else if (moreTags) {
       if (!newTags) newTags = {};
-      newTags[more] = true;
+      newTags[moreTags] = true;
     }
 
     return newTags;
@@ -382,11 +382,11 @@ class Loggers extends EventEmitter {
   /**
    * @private
    * @ignore
-   * @description Converts a 'data' argument to an object
+   * @description Converts a value to an object
    * @param {*} [data]
    * @returns {object|undefined}
    */
-  static dataToObject(data) {
+  static toObject(data) {
     if (data === undefined || data === null) return undefined;
     if (data instanceof Object) {
       if (data instanceof Error) return { error: data };
@@ -396,27 +396,26 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @description Combines the keys of two data objects and returns a new object
-   * @param {*} [data]
-   * @param {*} [more]
-   * @returns {object} data if data and more are falsy. If data is truthy and more is falsy,
-   * returns data or data converted to an object. If more is truthy and data is falsy, returns
-   * more or more converted to an object. Otherwise, returns a new object with data and more
-   * converted to objects and combined such that more's keys overwite data's keys.
+   * @description Combines the keys of context objects and returns a new object
+   * @param {*} [context]
+   * @param {*} [moreContext]
+   * @returns {object} context if data and moreContext are falsy. If context is truthy and moreContext is falsy,
+   * returns context or context converted to an object. If context is falsy and moreContext is truthy, returns
+   * moreContext or moreContext converted to an object. Otherwise, returns a new object with context and moreContext
+   * converted to objects and combined such that moreContext's keys overwite context's keys.
    */
   // eslint-disable-next-line class-methods-use-this
-  data(data, more) {
-    if (!data && !more) return data;
+  context(context, moreContext) {
+    if (!context && !moreContext) return context;
 
-    data = Loggers.dataToObject(data);
-    more = Loggers.dataToObject(more);
+    context = Loggers.toObject(context);
+    moreContext = Loggers.toObject(moreContext);
 
-    if (data && !more) return data;
-    if (more && !data) return more;
+    if (context && !moreContext) return context;
+    if (moreContext && !context) return moreContext;
 
-    const datas = { ...data };
-    Object.assign(datas, more);
-    return datas;
+    context = { ...context }; // Shallow copy
+    return Object.assign(context, moreContext);
   }
 
   /**
@@ -1684,10 +1683,11 @@ ${error}  [error ${myName}]`);
    * @param {*} [tags] See description.
    * @param {*} [message]
    * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    * @returns {object} false or an argument containing new values for tags, message, data, and category
    */
-  transformArgs(tags, message, data, category) {
+  transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
 
     // This method doesn't call this.category(category) so Logger::transformArgs method can't override
@@ -1695,43 +1695,42 @@ ${error}  [error ${myName}]`);
 
     // First argument is an Error object?
     if (tags instanceof Error) {
-      category = data;
-      if (message !== undefined) data = message;
-      else data = undefined;
+      category = context;
+      context = data;
+      data = message;
       message = tags;
       tags = undefined;
     }
     // log() called?
     else if (
-      message === undefined
+      tags instanceof Object && !(tags instanceof Array)
+      && message === undefined
       && data === undefined
+      && context === undefined
       && !category
-      && tags instanceof Object &&
-      !(tags instanceof Array)
     ) {
       // tags can't be an Error instance - it was checked above
       const copy = {...tags};
-      tags = undefined;
       ({ tags } = copy); delete copy.tags;
       ({ message } = copy); delete copy.message;
       ({ category } = copy); delete copy.category;
-      data = copy;
+      ({ data } = copy); delete copy.data;
+      context = copy;
     }
     // logLevel() called?
     else if (
-      data === undefined
+      message instanceof Object && !(message instanceof Error) && !(message instanceof Array)
+      && data === undefined
+      && context === undefined
       && !category
-      && message instanceof Object
-      && !(message instanceof Array)
     ) {
-      if (!(message instanceof Error)) {
-        const copy = {...message};
-        message = undefined;
-        tags = this.tags(tags, copy.tags); delete copy.tags;
-        ({ message } = copy); delete copy.message;
-        ({ category } = copy); delete copy.category;
-        data = copy;
-      }
+      const copy = {...message};
+      message = undefined;
+      tags = this.tags(tags, copy.tags); delete copy.tags;
+      ({ message } = copy); delete copy.message;
+      ({ category } = copy); delete copy.category;
+      ({ data } = copy); delete copy.data;
+      context = copy;
     }
 
     if (message instanceof Object && !Loggers.hasKeys(message)) message = undefined;
@@ -1760,6 +1759,7 @@ ${error}  [error ${myName}]`);
       tags,
       message,
       data,
+      context,
       category,
     });
   }
@@ -2054,17 +2054,19 @@ ${stack}  [error ${myName}]`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} message
    * @param {*} data
+   * @param {*} context
    * @param {Number} depth When falsy, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
    * 1. When the level is in this.props.logStackLevels, the stack is added when falsy
    * 2. The logStack and noLogStack meta tags are applied when falsy
    * @returns {object} A log entry
    */
-  logEntry(info, message, data, depth) {
+  logEntry(info, message, data, context, depth) {
     const entry = new LogEntry();
     const { level } = info;
 
     // Check for message returned by transformArgs as: { message: 'Foo', error: {} }
+    // TODO removed
     if (false && message instanceof Object && !(message instanceof Error) && !(message instanceof Array)) {
       const { message: realMessage } = message;
       if (realMessage) {
@@ -2095,6 +2097,7 @@ ${stack}  [error ${myName}]`);
       commitSha: this.options.commitSha,
       logStack: false, // Set and removed by send()
       stack: false, // Set and removed by send()
+      context: undefined,
       data: undefined,
       transports: info.transports,
     });
@@ -2103,18 +2106,16 @@ ${stack}  [error ${myName}]`);
     const state = {};
     const { tags } = info;
 
-    data = Loggers.dataToObject(data);
-
-    // Mix in category logger's data (isLevelEnabled does this for tags)
+    // Mix in category logger's context (isLevelEnabled does this for tags)
     {
       const cat = this.logger(info.category);
-      if (cat !== this) data = cat.data(data);
+      if (cat !== this) context = cat.context(context);
     }
 
     // Combine message and data
     const items = [];
     if (message !== null && message !== undefined) items.push(message);
-    if (data !== null && data !== undefined) items.push(data);
+    if (data !== null && data !== undefined) items.push(Loggers.toObject(data));
 
     items.forEach((item) => {
       const type = typeof item;
@@ -2158,17 +2159,47 @@ ${stack}  [error ${myName}]`);
       }
     });
 
+    // Move keys in context to meta
+    context = Loggers.toObject(context);
+
+    if (context) {
+      // TODO move to function
+      let foundKey;
+
+      this.props.metaProperties.foreach((key) => {
+        let value = context[key];
+        if (value === undefined && value === null) return;
+
+        if (value instanceof Date) entry[newKey] = value.toISOString();
+        else if (!scalars[typeof value]) return;
+
+        // Copy context
+        if (!foundKey) {
+          context = {...context};
+          foundKey = true;
+        }
+
+        // Rename object key to meta property
+        entry[this.props.meta[key]] = value;
+        delete context[key];
+      });
+
+      if (Loggers.hasKeys(context)) entry.context = context;
+    }
+
     // Copy keys in 'data' to meta
     const { data: entryData } = state;
     if (entryData) {
-      this.props.metaProperties.forEach((key) => {
-        const value = entryData[key];
+      // TODO move to function
+      this.props.metaProperties.items((key) => {
+        let value = context[key];
+        if (value === undefined && value === null) return;
 
-        if (value !== undefined) {
-          key = this.props.meta[key]; // Rename object key to meta property
-          if (scalars[typeof value]) entry[key] = value;
-          else if (value instanceof Date) entry[key] = value.toISOString();
-        }
+        if (value instanceof Date) entry[newKey] = value.toISOString();
+        else if (!scalars[typeof value]) return;
+
+        // Rename object key to meta property
+        entry[this.props.meta[key]] = value;
 
         delete entryData[key];
       });
@@ -2232,13 +2263,14 @@ ${stack}  [error ${myName}]`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} [message]
    * @param {*} [data]
+   * @param {*} [context]
    * @param {Set<Error>} [errors] Errors already logged, to avoid recursion. Not using WeakSet because .size is needed
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, data, errors = new Set(), depth = 0, groupId = undefined) { // eslint wants groupId=
+  send(info, message, data, context, errors = new Set(), depth = 0, groupId = undefined) { // eslint wants groupId=
     const { category, logger, level } = info;
-    const entry = this.logEntry(info, message, data, depth);
+    const entry = this.logEntry(info, message, data, context, depth);
 
     // =============================================================================================================
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
@@ -2362,7 +2394,7 @@ ${stack}  [error ${myName}]`);
     }
 
     // Log child errors
-    if (dataData) this.send(info, dataData, undefined, errors, depth, groupId || entry.id);
+    if (dataData) this.send(info, dataData, undefined, context, errors, depth, groupId || entry.id);
 
     dataMessages.forEach((dataMessage) => this.send(info, dataMessage, data, errors, depth, groupId || entry.id));
   }
@@ -2388,10 +2420,11 @@ ${stack}  [error ${myName}]`);
    * @param {*} [tags] See description
    * @param {*} [message]
    * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    */
-  log(tags, message, data, category) {
-    ({ tags, message, data, category } = this.transformArgs(tags, message, data, category));
+  log(tags, message, data, context, category) {
+    ({ tags, message, data, context, category } = this.transformArgs(tags, message, data, context, category));
     category = this.category(category);
 
     if (this.props.stopped) {
@@ -2406,7 +2439,7 @@ ${util.inspect({
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
       const info = this.isLevelEnabled(tags, category);
-      if (info) this.send(info, message, data);
+      if (info) this.send(info, message, data, context);
     }
   }
 }
@@ -2447,15 +2480,15 @@ Loggers.defaultLevels = {
 };
 
 /**
- * @description This class manages a (tags, data) tuple. Many of its methods also accept tags and data parameters,
- * which, if provided, are combined with the object's corresponding properties. For example, if the object is created
- * with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has almoast the same interface
- * such as error().
+ * @description This class manages a (tags, context, category) tuple. Many of its methods also accept tags and context
+ * parameters, which, if provided, are combined with the object's corresponding properties. For example, if the object
+ * is created with tags = ['apple'] log('banana') will use the tags 'apple' and 'banana.' This class has almost the same
+ * interface as Loggers.
  */
 class Logger {
   /**
    * Private Properties
-   *  {object} props Has keys: tags, data, category, loggers, parent
+   *  {object} props Has keys: tags, context, category, loggers, parent
    */
   /**
    * @private
@@ -2463,10 +2496,10 @@ class Logger {
    * @constructor
    * @param {Loggers|object} parent
    * @param {*} [tags]
-   * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    */
-  constructor(parent, tags, data, category) {
+  constructor(parent, tags, context, category) {
     let loggers;
 
     if (parent instanceof Logger) {
@@ -2476,10 +2509,10 @@ class Logger {
       loggers = parent;
     }
 
-    ({ tags, data, category } = parent.transformArgs(tags, undefined, data, category));
+    ({ tags, context, category } = parent.transformArgs(tags, undefined, context, undefined, category));
     category = parent.category(category);
 
-    this.props = { loggers, parent, tags, data, category };
+    this.props = { loggers, parent, tags, context, category };
 
     // Dynamic logging-level methods
     this.props.loggers.addLevelMethods(this);
@@ -2491,13 +2524,13 @@ class Logger {
    * @description Tranforms arguments sent to log methods, child(), and isLoggerEnabled(). Mixes in the tags, data,
    * and category properties.
    */
-  transformArgs(tags, message, data, category) {
+  transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
-    const ret = this.props.loggers.transformArgs(tags, message, data, category);
+    const ret = this.props.loggers.transformArgs(tags, message, data, context, category);
 
-    // Overlay my tags and data
+    // Overlay my tags and context
     ret.tags = this.tags(ret.tags);
-    ret.data = this.data(ret.data);
+    ret.context = this.context(ret.context);
     ret.category = this.category(ret.category);
 
     return ret;
@@ -2544,12 +2577,12 @@ class Logger {
 
   /**
    * @param {*} [tags]
-   * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    * @returns {object}
    */
-  child(tags, data, category) {
-    return new Logger(this, tags, data, category);
+  child(tags, context, category) {
+    return new Logger(this, tags, context, category);
   }
 
   /**
@@ -2612,24 +2645,29 @@ class Logger {
   }
 
   /**
+   * @param (*) tags
+   * @param {*} moreTags
    * @returns {object}
    */
-  tags(tags, more) {
+  tags(tags, moreTags) {
     const { loggers, tags: myTags } = this.props;
-    if (more) tags = loggers.tags(tags, more);
+    if (moreTags) tags = loggers.tags(tags, moreTags);
     return loggers.tags(myTags, tags);
   }
 
   /**
+   * @param {*} context
+   * @param {*} moreContext
    * @returns {object}
    */
-  data(data, more) {
-    const { loggers, data: myData } = this.props;
-    if (more) data = loggers.data(data, more);
-    return loggers.data(myData, data);
+  context(context, moreContext) {
+    const { loggers, context: myContext } = this.props;
+    if (moreContext) context = loggers.context(context, moreContext);
+    return loggers.context(myContext, context);
   }
 
   /**
+   * @param {string} category
    * @returns {string}
    */
   category(category) {
@@ -2641,10 +2679,11 @@ class Logger {
    * @param {*} [tags]
    * @param {*} [message]
    * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    */
-  log(tags, message, data, category) {
-    this.props.loggers.log(this.transformArgs(tags, message, data, category));
+  log(tags, message, data, context, category) {
+    this.props.loggers.log(this.transformArgs(tags, message, data, context, category));
   }
 }
 
