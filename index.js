@@ -455,11 +455,14 @@ class Loggers extends EventEmitter {
     context = this.toContext(tags, context, category);
     moreContext = this.toContext(tags, moreContext, category);
 
-    if (context && !moreContext) return context;
-    if (moreContext && !context) return moreContext;
+    if (moreContext && !context) {
+      context = moreContext;
+    } else if (context && moreContext) {
+      context = { ...context }; // Shallow copy
+      Object.assign(context, moreContext);
+    }
 
-    context = { ...context }; // Shallow copy
-    return Object.assign(context, moreContext);
+    return JSON.parse(prune(context, this.options.message.depth, this.options.message.arrayLength));
   }
 
   /**
