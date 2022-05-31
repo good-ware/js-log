@@ -1781,7 +1781,6 @@ ${error}  [error ${myName}]`);
       message = undefined;
       tags = this.tags(tags, copy.tags);
       delete copy.tags;
-
       ({ message } = copy);
       delete copy.message;
       // Allow category to be passed as a separate parameter
@@ -1826,10 +1825,10 @@ ${error}  [error ${myName}]`);
 
     return Object.assign(new LogArgs(), {
       tags,
-      message,
-      data,
       context,
       category,
+      message,
+      data,
     });
   }
 
@@ -1857,7 +1856,7 @@ ${stack}  [error ${myName}]`);
     // Mix in category logger's tags
     {
       const cat = this.logger(category);
-      if (cat !== this) tags = cat.tags(tags);
+      if (cat !== this) tags = cat.tags(tags); // TODO testme
     }
 
     this.processCategoryTags(category);
@@ -2069,8 +2068,8 @@ ${stack}  [error ${myName}]`);
    * @private
    * @ignore
    * @description Converts an object to a string
-   * @param {*} value It must be truthy
-   * @returns {string} or a falsy value
+   * @param {*} value null not allowed
+   * @returns {string|boolean} A string or false
    */
   objectToString(value) {
     if (value instanceof Array) {
@@ -2171,47 +2170,60 @@ ${stack}  [error ${myName}]`);
       if (cat !== this) context = cat.context(context);
     }
 
-    // Combine message and data
+    // ==========================================
+    // Send message and/or data to event handlers
+    if (message !== undefined && message != null) {
+      const event = { category: entry.category, context, message, level, tags };
+      try {
+        this.emit('message', event);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('A message event handler threw an exception');
+      }
+      ({ message } = event);
+    }
+
+    if (data !== undefined && data !== null) {
+      const event = { category: entry.category, context, data, level, tags };
+      try {
+        this.emit('data', event);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('A data event handler threw an exception (message)');
+      }
+      ({ data } = event);
+    }
+
+    // Combine message and data to state
     const items = [];
-    items.push(Loggers.toObject(message));
-    items.push(Loggers.toObject(data, 'data'));
+
+    if (message instanceof Object) {
+      items.push(Loggers.toObject(message, 'message'));
+    } else if (message !== undefined && message !== null) {
+      items.push(this.objectToString(message));
+    }
+
+    if (data !== null && data !== undefined) items.push(Loggers.toObject(data, 'data'));
 
     items.forEach((item) => {
-      if (item === undefined || item === null) return;
-
       if (item instanceof Object) {
-        if (item instanceof Array) {
-          const str = this.objectToString(item);
-          if (str) this.copyData(level, tags, state, 'message', str);
-        } else {
-          const event = { category: entry.category, context, data: item, level, tags };
-          try {
-            this.emit('data', event);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('A data event handler threw an exception');
+        // Object.keys is not used in order to get inherited properties
+        // eslint-disable-next-line guard-for-in, no-restricted-syntax
+        for (const key in item) {
+          const value = item[key];
+          // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
+          if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
+            // stack and message are handled below
+            this.copyData(level, tags, state, key, value);
           }
-
-          ({ data: item } = event);
-
-          // Object.keys is not used in order to get inherited properties
-          // eslint-disable-next-line guard-for-in, no-restricted-syntax
-          for (const key in item) {
-            const value = item[key];
-            // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
-            if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
-              // stack and message are handled below
-              this.copyData(level, tags, state, key, value);
-            }
-          }
-
-          const { stack } = item;
-          if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
-
-          // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
-          const str = this.objectToString(item);
-          if (str) this.copyData(level, tags, state, 'message', str);
         }
+
+        const { stack } = item;
+        if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
+
+        // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
+        const str = this.objectToString(item);
+        if (str) this.copyData(level, tags, state, 'message', str);
       } else {
         // Copy message to data where it will be moved to meta
         this.copyData(level, tags, state, 'message', item.toString());
@@ -2487,23 +2499,25 @@ ${stack}  [error ${myName}]`);
    */
   log(...args) {
     const args2 = this.transformArgs(...args);
-    const { tags, message, data, context } = args2;
 
     // transformArgs can not return the default category because Logger calls it
-    const category = this.category(args2.category); // Use default category if not provided
+    args2.category = this.category(args2.category); // Use default category if not provided
 
     if (this.props.stopped) {
+      const { tags, message, data, context, category } = args2;
       // eslint-disable-next-line no-console
       console.error(`Stopped  [error ${myName}]
 ${util.inspect({
   category,
   tags,
+  context,
   message,
   data,
 })}  [error ${myName}]
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
-      const info = this.isLevelEnabled(tags, category);
+      const info = this.isLevelEnabled(args2);
+      const { message, data, context } = args2;
       if (info) this.send(info, message, data, context);
     }
   }
@@ -2596,10 +2610,13 @@ class Logger {
   transformArgs(...args) {
     const { loggers } = this.props;
     const args2 = loggers.transformArgs(...args);
+
     const { message, data } = args2;
+    let { tags } = args2;
 
     // Mix in my tags and context
-    const tags = this.tags(args2.tags);
+
+    tags = this.tags(tags);
     const category = this.category(args2.category);
 
     let { context } = args2;
@@ -2729,7 +2746,7 @@ class Logger {
   tags(...args) {
     const { loggers, tags } = this.props;
     if (tags) args.unshift(tags);
-    return loggers.tags(args);
+    return loggers.tags(...args);
   }
 
   /**
