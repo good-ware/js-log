@@ -84,6 +84,13 @@ const reservedCategories = {
 /**
  * @private
  * @ignore
+ * @description Internal class for identifying the return value of transformArgs()
+ */
+class LogArgs {}
+
+/**
+ * @private
+ * @ignore
  * @description Internal class for identifying log entries that are created by Loggers::logEntry
  */
 class LogEntry {}
@@ -365,7 +372,7 @@ class Loggers extends EventEmitter {
    * @returns {object|undefined}
    */
   static toObject(data, key = 'context') {
-    if (data === undefined || data === null) return undefined;
+    if (data === undefined || data === null) return data;
     if (data.constructor === Object) {
       if (key === 'data' && data instanceof Error) return { error: data };
       if (!Loggers.hasKeys(data)) return undefined;
@@ -381,11 +388,10 @@ class Loggers extends EventEmitter {
    * @returns
    */
   toContext(context) {
-    if (context instanceof Context) return context;
+    if (context instanceof Context || context === null) return context;
     context = Loggers.toObject(context);
 
     if (!context) return context;
-    if (!Loggers.hasKeys(context)) return undefined;
 
     const event = { context };
     this.emit('context', event);
@@ -412,7 +418,6 @@ class Loggers extends EventEmitter {
     // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
     const str = this.objectToString(context);
     if (str) result.message = str;
-
     return result;
   }
 
@@ -422,7 +427,6 @@ class Loggers extends EventEmitter {
    */
   context(...args) {
     let prevCopied;
-
     const context = args.reduce((prev, item) => {
       item = this.toContext(item);
       if (!item) return prev;
@@ -433,7 +437,7 @@ class Loggers extends EventEmitter {
         prevCopied = true;
       }
       return Object.assign(prev, item);
-    });
+    }, undefined);
 
     if (context === undefined || context instanceof Context) return context;
 
@@ -725,6 +729,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
         undefined,
         `Ready: ${service} ${stage} v${version} ${commitSha} [${myName} v${myVersion}]`,
         undefined,
+        undefined,
         reservedCategories.log
       );
     }
@@ -738,15 +743,17 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @param {object} levelObj From this.props.logLevel. Has property logLevel.
    * @param {*} tagsOrMessage
    * @param {*} messageOrData
-   * @param {*} dataOrCategory
+   * @param {*} dataOrContext
+   * @param {*} contextOrCategory
    * @param {*} category
    */
-  static levelLog(logger, levelObj, tagsOrMessage, messageOrData, dataOrCategory, category) {
+  static levelLog(logger, levelObj, tagsOrMessage, messageOrData, dataOrContext, contextOrCategory, category) {
     // tagsOrMessage has tags if it's an array
     if (tagsOrMessage instanceof Array) {
-      logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrData, dataOrCategory, category);
+      logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrData, dataOrContext, contextOrCategory,
+        category);
     } else {
-      logger.log(levelObj, tagsOrMessage, messageOrData, dataOrCategory, category);
+      logger.log(levelObj, tagsOrMessage, messageOrData, dataOrContext, contextOrCategory, category);
     }
   }
 
@@ -797,7 +804,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
       const error = Error(`Invalid datatype provided for category (${type})`);
 
       const stack = error.stack.replace(stripStack, '');
-      this.log('error', stack, undefined, reservedCategories.log);
+      this.log('error', stack, undefined, undefined, reservedCategories.log);
       // eslint-disable-next-line no-console
       console.error(`${stack}  [error ${myName}]`);
 
@@ -1117,7 +1124,7 @@ ${error}  [error ${myName}]`);
     // eslint-disable-next-line no-underscore-dangle
     if (error.__type === 'InvalidParameterException') return;
 
-    this.log(error, undefined, undefined, reservedCategories.cloudWatch);
+    this.log(error, undefined, undefined, undefined, reservedCategories.cloudWatch);
   }
 
   /**
@@ -1311,7 +1318,7 @@ ${error}  [error ${myName}]`)
 
     if (!this.props.restarting && this.options.say.stopping) {
       const { service, stage, version } = this.options;
-      this.log(undefined, `Stopping: ${service} v${version} ${stage}`, undefined, reservedCategories.log);
+      this.log(undefined, `Stopping: ${service} v${version} ${stage}`, undefined, undefined, reservedCategories.log);
     }
 
     this.props.stopping = true;
@@ -1712,8 +1719,7 @@ ${error}  [error ${myName}]`);
    * @returns {object} false or an argument containing new values for tags, message, data, and category
    */
   transformArgs(tags, message, data, context, category) {
-    // This method doesn't call this.category(category) so Logger::transformArgs method can't override
-    // the category
+    if (tags instanceof LogArgs) return tags;
 
     // First argument is an Error object?
     if (tags instanceof Error) {
@@ -1744,7 +1750,12 @@ ${error}  [error ${myName}]`);
       delete copy.data;
       ({ context } = copy);
       delete copy.context;
-      context = [copy, context];
+      if (Loggers.hasKeys(copy)) {
+        if (context !== undefined && context !== null) context = [copy, context];
+        else context = [copy];
+      } else if (context !== undefined && context !== null) {
+        context = [context];
+      }
     } else if (
       // logLevel() called
       message instanceof Object &&
@@ -1767,10 +1778,15 @@ ${error}  [error ${myName}]`);
       delete copy.data;
       ({ context } = copy);
       delete copy.context;
-      context = [copy, context];
+      if (Loggers.hasKeys(copy)) {
+        if (context !== undefined) context = [copy, context];
+        else context = [copy];
+      } else if (context !== undefined && context !== null) {
+        context = [context];
+      }
     } else {
       tags = this.tags(tags);
-      context = [context];
+      if (context !== undefined && context !== null) context = [context];
     }
 
     if (message instanceof Object && !Loggers.hasKeys(message)) message = undefined;
@@ -1795,13 +1811,15 @@ ${error}  [error ${myName}]`);
       tags[addErrorSymbol] = true;
     }
 
-    return {
+    category = this.category(category); // Use default category if not provided
+
+    return Object.assign(new LogArgs(), {
       tags,
       message,
       data,
       context,
       category,
-    };
+    });
   }
 
   /**
@@ -1821,7 +1839,6 @@ ${stack}  [error ${myName}]`);
     }
 
     ({ tags, category } = this.transformArgs({ tags, category }));
-    category = this.category(category);
 
     // Mix in category logger's tags
     {
@@ -2296,12 +2313,13 @@ ${stack}  [error ${myName}]`);
    * @param {String} [groupId]
    */
   send(info, message, data, context, errors = new Set(), depth = 0, groupId = undefined) {
+    if (context instanceof Array) context = this.context(...context);
     // eslint wants groupId=
     const { category, logger, level } = info;
 
     const entry = this.logEntry(info, message, data, context, depth);
 
-    // =============================================================================================================
+    // ==========================================================================================================
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
 
     // If message is an Error, don't log it again
@@ -2321,7 +2339,6 @@ ${stack}  [error ${myName}]`);
     if (dataData) {
       delete entry.dataData;
       if (!addData) dataData = undefined;
-      // if (!addData || !Loggers.hasKeys(dataData) || !addData) dataData = undefined;
     }
 
     let firstError;
@@ -2455,8 +2472,7 @@ ${stack}  [error ${myName}]`);
    */
   log(...args) {
     const args2 = this.transformArgs(...args);
-    const { tags, message, data, context } = args2;
-    const category = this.category(args2.category);
+    const { tags, message, data, context, category } = args2;
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
@@ -2469,8 +2485,8 @@ ${util.inspect({
 })}  [error ${myName}]
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
-      const info = this.isLevelEnabled({ tags, category });
-      if (info) this.send(info, message, data, this.context(context));
+      const info = this.isLevelEnabled(tags, category);
+      if (info) this.send(info, message, data, context);
     }
   }
 }
@@ -2541,7 +2557,7 @@ class Logger {
     }
 
     ({ tags, context, category } = parent.transformArgs({ tags, context, category }));
-    context = loggers.context(context);
+    if (context) context = loggers.context(...context);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2555,19 +2571,23 @@ class Logger {
    * @description Tranforms arguments sent to log methods, child(), and isLoggerEnabled(). Mixes in the tags, data,
    * and category properties.
    */
-  transformArgs(tags, message, data, context, category) {
+  transformArgs(...args) {
     const { loggers } = this.props;
-
-    ({ tags, message, data, context, category } = loggers.transformArgs(tags, message, data, context, category));
+    const args2 = loggers.transformArgs(...args);
+    const { message, data } = args2;
 
     // Overlay my tags and context
-    tags = this.tags(tags);
-    category = this.category(category);
+    const tags = this.tags(args2.tags);
+    const category = this.category(args2.category); // Override the category
 
+    let { context } = args2;
     const { context: myContext } = this.props;
+    if (myContext) { // It's either an object or falsy
+      if (context) context.unshift(myContext);
+      else context = [myContext];
+    }
 
-    if (myContext) context.unshift(myContext);
-    return { tags, message, data, context, category };
+    return Object.assign(new LogArgs(), { tags, message, data, context, category });
   }
 
   /**
@@ -2668,7 +2688,8 @@ class Logger {
    * @returns {boolean}
    */
   isLevelEnabled(tags, category) {
-    return this.props.loggers.isLevelEnabled(this.transformArgs({ tags, category }));
+    ({ tags, category } = this.transformArgs({ tags, category }));
+    return this.props.loggers.isLevelEnabled(tags, category);
   }
 
   /**
@@ -2693,6 +2714,7 @@ class Logger {
    * @returns {object}
    */
   context(...args) {
+
     const { loggers, context } = this.props;
     if (context) args.unshift(context);
     return loggers.context(args);
