@@ -261,9 +261,7 @@ class Loggers extends EventEmitter {
     });
 
     // Process category tag switches
-    if (!this.processCategoryTags('default')) {
-      props.categoryTags.default = { on: true };
-    }
+    if (!this.processCategoryTags('default')) props.categoryTags.default = { on: true };
 
     // Set props.logStackLevels
     {
@@ -340,6 +338,7 @@ class Loggers extends EventEmitter {
 
   /**
    * @description Combines tags into a single tags object
+   * @param {Array} [args]
    * @returns {object}
    */
   // eslint-disable-next-line class-methods-use-this
@@ -373,27 +372,32 @@ class Loggers extends EventEmitter {
    */
   static toObject(data, key = 'context') {
     if (data === undefined || data === null) return data;
-    if (data.constructor === Object) {
+    if (typeof data === 'function') return undefined;
+
+    if (data instanceof Object && !(data instanceof Array)) {
       if (key === 'data' && data instanceof Error) return { error: data };
       if (!Loggers.hasKeys(data)) return undefined;
       return data;
     }
+
     return { [key]: data };
   }
 
   /**
    * @private
    * @ignore
+   * @param {object} tags
+   * @param {string} category
    * @param {*} context
    * @returns
    */
-  toContext(context) {
-    if (context instanceof Context || context === null) return context;
+  toContext(tags, category, context) {
+    if (context instanceof Context) return context;
     context = Loggers.toObject(context);
 
     if (!context) return context;
 
-    const event = { context };
+    const event = { tags, category, context };
     this.emit('context', event);
     ({ context } = event);
 
@@ -423,19 +427,28 @@ class Loggers extends EventEmitter {
 
   /**
    * @description Combines multiple contexts into one context object
+   * @param {*} [tags]
+   * @param {string} [category]
+   * @param {Array} [args]
    * @returns {object}
    */
-  context(...args) {
+  context(tags, category, ...args) {
+    tags = this.tags(tags);
+    category = this.category(category);
+
     let prevCopied;
     const context = args.reduce((prev, item) => {
-      item = this.toContext(item);
+      item = this.toContext(tags, category, item);
+
       if (!item) return prev;
       if (!prev) return item;
+
       if (!prevCopied) {
         // Make a shallow copy
         prev = { ...prev };
         prevCopied = true;
       }
+
       return Object.assign(prev, item);
     }, undefined);
 
@@ -457,7 +470,7 @@ class Loggers extends EventEmitter {
    */
   static hasKeys(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
-    if (!object || object.constructor !== Object) return false;
+    if (!object || !(object instanceof Object) || object instanceof Array) return false;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
     for (const prop in object) return true;
     return false;
@@ -1733,8 +1746,7 @@ ${error}  [error ${myName}]`);
       !(tags instanceof Array) &&
       message === undefined &&
       data === undefined &&
-      context === undefined &&
-      !category
+      context === undefined
     ) {
       // log() called?
       // tags can't be an Error instance - it was checked above
@@ -1744,7 +1756,8 @@ ${error}  [error ${myName}]`);
       tags = this.tags(tags);
       ({ message } = copy);
       delete copy.message;
-      ({ category } = copy);
+      // Allow category to be passed as a separate parameter
+      if (copy.category) ({ category } = copy);
       delete copy.category;
       ({ data } = copy);
       delete copy.data;
@@ -1762,8 +1775,7 @@ ${error}  [error ${myName}]`);
       !(message instanceof Error) &&
       !(message instanceof Array) &&
       data === undefined &&
-      context === undefined &&
-      !category
+      context === undefined
     ) {
       const copy = { ...message };
       message = undefined;
@@ -1772,7 +1784,8 @@ ${error}  [error ${myName}]`);
 
       ({ message } = copy);
       delete copy.message;
-      ({ category } = copy);
+      // Allow category to be passed as a separate parameter
+      if (copy.category) ({ category } = copy);
       delete copy.category;
       ({ data } = copy);
       delete copy.data;
@@ -1811,8 +1824,6 @@ ${error}  [error ${myName}]`);
       tags[addErrorSymbol] = true;
     }
 
-    category = this.category(category); // Use default category if not provided
-
     return Object.assign(new LogArgs(), {
       tags,
       message,
@@ -1824,12 +1835,12 @@ ${error}  [error ${myName}]`);
 
   /**
    * @description Determines whether a log entry will be sent to a logger
-   * @param {*} [tags]
+   * @param {*} [tagsOrNamedParameters]
    * @param {string} [category]
    * @returns {object} If the message will be logged, returns an object with properties tags, logger, level, transports,
    * and category. Otherwise, returns false.
    */
-  isLevelEnabled(tags, category) {
+  isLevelEnabled(tagsOrNamedParameters, category) {
     if (this.props.stopped) {
       const stack = new Error().stack.replace(stripStack, '');
       // eslint-disable-next-line no-console
@@ -1838,7 +1849,10 @@ ${stack}  [error ${myName}]`);
       return false;
     }
 
-    ({ tags, category } = this.transformArgs({ tags, category }));
+    let tags;
+    ({ tags, category } = this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
+    // transformArgs can not return the default category because Logger calls it
+    category = this.category(category); // Use default category if not provided
 
     // Mix in category logger's tags
     {
@@ -2045,6 +2059,7 @@ ${stack}  [error ${myName}]`);
 
   /**
    * @description Alias for isLevelEnabled
+   * @param {Array} [args]
    */
   levelEnabled(...args) {
     return this.levelEnabled(...args);
@@ -2111,7 +2126,7 @@ ${stack}  [error ${myName}]`);
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} message
    * @param {*} data
-   * @param {*} context
+   * @param {Array} context
    * @param {Number} depth When falsy, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
    * 1. When the level is in this.props.logStackLevels, the stack is added when falsy
@@ -2313,9 +2328,10 @@ ${stack}  [error ${myName}]`);
    * @param {String} [groupId]
    */
   send(info, message, data, context, errors = new Set(), depth = 0, groupId = undefined) {
-    if (context instanceof Array) context = this.context(...context);
     // eslint wants groupId=
-    const { category, logger, level } = info;
+    const { category, tags, logger, level } = info;
+
+    if (context instanceof Array) context = this.context(tags, category, ...context);
 
     const entry = this.logEntry(info, message, data, context, depth);
 
@@ -2449,6 +2465,7 @@ ${stack}  [error ${myName}]`);
 
   /**
    * @description Sends a log entry using the default level
+   * @param {Array} [args]
    */
   default(...args) {
     Loggers.levelLog(this, this.props.logLevel.default, ...args);
@@ -2472,7 +2489,10 @@ ${stack}  [error ${myName}]`);
    */
   log(...args) {
     const args2 = this.transformArgs(...args);
-    const { tags, message, data, context, category } = args2;
+    const { tags, message, data, context } = args2;
+
+    // transformArgs can not return the default category because Logger calls it
+    const category = this.category(args2.category); // Use default category if not provided
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
@@ -2556,7 +2576,10 @@ class Logger {
       loggers = parent;
     }
 
-    ({ tags, context, category } = parent.transformArgs({ tags, context, category }));
+    ({ tags, context, category } = parent.transformArgs(tags, undefined, undefined, context, category));
+
+    // transformArgs can not return the default category because Logger calls it
+    category = loggers.category(category); // Use default category if not provided
     if (context) context = loggers.context(...context);
 
     this.props = { loggers, parent, tags, context, category };
@@ -2568,6 +2591,7 @@ class Logger {
   /**
    * @private
    * @ignore
+   * @param {Array} [args]
    * @description Tranforms arguments sent to log methods, child(), and isLoggerEnabled(). Mixes in the tags, data,
    * and category properties.
    */
@@ -2576,9 +2600,9 @@ class Logger {
     const args2 = loggers.transformArgs(...args);
     const { message, data } = args2;
 
-    // Overlay my tags and context
+    // Mix in my tags and context
     const tags = this.tags(args2.tags);
-    const category = this.category(args2.category); // Override the category
+    const category = this.category(args2.category);
 
     let { context } = args2;
     const { context: myContext } = this.props;
@@ -2683,12 +2707,13 @@ class Logger {
   }
 
   /**
-   * @param {*} [tags]
+   * @param {*} [tagsOrNamedParameters]
    * @param {string} [category]
    * @returns {boolean}
    */
-  isLevelEnabled(tags, category) {
-    ({ tags, category } = this.transformArgs({ tags, category }));
+  isLevelEnabled(tagsOrNamedParameters, category) {
+    let tags;
+    ({ tags, category } = this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
     return this.props.loggers.isLevelEnabled(tags, category);
   }
 
@@ -2711,22 +2736,23 @@ class Logger {
   }
 
   /**
-   * @returns {object}
-   */
-  context(...args) {
-
-    const { loggers, context } = this.props;
-    if (context) args.unshift(context);
-    return loggers.context(args);
-  }
-
-  /**
    * @param {string} category
    * @returns {string}
    */
   category(category) {
     if (category) return this.props.loggers.category(category);
     return this.props.category;
+  }
+
+  /**
+   * @param {*} [tags]
+   * @param {string} [category]
+   * @returns {object}
+   */
+  context(tags, category, ...args) {
+    const { loggers, context } = this.props;
+    if (context) args.unshift(context);
+    return loggers.context(this.tags(tags), this.category(category), ...args);
   }
 
   /**
