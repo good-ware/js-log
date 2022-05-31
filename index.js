@@ -371,12 +371,11 @@ class Loggers extends EventEmitter {
    * @returns {object|undefined}
    */
   static toObject(data, key = 'context') {
-    if (data === undefined || data === null) return data;
+    if (data === null || data === undefined) return data;
     if (typeof data === 'function') return undefined;
 
     if (data instanceof Object && !(data instanceof Array)) {
       if (key === 'data' && data instanceof Error) return { error: data };
-      if (!Loggers.hasKeys(data)) return undefined;
       return data;
     }
 
@@ -422,7 +421,8 @@ class Loggers extends EventEmitter {
     // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
     const str = this.objectToString(context);
     if (str) result.message = str;
-    return result;
+
+    return Loggers.hasKeys(result) ? result:undefined;
   }
 
   /**
@@ -1748,7 +1748,7 @@ ${error}  [error ${myName}]`);
       data === undefined &&
       context === undefined
     ) {
-      // log() called?
+      // log() called
       // tags can't be an Error instance - it was checked above
       const copy = { ...tags };
       ({ tags } = copy);
@@ -1802,8 +1802,8 @@ ${error}  [error ${myName}]`);
       if (context !== undefined && context !== null) context = [context];
     }
 
-    if (message instanceof Object && !Loggers.hasKeys(message)) message = undefined;
-    if (data instanceof Object && !Loggers.hasKeys(data)) data = undefined;
+    if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
+    if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
 
     // info(new Error(), 'Message') is the same as info('Message', new Error())
     if (scalars[typeof data] && message instanceof Object) {
@@ -2173,13 +2173,11 @@ ${stack}  [error ${myName}]`);
 
     // Combine message and data
     const items = [];
-    if (message !== null && message !== undefined) items.push(message);
-    if (data !== null && data !== undefined) items.push(Loggers.toObject(data, 'data'));
-    context = Loggers.toObject(context);
+    items.push(Loggers.toObject(message));
+    items.push(Loggers.toObject(data, 'data'));
 
     items.forEach((item) => {
-      const type = typeof item;
-      if (type === 'function') return;
+      if (item === undefined || item === null) return;
 
       if (item instanceof Object) {
         if (item instanceof Array) {
@@ -2216,7 +2214,7 @@ ${stack}  [error ${myName}]`);
         }
       } else {
         // Copy message to data where it will be moved to meta
-        this.copyData(level, tags, state, 'message', item === null || item === undefined ? null : item.toString());
+        this.copyData(level, tags, state, 'message', item.toString());
       }
     });
 
@@ -2712,9 +2710,8 @@ class Logger {
    * @returns {boolean}
    */
   isLevelEnabled(tagsOrNamedParameters, category) {
-    let tags;
-    ({ tags, category } = this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
-    return this.props.loggers.isLevelEnabled(tags, category);
+    return this.props.loggers.isLevelEnabled(
+      this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
   }
 
   /**
