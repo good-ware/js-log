@@ -2359,6 +2359,14 @@ ${stack}  [error ${myName}]`);
     if (dataData) {
       delete entry.dataData;
       if (!addData) dataData = undefined;
+      // else {
+        // dataData might have errors from data - remove them so overlap doesn't happen again       
+        // eslint-disable-next-line guard-for-in, no-restricted-syntax
+        // for (const key in dataData) {
+        //  const value = dataData[key];
+        //  if (value instanceof Error) errors.add(value);
+        // }
+      // }
     }
 
     let firstError;
@@ -2422,7 +2430,7 @@ ${stack}  [error ${myName}]`);
       }
     }
 
-    const noMessage = !('message' in entry) && !('data' in entry);
+    const noMessage = !('message' in entry) && !('data' in entry) && !('context' in entry);
 
     ++depth;
 
