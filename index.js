@@ -1753,7 +1753,6 @@ ${error}  [error ${myName}]`);
       const copy = { ...tags };
       ({ tags } = copy);
       delete copy.tags;
-      tags = this.tags(tags);
       ({ message } = copy);
       delete copy.message;
       // Allow category to be passed as a separate parameter
@@ -1796,10 +1795,11 @@ ${error}  [error ${myName}]`);
       } else if (context !== undefined && context !== null) {
         context = [context];
       }
-    } else {
-      tags = this.tags(tags);
-      if (context !== undefined && context !== null) context = [context];
+    } else if (context !== undefined && context !== null) {
+      context = [context];
     }
+
+    tags = this.tags(tags);
 
     if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
     if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
@@ -1810,17 +1810,6 @@ ${error}  [error ${myName}]`);
       const x = data;
       data = message;
       message = x;
-    }
-
-    // Add 'error' tag if an error was provided in message or data
-    if (
-      !('error' in tags) && // can turn it off with false
-      (message instanceof Error ||
-        (message instanceof Object && message.error instanceof Error) ||
-        data instanceof Error ||
-        (data instanceof Object && data.error instanceof Error))
-    ) {
-      tags[addErrorSymbol] = true;
     }
 
     return Object.assign(new LogArgs(), {
@@ -2284,7 +2273,12 @@ ${stack}  [error ${myName}]`);
     }
 
     // If null is passed as message, log 'null'
-    if (message === null) entry.message = null;
+    if (message === null) {
+      entry.message = null;
+    } else if (entry.message === undefined) {
+      // If entry.message doesn't exist or is undefined, the tag is output
+      entry.message = '';
+    }
 
     if (state.dataData) entry.dataData = state.dataData;
 
@@ -2503,8 +2497,20 @@ ${stack}  [error ${myName}]`);
     // transformArgs can not return the default category because Logger calls it
     args2.category = this.category(args2.category); // Use default category if not provided
 
+    const { tags, message, data, context, category } = args2;
+
+    // Add 'error' tag if an error was provided in message or data
+    if (
+      !('error' in tags) && // can turn it off with false
+      (message instanceof Error ||
+        (message instanceof Object && message.error instanceof Error) ||
+        data instanceof Error ||
+        (data instanceof Object && data.error instanceof Error))
+    ) {
+      tags[addErrorSymbol] = true;
+    }
+
     if (this.props.stopped) {
-      const { tags, message, data, context, category } = args2;
       // eslint-disable-next-line no-console
       console.error(`Stopped  [error ${myName}]
 ${util.inspect({
@@ -2517,7 +2523,6 @@ ${util.inspect({
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
       const info = this.isLevelEnabled(args2);
-      const { message, data, context } = args2;
       if (info) this.send(info, message, data, context);
     }
   }

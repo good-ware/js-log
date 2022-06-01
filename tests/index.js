@@ -58,7 +58,6 @@ async function go(colors) {
   // config.logging.logDirectoryNotFound = true;
 
   loggers = new Loggers(config.logging);
-
   const hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
 
   // =====================
@@ -72,8 +71,25 @@ async function go(colors) {
   // Ready for testing
   //
 
+//console.log(loggers.tags('error'));
+//console.log(loggers.tags('error', 'five'));
+//console.log(loggers.tags('error', ['five']));
+//console.log(loggers.tags('error', {five: 5}));
+//    console.log(loggers.context(5, {a:{b: 3}}));
+// loggers.context(tags, category, null, undefined)
+
+// loggers.context({a: 5,d: {a: 5}}, {b:6}, 8, [2], {a: 2}));
+
+  // loggers.log('info', {message: 'hello', data: {a: 5}, context: {}});
+  // loggers.log('info', 'hello');
+  // loggers.log('info', 'hello', null);
+  // loggers.log('info', null);
+  // loggers.log('info', {context: null, data: null});
   // loggers.log('info', {message: 'hello', data: {a: 5}, context: 5, a:{b: 3}});
   // loggers.info({ message: 'Foo', context: new Error('I am a message'), });
+  // loggers.log(new Error('1'), {a: 5});
+  loggers.log('info', {a: 6}, {a: 5});
+  process.exit()
   // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
   // loggers.log('info', '', new Error('x'))
   // loggers.log(null, undefined, new Error('x'))
@@ -443,7 +459,7 @@ async function go(colors) {
   {
     logger.error({ tags: ['d'], a: 1, b: 2, data: { d: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
-    process.exit()
+    process.exit();
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
