@@ -367,11 +367,12 @@ class Loggers extends EventEmitter {
    * @ignore
    * @description Converts a value to an object
    * @param {*} [data]
-   * @param {string} [key] Either data or context, defaults to context. The key name to use when data is not an object.
+   * @param {string} [key] message, data, or context, defaults to context. The key name to use when data is not an
+   *   object.
    * @returns {object|undefined}
    */
   static toObject(data, key = 'context') {
-    if (data === null || data === undefined) return data;
+    if (data === undefined) return data;
     if (typeof data === 'function') return undefined;
 
     if (data instanceof Object && !(data instanceof Array)) {
@@ -385,20 +386,21 @@ class Loggers extends EventEmitter {
   /**
    * @private
    * @ignore
+   * @param {string} [level]
    * @param {object} tags
    * @param {string} category
    * @param {*} context
    * @returns
    */
-  toContext(tags, category, context) {
+  toContext(level, tags, category, context) {
     if (context instanceof Context) return context;
     context = Loggers.toObject(context);
 
     if (!context) return context;
 
-    const event = { tags, category, context };
-    this.emit('context', event);
-    ({ context } = event);
+    const event = { level, tags, category, data: context, type: 'context' };
+    this.emit('redact', event);
+    ({ data: context } = event);
 
     // Redact
     const result = {};
@@ -427,18 +429,20 @@ class Loggers extends EventEmitter {
 
   /**
    * @description Combines multiple contexts into one context object
+   * @param {string} [level]
+   * @param {string} [tags]
    * @param {*} [tags]
    * @param {string} [category]
    * @param {Array} [args]
    * @returns {object}
    */
-  context(tags, category, ...args) {
+  context(level, tags, category, ...args) {
     tags = this.tags(tags);
     category = this.category(category);
 
     let prevCopied;
     const context = args.reduce((prev, item) => {
-      item = this.toContext(tags, category, item);
+      item = this.toContext(level, tags, category, item);
 
       if (!item) return prev;
       if (!prev) return item;
@@ -456,7 +460,7 @@ class Loggers extends EventEmitter {
 
     return Object.assign(
       new Context(),
-      JSON.parse(prune(context, this.options.message.depth, this.options.message.arrayLength))
+      {...context}
     );
   }
 
@@ -2155,27 +2159,28 @@ ${stack}  [error ${myName}]`);
 
     // Mix in category logger's context (isLevelEnabled does this for tags)
     {
-      const cat = this.logger(info.category);
-      if (cat !== this) context = cat.context(context);
+      const { category } = info;
+      const cat = this.logger(category);
+      if (cat !== this) context = cat.context(level, tags, category, context);
     }
 
     // ==========================================
     // Send message and/or data to event handlers
     if (message !== undefined && message != null) {
-      const event = { category: entry.category, context, message, level, tags };
+      const event = { category: entry.category, context, data: message, level, tags, type: 'message' };
       try {
-        this.emit('message', event);
+        this.emit('redact', event);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('A message event handler threw an exception');
       }
-      ({ message } = event);
+      ({ data: message } = event);
     }
 
     if (data !== undefined && data !== null) {
-      const event = { category: entry.category, context, data, level, tags };
+      const event = { category: entry.category, context, data, level, tags, type: 'data' };
       try {
-        this.emit('data', event);
+        this.emit('redact', event);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('A data event handler threw an exception (message)');
@@ -2186,13 +2191,16 @@ ${stack}  [error ${myName}]`);
     // Combine message and data to state
     const items = [];
 
-    if (message instanceof Object) {
-      items.push(Loggers.toObject(message, 'message'));
-    } else if (message !== undefined && message !== null) {
-      items.push(this.objectToString(message));
+    if (message !== undefined) {
+      if (typeof message === 'object') {
+        // includes null
+        items.push(Loggers.toObject(message, 'message'));
+      } else if (typeof message !== 'function') {
+        items.push(this.objectToString(message));
+      }
     }
 
-    if (data !== null && data !== undefined) items.push(Loggers.toObject(data, 'data'));
+    if (data !== undefined && typeof data !== 'function') items.push(Loggers.toObject(data, 'data'));
 
     items.forEach((item) => {
       if (item instanceof Object) {
@@ -2212,20 +2220,24 @@ ${stack}  [error ${myName}]`);
 
         // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
         const str = this.objectToString(item);
-        if (str) this.copyData(level, tags, state, 'message', str);
+        if (str) {
+          this.copyData(level, tags, state, 'message', str);
+        } else if ('message' in item) {
+          this.copyData(level, tags, state, 'message', item.message);
+        }
       } else {
         // Copy message to data where it will be moved to meta
         this.copyData(level, tags, state, 'message', item.toString());
       }
     });
 
+    // ============================
     // Move keys in context to meta
     if (context) {
       let foundKey;
 
       this.props.metaProperties.forEach((key) => {
         let value = context[key];
-        if (value === undefined && value === null) return;
 
         if (value instanceof Date) value = value.toISOString();
         else if (!scalars[typeof value]) return;
@@ -2246,15 +2258,15 @@ ${stack}  [error ${myName}]`);
       }
     }
 
-    // Copy keys in 'data' to meta
+    // =========================
+    // Move keys in data to meta
     const { data: entryData } = state;
     if (entryData) {
       this.props.metaProperties.forEach((key) => {
         let value = entryData[key];
-        if (value === undefined && value === null) return;
 
         if (value instanceof Date) value = value.toISOString();
-        else if (!scalars[typeof value]) return;
+        else if (value !== null && !scalars[typeof value]) return;
 
         // Rename object key to meta property
         entry[this.props.meta[key]] = value;
@@ -2272,13 +2284,8 @@ ${stack}  [error ${myName}]`);
       if (value === undefined) delete entry[key];
     }
 
-    // If null is passed as message, log 'null'
-    if (message === null) {
-      entry.message = null;
-    } else if (entry.message === undefined) {
-      // If entry.message doesn't exist or is undefined, the tag is output
-      entry.message = '';
-    }
+    // If entry.message doesn't exist or is undefined, '' is the message instead of the level
+    if (entry.message === undefined) entry.message = '';
 
     if (state.dataData) entry.dataData = state.dataData;
 
@@ -2359,14 +2366,6 @@ ${stack}  [error ${myName}]`);
     if (dataData) {
       delete entry.dataData;
       if (!addData) dataData = undefined;
-      // else {
-        // dataData might have errors from data - remove them so overlap doesn't happen again       
-        // eslint-disable-next-line guard-for-in, no-restricted-syntax
-        // for (const key in dataData) {
-        //  const value = dataData[key];
-        //  if (value instanceof Error) errors.add(value);
-        // }
-      // }
     }
 
     let firstError;
@@ -2772,14 +2771,15 @@ class Logger {
   }
 
   /**
+   * @param {string} [level]
    * @param {*} [tags]
    * @param {string} [category]
    * @returns {object}
    */
-  context(tags, category, ...args) {
+  context(level, tags, category, ...args) {
     const { loggers, context } = this.props;
     if (context) args.unshift(context);
-    return loggers.context(this.tags(tags), this.category(category), ...args);
+    return loggers.context(level, this.tags(tags), this.category(category), ...args);
   }
 
   /**
