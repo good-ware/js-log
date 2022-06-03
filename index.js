@@ -398,7 +398,9 @@ class Loggers extends EventEmitter {
 
     if (!context) return context;
 
-    const event = { level, tags, category, data: context, type: 'context' };
+    const event = { tags, category, arg: context, type: 'context' };
+    if (level) event.level = level;
+
     this.emit('redact', event);
     ({ data: context } = event);
 
@@ -2167,7 +2169,7 @@ ${stack}  [error ${myName}]`);
     // ==========================================
     // Send message and/or data to event handlers
     if (message !== undefined && message != null) {
-      const event = { category: entry.category, context, data: message, level, tags, type: 'message' };
+      const event = { category: entry.category, context, arg: message, level, tags, type: 'message' };
       try {
         this.emit('redact', event);
       } catch (error) {
@@ -2178,7 +2180,7 @@ ${stack}  [error ${myName}]`);
     }
 
     if (data !== undefined && data !== null) {
-      const event = { category: entry.category, context, data, level, tags, type: 'data' };
+      const event = { category: entry.category, context, arg: data, level, tags, type: 'data' };
       try {
         this.emit('redact', event);
       } catch (error) {
