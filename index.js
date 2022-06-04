@@ -401,8 +401,13 @@ class Loggers extends EventEmitter {
     const event = { tags, category, arg: context, type: 'context' };
     if (level) event.level = level;
 
-    this.emit('redact', event);
-    ({ data: context } = event);
+    try {
+      this.emit('redact', event);
+      ({ arg: context } = event);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Redact context event handler failed', error);
+    }
 
     // Redact
     const result = {};
@@ -2172,22 +2177,22 @@ ${stack}  [error ${myName}]`);
       const event = { category: entry.category, context, arg: message, level, tags, type: 'message' };
       try {
         this.emit('redact', event);
+        ({ arg: message } = event);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('A message event handler threw an exception');
+        console.error('Redact message event handler failed', error);
       }
-      ({ data: message } = event);
     }
 
     if (data !== undefined && data !== null) {
       const event = { category: entry.category, context, arg: data, level, tags, type: 'data' };
       try {
         this.emit('redact', event);
+        ({ arg: data } = event);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('A data event handler threw an exception (message)');
+        console.error('Redact data event handler failed', error);
       }
-      ({ data } = event);
     }
 
     // Combine message and data to state
