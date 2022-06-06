@@ -443,6 +443,17 @@ class Loggers extends EventEmitter {
   }
 
   /**
+   * Accessor for context 
+   * @returns {object}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  context() {
+    return {};
+  }
+
+  /**
+   * @private
+   * @ignore
    * @description Combines multiple contexts into one context object
    * @param {string} [level]
    * @param {string} [tags]
@@ -451,7 +462,7 @@ class Loggers extends EventEmitter {
    * @param {Array} [args]
    * @returns {object}
    */
-  context(level, tags, category, ...args) {
+  mergeContext(level, tags, category, ...args) {
     tags = this.tags(tags);
     category = this.category(category);
 
@@ -1837,7 +1848,7 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @description Determines whether a log entry will be sent to a logger
+   * @escription Determines whether a log entry will be sent to a logger
    * @param {*} [tagsOrNamedParameters]
    * @param {string} [category]
    * @returns {object} If the message will be logged, returns an object with properties tags, logger, level, transports,
@@ -1858,6 +1869,8 @@ ${stack}  [error ${myName}]`);
     category = this.category(category); // Use default category if not provided
 
     // Mix in category logger's tags
+    // Because child loggers can be assigned to to this.logger(category)
+    // (search for Mix in)
     {
       const cat = this.logger(category);
       if (cat !== this) tags = cat.tags(tags); // TODO testme
@@ -2169,10 +2182,12 @@ ${stack}  [error ${myName}]`);
     const state = {};
 
     // Mix in category logger's context (isLevelEnabled does this for tags)
+    // Because child loggers can be assigned to to this.logger(category)
+    // (search for Mix in)
     {
       const { category } = info;
       const cat = this.logger(category);
-      if (cat !== this) context = cat.context(level, tags, category, context);
+      if (cat !== this) context = cat.mergeContext(level, tags, category, context);
     }
 
     // ==========================================
@@ -2348,7 +2363,7 @@ ${stack}  [error ${myName}]`);
     // eslint wants groupId=
     const { category, tags, logger, level } = info;
 
-    if (context instanceof Array) context = this.context(level, tags, category, ...context);
+    if (context instanceof Array) context = this.mergeContext(level, tags, category, ...context);
 
     const entry = this.logEntry(info, message, data, context, depth);
 
@@ -2609,7 +2624,7 @@ class Logger {
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
-    if (context) context = loggers.context(...context);
+    if (context) context = loggers.mergeContext(...context);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2776,15 +2791,25 @@ class Logger {
   }
 
   /**
+   * @private
+   * @ignore
    * @param {string} [level]
    * @param {*} [tags]
    * @param {string} [category]
    * @returns {object}
    */
-  context(level, tags, category, ...args) {
+  mergeContext(level, tags, category, ...args) {
     const { loggers, context } = this.props;
     if (context) args.unshift(context);
     return loggers.context(level, this.tags(tags), this.category(category), ...args);
+  }
+
+  /**
+   * Accessor for context 
+   * @returns {object}
+   */
+  context() {
+    return this.context;
   }
 
   /**

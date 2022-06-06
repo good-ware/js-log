@@ -10,7 +10,7 @@
 
 ## Requirements
 
-If you plan to write to AWS CloudWatch Logs, NodeJS 10 (LTS/dubnium) or higher is required. Otherwise, any LTS version is sufficent.
+If you plan to write to AWS CloudWatch Logs, NodeJS 12 or higher is required (however, despite the warnings from AWS SDK 2.0, NodeJS 8 seems to work fine). Otherwise, any LTS version is sufficent.
 
 ## Installation
 
@@ -24,14 +24,19 @@ This package extends Winston3 with additional features such as tag-based filteri
 
 ## Features
 
-1. HAPI-style tags: Log entries can be filtered by tags on a per-transport basis
-2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
-3. Safely logs large objects and arrays - even those with circular references 3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
-4. Promotes object properties to a configurable subset of 'meta' properties
-5. Reliable flushing
-6. Does not interfere with other code that uses Winston
-7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
-8. Transformation of logged data via the log event
+1. In addition to a message (an object or scalar) a log entry may consist of tags (an array of strings), context (an object or scalar), and data (an object or scalar). message, and data may also be arrays.
+2. Log entries can be filtered by tags on a per-transport basis
+3. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
+4. Safely logs large objects and arrays - even those with circular references
+4.1. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
+5. Promotes object properties to a configurable subset of 'meta' properties
+6. On-demand flushing to CloudWatch Logs
+7. Does not interfere with other code that uses Winston
+8. Transformation/redaction of logged objects via events
+
+## Performance
+
+This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
 
 ## Transports Supported
 
@@ -75,12 +80,12 @@ One Winston logger is created for each unique category name. winstonLogger() ret
 
 ### Child Loggers (flyweight)
 
-logger() and child() return objects with their own tags, data, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
+logger() and child() return objects with their own tags, context, data, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
 
 Child loggers and Loggers instances have the following methods:
 
 - tags(a, b) Combines a and b such that b's tags override a's tags. The result is combined with (and overrides) the child logger's tags.
-- data(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's data.
+- context() Returns the context associated with a child loggers, combined with the context of its parent
 - category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
 Context can be built up by chaining calls to logger() and/or child().
@@ -203,7 +208,11 @@ The top-level keys of a log entry. Meta properties contain scalar values except 
 
 ### data
 
-The keys remaining in 'both' after meta properties are removed (see 'both' below)
+The properties remaining in 'both' after meta properties are removed (see 'both' below)
+
+### context
+
+An object provided optionally to log() methods and to the Logger constructor. Context objects are merged. For example, if a child logger (Logger) is created with: `{a: 1, b: 5}` and `{b: 2, c: 3}` is passed as a context argument to `log()`, `{a: 1, b: 2, c: 3}` is logged.
 
 ### level (severity)
 
