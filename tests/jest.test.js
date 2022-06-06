@@ -5,6 +5,9 @@ const config = require('./config');
 // WINSTON_CLOUDWATCH_DEBUG=true node logger.js
 
 let loggers;
+let logger;
+let unitTest;
+let hasCloudWatch;
 
 /**
  * @description Runs the test
@@ -52,22 +55,35 @@ function init(colors) {
   // config.logging.logDirectoryNotFound = true;
 
   loggers = new Loggers(config.logging);
-  const hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
+  hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
 
-  // =====================
-  // Create a child logger
-  const logger = loggers.logger();
-  const { unitTest } = loggers;
+  ({ unitTest } = loggers);
 
-  if (!loggers.ready || !logger.ready) throw new Error();
-
-  // =================
-  // Ready for testing
+  if (!loggers.ready) throw new Error('Not ready');
 }
 
+/**
+ * Initialize globals
+ */
 beforeAll(()=>init(true));
 
 test('null message', () => {
-  expect(true)
+  const count = unitTest.entries.length;
+  loggers.info(null);
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe(null);
 });
 
+test('undefined message', () => {
+  const count = unitTest.entries.length;
+  loggers.info();
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe('');
+});
+
+test('child logger is ready', () => {
+  expect(loggers.logger().ready).toBe(true);
+}
+);

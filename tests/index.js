@@ -123,13 +123,13 @@ async function go(colors) {
   // loggers.log('info', {error: new Error('1'), error2: new Error('2')});
 
   // An error is provided and the message is blank
+  // errors add stack
   {
     const count = unitTest.entries.length;
-    loggers.info(undefined, new Error('abc'));
-    if (count + 1 !== unitTest.entries.length) throw new Error();
+    loggers.error(undefined, new Error('abc'));
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
-  process.exit()
   {
     const count = unitTest.entries.length;
     loggers.error(null, new Error('abc'));
