@@ -71,25 +71,22 @@ async function go(colors) {
   // Ready for testing
   //
 
-//console.log(loggers.tags('error'));
-//console.log(loggers.tags('error', 'five'));
-//console.log(loggers.tags('error', ['five']));
-//console.log(loggers.tags('error', {five: 5}));
-//    console.log(loggers.context(5, {a:{b: 3}}));
-// loggers.context(tags, category, null, undefined)
-
-// loggers.context({a: 5,d: {a: 5}}, {b:6}, 8, [2], {a: 2}));
-
+  // console.log(loggers.tags('error'));
+  // console.log(loggers.tags('error', 'five'));
+  // console.log(loggers.tags('error', ['five']));
+  // console.log(loggers.tags('error', {five: 5}));
+  // console.log(loggers.context(5, {a:{b: 3}}));
+  // loggers.context(tags, category, null, undefined)
+  // loggers.context({a: 5,d: {a: 5}}, {b:6}, 8, [2], {a: 2}));
   // loggers.log('info', {message: 'hello', data: {a: 5}, context: {}});
   // loggers.log('info', 'hello');
   // loggers.log('info', 'hello', null);
-  loggers.log('info', null);
+  // loggers.log('info', null);
   // loggers.log('info', {context: null, data: null});
   // loggers.log('info', {message: 'hello', data: {a: 5}, context: 5, a:{b: 3}});
   // loggers.info({ message: 'Foo', context: new Error('I am a message'), });
   // loggers.log(new Error('1'), {a: 5});
   // loggers.log('info', {a: 6}, {a: 5});
-  process.exit()
   // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
   // loggers.log('info', '', new Error('x'))
   // loggers.log(null, undefined, new Error('x'))
@@ -124,15 +121,15 @@ async function go(colors) {
   // loggers.log('info', {message: {a: 5, error: new Error('2')}}, new Error('1'));
   // loggers.log('info', 'message', {a: 5, error: new Error('1')});
   // loggers.log('info', {error: new Error('1'), error2: new Error('2')});
-  // process.exit()
 
   // An error is provided and the message is blank
   {
     const count = unitTest.entries.length;
-    loggers.error(undefined, new Error('abc'));
+    loggers.info(undefined, new Error('abc'));
     if (count + 1 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
+  process.exit()
   {
     const count = unitTest.entries.length;
     loggers.error(null, new Error('abc'));

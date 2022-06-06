@@ -286,8 +286,8 @@ class Loggers extends EventEmitter {
       }
     }
 
-    // ===============================
-    // Preprocess recursive redactions
+    // =====================
+    // Preprocess redactions
     this.props.redact = Object.entries(options.redact).reduce((prev, [key, value]) => {
       if (!value.recursive) prev[key] = true;
       return prev;
@@ -303,6 +303,24 @@ class Loggers extends EventEmitter {
     this.addLevelMethods(this);
 
     this.start();
+  }
+
+  /**
+   * @private
+   * @ignore
+   * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
+   * See https://jsperf.com/testing-for-any-keys-in-js
+   * @param {object} object An object to test
+   * @returns {boolean} true if object has properties (including inherited)
+   */
+  static hasKeys(object) {
+    // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
+    if (!object || !(object instanceof Object) || object instanceof Array) return false;
+    // message and stack are invisible; any others?
+    if (object instanceof Error) return true;
+    // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
+    for (const prop in object) return true;
+    return false;
   }
 
   /**
@@ -396,7 +414,7 @@ class Loggers extends EventEmitter {
     if (context instanceof Context) return context;
     context = Loggers.toObject(context);
 
-    if (!context) return context;
+    if (!context) return undefined;
 
     const event = { tags, category, arg: context, type: 'context' };
     if (level) event.level = level;
@@ -409,27 +427,17 @@ class Loggers extends EventEmitter {
       console.error('Redact context event handler failed', error);
     }
 
-    // Redact
+    // Redact context
     const result = {};
+    const { redact } = this.props;
 
     // eslint-disable-next-line no-restricted-syntax
     for (const key in context) {
-      if (!this.props.redact[key]) {
+      if (!(key in redact)) {
         const value = context[key];
-        // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
-        if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
-          // stack and message are handled below
-          result[key] = value;
-        }
+        if (typeof value !== 'function') result[key] = value;
       }
     }
-
-    const { stack } = context;
-    if (stack && typeof stack === 'string') result.stack = stack;
-
-    // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
-    const str = this.objectToString(context);
-    if (str) result.message = str;
 
     return Loggers.hasKeys(result) ? result:undefined;
   }
@@ -448,7 +456,8 @@ class Loggers extends EventEmitter {
     category = this.category(category);
 
     let prevCopied;
-    const context = args.reduce((prev, item) => {
+    let context = args.reduce((prev, item) => {
+      // toContext performs redaction
       item = this.toContext(level, tags, category, item);
 
       if (!item) return prev;
@@ -465,26 +474,19 @@ class Loggers extends EventEmitter {
 
     if (context === undefined || context instanceof Context) return context;
 
+    // =======================================================================
+    // Prune data. This unfortunately removes keys that have undefined values.
+    context = JSON.parse(prune(context, this.options.message.depth, this.options.message.arrayLength));
+
+    {
+      const { recursiveRedact } = this.props;
+      if (recursiveRedact.length) deepCleaner(context, recursiveRedact);
+    }
+
     return Object.assign(
       new Context(),
-      {...context}
+      context
     );
-  }
-
-  /**
-   * @private
-   * @ignore
-   * @description Determines whether an object has any properties. Faster than Object.keys(object).length.
-   * See https://jsperf.com/testing-for-any-keys-in-js
-   * @param {object} object An object to test
-   * @returns {boolean} true if object has properties (including inherited)
-   */
-  static hasKeys(object) {
-    // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
-    if (!object || !(object instanceof Object) || object instanceof Array) return false;
-    // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
-    for (const prop in object) return true;
-    return false;
   }
 
   /**
@@ -1780,13 +1782,13 @@ ${error}  [error ${myName}]`);
         context = [context];
       }
     } else if (
-      // logLevel() called
       message instanceof Object &&
-      !(message instanceof Error) &&
       !(message instanceof Array) &&
+      !(message instanceof Error) &&
       data === undefined &&
       context === undefined
     ) {
+      // logLevel() called
       const copy = { ...message };
       message = undefined;
       tags = this.tags(tags, copy.tags);
@@ -1812,24 +1814,26 @@ ${error}  [error ${myName}]`);
 
     tags = this.tags(tags);
 
-    if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
-    if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
-
-    // info(new Error(), 'Message') is the same as info('Message', new Error())
-    if (scalars[typeof data] && message instanceof Object) {
+    if (message instanceof Object && !(message instanceof Array) && scalars[typeof data]) {
+      // info(new Error(), 'Message') is the same as info('Message', new Error())
       // swap message, data
       const x = data;
       data = message;
       message = x;
     }
 
-    return Object.assign(new LogArgs(), {
+    if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
+    if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
+
+    const ret = {
       tags,
       context,
       category,
       message,
       data,
-    });
+    };
+
+    return Object.assign(new LogArgs(), ret);
   }
 
   /**
@@ -2107,7 +2111,7 @@ ${stack}  [error ${myName}]`);
   copyData(level, tags, state, key, value) {
     // Check redaction (nonrecursive)
     if (value === undefined) return;
-    if (this.props.redact[key]) return;
+    if (key in this.props.redact) return;
 
     if (!state.currentData) {
       state.currentData = state.data = {};
@@ -2218,6 +2222,7 @@ ${stack}  [error ${myName}]`);
           // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
           if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
             // stack and message are handled below
+            // copyData also handles redaction
             this.copyData(level, tags, state, key, value);
           }
         }
@@ -2260,9 +2265,7 @@ ${stack}  [error ${myName}]`);
         delete context[key];
       });
 
-      if (Loggers.hasKeys(context)) {
-        entry.context = JSON.parse(prune(context, this.options.message.depth, this.options.message.arrayLength));
-      }
+      if (Loggers.hasKeys(context)) entry.context = context;
     }
 
     // =========================
@@ -2324,11 +2327,7 @@ ${stack}  [error ${myName}]`);
     }
 
     // Set the logStack meta
-    if (addStack) {
-      let msg;
-      if (entry.message) msg = entry.message.replace(/^Error(\n|: )/, '');
-      entry.logStack = new Error(msg).stack.replace(/^Error(\n|: )/, '').replace(stripStack, '');
-    }
+    if (addStack) entry.logStack = new Error().stack.replace(/^Error(\n|: )/, '').replace(stripStack, '');
 
     return entry;
   }
@@ -2349,7 +2348,7 @@ ${stack}  [error ${myName}]`);
     // eslint wants groupId=
     const { category, tags, logger, level } = info;
 
-    if (context instanceof Array) context = this.context(tags, category, ...context);
+    if (context instanceof Array) context = this.context(level, tags, category, ...context);
 
     const entry = this.logEntry(info, message, data, context, depth);
 
@@ -2404,7 +2403,6 @@ ${stack}  [error ${myName}]`);
             delete data[key];
           }
 
-          // Prefer 'error'
           if (!firstError || key === 'error') firstError = entryData[key];
           delete entryData[key];
         }
