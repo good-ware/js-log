@@ -195,7 +195,7 @@ async function go(colors) {
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.context.dog !== 'woof') throw new Error();
   }
-  process.exit()
+
   // ============ logger() tests end
 
   // Specify the level
@@ -220,7 +220,7 @@ async function go(colors) {
   // No output (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.silly('msg', {}, 'briefConsole');
+    loggers.silly('msg', {}, null, 'briefConsole');
     if (count !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message (default category)
@@ -234,7 +234,7 @@ async function go(colors) {
   // Outputs no message, overriding level
   {
     const count = unitTest.console.entries.length;
-    loggers.silly(new Error('fail'), null, 'briefConsole');
+    loggers.silly(new Error('fail'), null, null, 'briefConsole');
     if (count !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs error (specify category)
@@ -246,49 +246,49 @@ async function go(colors) {
   // Outputs a message without an error (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', 'Message', new Error('fail'), 'briefConsoleNoErrors');
+    loggers.log('error', 'Message', new Error('fail'), null, 'briefConsoleNoErrors');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs a message and an error (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', 'Message', new Error('fail'), 'briefConsole');
+    loggers.log('error', 'Message', new Error('fail'), null, 'briefConsole');
     if (count + 2 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs an error (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', '', new Error('fail'), 'briefConsole');
+    loggers.log('error', '', new Error('fail'), null, 'briefConsole');
     if (count + 2 !== unitTest.console.entries.length) throw new Error();
   }
   // Message can be 0 (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', 0, null, 'briefConsole');
+    loggers.log('error', 0, null, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Message can be false (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', false, null, 'briefConsole');
+    loggers.log('error', false, null, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Message when null (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', null, null, 'briefConsole');
+    loggers.log('error', null, null, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Message when undefined (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.log('error', undefined, null, 'briefConsole');
+    loggers.log('error', undefined, null, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message without data
   {
     const count = unitTest.console.entries.length;
-    loggers.info('msg', { a: 1 }, 'briefConsole');
+    loggers.info('msg', { a: 1 }, null, 'briefConsole');
     if (count === unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') >= 0) throw new Error();
@@ -296,7 +296,7 @@ async function go(colors) {
   // Outputs message with data
   {
     const count = unitTest.console.entries.length;
-    loggers.info('msg', { a: 1 }, 'dataConsole');
+    loggers.info('msg', { a: 1 }, null, 'dataConsole');
     if (count === unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') < 0) throw new Error();
@@ -338,6 +338,7 @@ async function go(colors) {
   {
     logger.info(new Error('err'), 'message');
     const entry = unitTest.entries[unitTest.entries.length - 2];
+    console.log(entry.level);process.exit()
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
     // if (!entry.data.error) throw new Error();
