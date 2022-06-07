@@ -105,3 +105,12 @@ test('undefined message', () => {
   expect(item.message).toBe('');
   expect(item.level).toBe('info');
 });
+
+test('default method', () => {
+  const count = unitTest.entries.length;
+  loggers.default('hello');
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe('hello');
+  expect(item.level).toBe('debug');
+});

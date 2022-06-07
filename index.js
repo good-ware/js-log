@@ -7,7 +7,6 @@
 // =============================================================================
 /* eslint-disable no-promise-executor-return */
 /* eslint-disable no-plusplus */
-/* eslint-disable no-multi-assign */
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
 const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
@@ -30,6 +29,7 @@ const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format'
 // Local includes
 const Stack = require('./Stack');
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
+const { parse } = require('path');
 
 // Global variables
 let WinstonCloudWatch;
@@ -194,7 +194,10 @@ class Loggers extends EventEmitter {
     // Copy environment variables to options (end)
 
     // Validate options
-    options = this.options = this.validateOptions(options);
+    options = this.validateOptions(options);
+    this.options = options;
+
+    console.log(JSON.stringify(options,null,2))
 
     envToConsoleKey('colors');
     envToConsoleKey('data');
@@ -240,7 +243,7 @@ class Loggers extends EventEmitter {
           key = value;
           meta[key] = key;
         }
-        props.userMeta[key] = undefined;
+        props.userMeta[key] = null;
       });
 
       props.metaProperties = Object.keys(meta);
@@ -258,7 +261,9 @@ class Loggers extends EventEmitter {
 
     // Set props.logStackLevels
     {
-      const obj = (props.logStackLevels = {});
+      const obj = {};
+      props.logStackLevels = obj;
+
       options.logStackLevels.forEach((level) => {
         if (level === 'default') level = options.defaultLevel;
         obj[level] = null;
@@ -460,12 +465,12 @@ class Loggers extends EventEmitter {
     category = this.category(category);
 
     let prevCopied;
-    let context = args.reduce((prev, item) => {
+    let mergedContext = args.reduce((prev, arg) => {
       // toContext performs redaction
-      item = this.toContext(level, tags, category, item);
+      const context = this.toContext(level, tags, category, arg);
 
-      if (!item) return prev;
-      if (!prev) return item;
+      if (!context) return prev;
+      if (!context) return arg;
 
       if (!prevCopied) {
         // Make a shallow copy
@@ -473,23 +478,25 @@ class Loggers extends EventEmitter {
         prevCopied = true;
       }
 
-      return Object.assign(prev, item);
+      return Object.assign(prev, arg);
     }, undefined);
 
-    if (context === undefined || context instanceof Context) return context;
+    if (mergedContext === undefined || mergedContext instanceof Context) {
+      return mergedContext;
+    }
 
     // =======================================================================
     // Prune data. This unfortunately removes keys that have undefined values.
-    context = JSON.parse(prune(context, this.options.message.depth, this.options.message.arrayLength));
+    mergedContext = JSON.parse(prune(mergedContext, this.options.message.depth, this.options.message.arrayLength));
 
     {
       const { recursiveRedact } = this.props;
-      if (recursiveRedact.length) deepCleaner(context, recursiveRedact);
+      if (recursiveRedact.length) deepCleaner(mergedContext, recursiveRedact);
     }
 
     return Object.assign(
       new Context(),
-      context
+      mergedContext
     );
   }
 
@@ -590,8 +597,8 @@ age of files to keep in days, followed by the chracter 'd'.`),
 
       // meta properties
       metaProperties: Joi.object()
-        .pattern(Joi.string(), Joi.string())
-        .default(Loggers.defaultMetaKeys)
+        .pattern(Joi.string(), Joi.string().allow(null)) // They can be renamed
+        .default(Loggers.defaultMetaProperties)
         .description(`Which keys to copy from 'both' to meta with the option to rename the keys`),
 
       // Redaction
@@ -691,13 +698,13 @@ Enable the tag for log entries with severity levels equal to or greater than the
     // Joi model for options (end)
     // ===========================
 
+    // TODO cache options schema
     let validation = optionsSchema.validate(options);
     if (validation.error) throw new Error(validation.error.message);
     // Add defaults to default empty objects
     validation = optionsSchema.validate(validation.value);
-    options = validation.value;
-
-    return options;
+    if (validation.error) throw new Error(validation.error.message);
+    return validation.value;
   }
 
   /**
@@ -771,6 +778,8 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @returns {string} A directory path
    */
   static createLogDirectory({ directories }) {
+    if (!directories) return undefined;
+
     let logDirectory;
 
     directories.every((dir) => {
@@ -1066,6 +1075,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
       Object.assign(fileOptions, level);
       level = undefined;
     }
+
     if (!level) ({ level } = fileOptions);
     if (!level) level = 'off';
     else if (level === 'default') {
@@ -1373,6 +1383,7 @@ ${error}  [error ${myName}]`)
       // File
       {
         const fileOptions = { ...options.file };
+
         let level = settings.file;
         if (level instanceof Object) {
           Object.assign(fileOptions, level);
@@ -1584,7 +1595,7 @@ ${error}  [error ${myName}]`);
 
         // Winston wants at least one transport (error file transport is intentionally ignored because it's only error)
         // so console is always active. This has the added benefit of ensuring that the unhandled exception logger has
-        // at least one transport with handleExcetpions: true; otherwise, undhandled exceptions will kill the process.
+        // at least one transport with handleExceptions: true; otherwise, undhandled exceptions will kill the process.
         if (!transports.length && level === 'off') level = 'error';
 
         if (level !== 'off') {
@@ -1668,13 +1679,13 @@ ${error}  [error ${myName}]`);
   /**
    * @description Creates a child logger
    * @param {*} [tags]
-   * @param {*} [data]
+   * @param {*} [context]
    * @param {string} [category]
    * @returns {object}
    */
-  child(tags, data, category) {
+  child(tags, context, category) {
     // eslint-disable-next-line no-use-before-define
-    return new Logger(this, tags, data, category);
+    return new Logger(this, tags, context, category);
   }
 
   /**
@@ -2507,7 +2518,7 @@ ${new Error('Stopped').stack}  [error ${myName}]`);
  *  properties are copied to data. For convenience, the existence of the tuple a: 'b' implies the existence of the
  *  tuple b: 'b'.
  */
-Loggers.defaultMetaKeys = { stack: undefined, correlationId: undefined };
+Loggers.defaultMetaProperties = { context: null, correlationId: null, stack: null };
 
 /**
  * @description These follow npm levels wich are defined at
@@ -2570,7 +2581,7 @@ class Logger {
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
-    if (context) context = loggers.mergeContext(...context);
+    if (context instanceof Array) context = loggers.mergeContext(undefined, tags, category, ...context);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2721,7 +2732,7 @@ class Logger {
    * @returns {object}
    */
   context() {
-    return this.context;
+    return this.props.context;
   }
 
   /**

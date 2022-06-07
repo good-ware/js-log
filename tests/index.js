@@ -71,6 +71,7 @@ async function go(colors) {
   // Ready for testing
   //
 
+  // console.log(loggers.child(['warn', 'goofy'], { dog: 'woof' }).context())
   // console.log(loggers.tags('error'));
   // console.log(loggers.tags('error', 'five'));
   // console.log(loggers.tags('error', ['five']));
@@ -192,7 +193,7 @@ async function go(colors) {
     // Nothing was logged to thie console?
     if (count === unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.data.dog !== 'woof') throw new Error();
+    if (entry.context.dog !== 'woof') throw new Error();
   }
   // ============ logger() tests end
 
