@@ -70,9 +70,27 @@ test('ready', () => {
   expect(loggers.logger().ready).toBe(true);
 });
 
-test('null message', () => {
+test('null message info', () => {
   const count = unitTest.entries.length;
   loggers.info(null);
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe(null);
+  expect(item.level).toBe('info');
+});
+
+test('null message default', () => {
+  const count = unitTest.entries.length;
+  loggers.log(null, null);
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe(null);
+  expect(item.level).toBe('debug');
+});
+
+test('null message info 2', () => {
+  const count = unitTest.entries.length;
+  loggers.info(['warn'], null);
   expect(unitTest.entries.length).toBe(count+1);
   const item = unitTest.entries[count];
   expect(item.message).toBe(null);

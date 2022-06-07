@@ -500,9 +500,8 @@ class Loggers extends EventEmitter {
    * @param target The object to modify
    */
   addLevelMethods(target) {
-    this.props.levels.forEach((level) => {
-      target[level] = (...args) => Loggers.logLevel(target, level, ...args);
-    });
+    // eslint-disable-next-line no-return-assign
+    this.props.levels.forEach((level) => target[level] = (...args) => target.logLevel(level, ...args));
   }
 
   /**
@@ -763,20 +762,6 @@ Enable the tag for log entries with severity levels equal to or greater than the
       );
     }
   }
-
-  /**
-   * @private
-   * @ignore
-   * @description Internal function called by methods that are named after levels. Allows tags to be provided.
-   * @param {Loggers|Logger} logger
-   * @param {string} level
-   */
-  static logLevel(logger, level, ...args) {
-    const logArgs = logger.transformArgs(...args);
-    logArgs.tags.logLevel = level;
-    logger.log(logArgs);
-  }
-
 
   /**
    * @private
@@ -1758,7 +1743,8 @@ ${error}  [error ${myName}]`);
       ('tags' in tags ||
       'context' in tags ||
       'message' in tags ||
-      'data' in tags
+      'data' in tags ||
+      'category' in tags
       )
     ) {
       const copy = { ...tags };
@@ -1783,18 +1769,10 @@ ${error}  [error ${myName}]`);
       context = [context];
     }
 
-    tags = this.tags(tags);
-
-    if (false && message instanceof Object && !(message instanceof Array) && scalars[typeof data]) {
-      // info(new Error(), 'Message') is the same as info('Message', new Error())
-      // swap message, data
-      const x = data;
-      data = message;
-      message = x;
-    }
-
     if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
     if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
+
+    tags = this.tags(tags);
 
     const ret = {
       tags,
@@ -1803,6 +1781,8 @@ ${error}  [error ${myName}]`);
       message,
       data,
     };
+
+    console.log(JSON.stringify(ret))
 
     return Object.assign(new LogArgs(), ret);
   }
@@ -2453,11 +2433,17 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @description Sends a log entry using the default level
-   * @param {Array} [args]
+   * @private
+   * @ignore
+   * @description Internal function called by methods that are named after levels. Allows tags to be provided.
+   * @param {string} level
+   * @param {Array} args
    */
-  default(...args) {
-    Loggers.logLevel(this, 'default', ...args);
+  logLevel(level, ...args) {
+    if(args.length && !(args[0] instanceof Array)) args.unshift(undefined);
+    const logArgs = this.transformArgs(...args);
+    logArgs.tags.logLevel = level;
+    this.log(logArgs);
   }
 
   /**
@@ -2469,7 +2455,8 @@ ${stack}  [error ${myName}]`);
    *   1. tags = this.tags(tags.logLevel, tags.tags)
    *   2. message = tags.message
    *   3. data = tags.data
-   *   4. category = tags.category
+   *   4. context = tags.context
+   *   5. category = tags.category
    * @param {*} [tags] See description
    * @param {*} [message]
    * @param {*} [data]
@@ -2754,6 +2741,7 @@ class Logger {
    * @param {string} [level]
    * @param {*} [tags]
    * @param {string} [category]
+   * @param {Array} [args]
    * @returns {object}
    */
   mergeContext(level, tags, category, ...args) {
@@ -2771,6 +2759,7 @@ class Logger {
   }
 
   /**
+   * @param {Array} [args]
    */
   log(...args) {
     this.props.loggers.log(this.transformArgs(...args));
