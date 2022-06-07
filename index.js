@@ -56,7 +56,7 @@ const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
  */
 const transportObj = {};
 transportNames.forEach((transport) => {
-  transportObj[transport] = true;
+  transportObj[transport] = null;
 });
 
 /**
@@ -131,7 +131,6 @@ class Loggers extends EventEmitter {
    *  {object[]} props.cloudWatchTransports
    *  {object} props.categoryTags {string} category -> {{string} tag -> {object}}
    *  {object} props.hasCategoryTags {string} category -> {boolean}
-   *  {object} props.logLevel {string} level name or 'default' -> {logLevel: {string}}
    *  {object} props.levelSeverity {string} level plus 'on', 'off', and 'default'
    *   -> {Number} {object} winstonLevels Passed to Winston when creating a logger
    *  {object} props.loggerStacks
@@ -171,7 +170,6 @@ class Loggers extends EventEmitter {
       userMeta: {},
       categoryTags: {},
       hasCategoryTags: {},
-      logLevel: {},
       cloudWatchLogGroups: {},
     };
 
@@ -255,11 +253,6 @@ class Loggers extends EventEmitter {
       if (!category.default) category.default = {};
     }
 
-    // logLevel is used by level-named methods
-    props.levels.forEach((logLevel) => {
-      props.logLevel[logLevel] = { logLevel };
-    });
-
     // Process category tag switches
     if (!this.processCategoryTags('default')) props.categoryTags.default = { on: true };
 
@@ -268,7 +261,7 @@ class Loggers extends EventEmitter {
       const obj = (props.logStackLevels = {});
       options.logStackLevels.forEach((level) => {
         if (level === 'default') level = options.defaultLevel;
-        obj[level] = true;
+        obj[level] = null;
       });
     }
 
@@ -279,7 +272,7 @@ class Loggers extends EventEmitter {
 
       if (defaultConfig) {
         Object.entries(defaultConfig).forEach(([key, value]) => {
-          if (!transportObj[key]) return;
+          if (!(key in transportObj)) return;
           if (!(value instanceof Object)) value = { level: value };
           Object.assign(options[key], value);
         });
@@ -289,7 +282,7 @@ class Loggers extends EventEmitter {
     // =====================
     // Preprocess redactions
     this.props.redact = Object.entries(options.redact).reduce((prev, [key, value]) => {
-      if (!value.recursive) prev[key] = true;
+      if (!value.recursive) prev[key] = null;
       return prev;
     }, {});
 
@@ -507,9 +500,8 @@ class Loggers extends EventEmitter {
    * @param target The object to modify
    */
   addLevelMethods(target) {
-    const { levels, logLevel } = this.props;
-    levels.forEach((level) => {
-      target[level] = (...args) => Loggers.levelLog(target, logLevel[level], ...args);
+    this.props.levels.forEach((level) => {
+      target[level] = (...args) => Loggers.logLevel(target, level, ...args);
     });
   }
 
@@ -776,23 +768,15 @@ Enable the tag for log entries with severity levels equal to or greater than the
    * @private
    * @ignore
    * @description Internal function called by methods that are named after levels. Allows tags to be provided.
-   * @param {Loggers|object} logger
-   * @param {object} levelObj From this.props.logLevel. Has property logLevel.
-   * @param {*} tagsOrMessage
-   * @param {*} messageOrData
-   * @param {*} dataOrContext
-   * @param {*} contextOrCategory
-   * @param {*} category
+   * @param {Loggers|Logger} logger
+   * @param {string} level
    */
-  static levelLog(logger, levelObj, tagsOrMessage, messageOrData, dataOrContext, contextOrCategory, category) {
-    // tagsOrMessage has tags if it's an array
-    if (tagsOrMessage instanceof Array) {
-      logger.log(logger.loggers.tags(tagsOrMessage, levelObj), messageOrData, dataOrContext, contextOrCategory,
-        category);
-    } else {
-      logger.log(levelObj, tagsOrMessage, messageOrData, dataOrContext, contextOrCategory, category);
-    }
+  static logLevel(logger, level, ...args) {
+    const logArgs = logger.transformArgs(...args);
+    logArgs.tags.logLevel = level;
+    logger.log(logArgs);
   }
+
 
   /**
    * @private
@@ -945,7 +929,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     if (info instanceof LogEntry) {
       if (this.unitTest) {
         this.unitTest.entries.push(info);
-        if (info.groupId) this.unitTest.groupIds[info.groupId] = true;
+        if (info.groupId) this.unitTest.groupIds[info.groupId] = null;
         if (info.data) ++this.unitTest.dataCount;
       }
       return info;
@@ -1567,8 +1551,8 @@ ${error}  [error ${myName}]`);
               // TODO: add more options supported by winston-cloudwatch
               // See https://github.com/lazywithclass/winston-cloudwatch/blob/e705a18220bc9be0564ad27b299127c6ee56a28b/typescript/winston-cloudwatch.d.ts
 
-              if (this.options.say.cloudWatch && !this.props.cloudWatchLogGroups[logGroupName]) {
-                this.props.cloudWatchLogGroups[logGroupName] = true;
+              if (this.options.say.cloudWatch && !(logGroupName in this.props.cloudWatchLogGroups)) {
+                this.props.cloudWatchLogGroups[logGroupName] = null;
                 // eslint-disable-next-line no-console
                 console.log(
                   // eslint-disable-next-line max-len
@@ -1770,10 +1754,13 @@ ${error}  [error ${myName}]`);
       !(tags instanceof Array) &&
       message === undefined &&
       data === undefined &&
-      context === undefined
+      context === undefined &&
+      ('tags' in tags ||
+      'context' in tags ||
+      'message' in tags ||
+      'data' in tags
+      )
     ) {
-      // log() called
-      // tags can't be an Error instance - it was checked above
       const copy = { ...tags };
       ({ tags } = copy);
       delete copy.tags;
@@ -1792,40 +1779,13 @@ ${error}  [error ${myName}]`);
       } else if (context !== undefined && context !== null) {
         context = [context];
       }
-    } else if (
-      message instanceof Object &&
-      !(message instanceof Array) &&
-      !(message instanceof Error) &&
-      data === undefined &&
-      context === undefined
-    ) {
-      // logLevel() called
-      const copy = { ...message };
-      message = undefined;
-      tags = this.tags(tags, copy.tags);
-      delete copy.tags;
-      ({ message } = copy);
-      delete copy.message;
-      // Allow category to be passed as a separate parameter
-      if (copy.category) ({ category } = copy);
-      delete copy.category;
-      ({ data } = copy);
-      delete copy.data;
-      ({ context } = copy);
-      delete copy.context;
-      if (Loggers.hasKeys(copy)) {
-        if (context !== undefined) context = [copy, context];
-        else context = [copy];
-      } else if (context !== undefined && context !== null) {
-        context = [context];
-      }
     } else if (context !== undefined && context !== null) {
       context = [context];
     }
 
     tags = this.tags(tags);
 
-    if (message instanceof Object && !(message instanceof Array) && scalars[typeof data]) {
+    if (false && message instanceof Object && !(message instanceof Array) && scalars[typeof data]) {
       // info(new Error(), 'Message') is the same as info('Message', new Error())
       // swap message, data
       const x = data;
@@ -1890,10 +1850,8 @@ ${stack}  [error ${myName}]`);
       if (value) {
         tags = { ...tags };
         delete tags.logLevel;
-        if (this.props.logLevel[value]) {
-          level = value === 'default' ? this.options.defaultLevel : value;
-          tags[level] = true;
-        }
+        level = value === 'default' ? this.options.defaultLevel : value;
+        tags[level] = true;
       }
 
       tagNames = Object.keys(tags);
@@ -1904,9 +1862,9 @@ ${stack}  [error ${myName}]`);
         let levelNum = 100000;
 
         tagNames.forEach((tag) => {
-          if (tags[tag] && this.props.logLevel[tag]) {
+          if (tags[tag]) {
             const num = this.props.levelSeverity[tag];
-            if (num < levelNum) {
+            if (num !== undefined && num < levelNum) {
               levelNum = num;
               level = tag === 'default' ? this.options.defaultLevel : tag;
             }
@@ -2003,7 +1961,7 @@ ${stack}  [error ${myName}]`);
 
           // Process per-transport switches. Remove keys from transports.
           transportNames.forEach((transport) => {
-            if (transports && !transports[transport]) return true;
+            if (transports && !(transport in transports)) return true;
 
             checkDefault = true;
 
@@ -2315,7 +2273,7 @@ ${stack}  [error ${myName}]`);
     if (state.dataData) entry.dataData = state.dataData;
 
     // Add stack trace?
-    let addStack = !depth && this.props.logStackLevels[info.level];
+    let addStack = !depth && (info.level in this.props.logStackLevels);
 
     // Turn tags into an array and put the level in the front without modifying the object in entry.tags
     if (tags) {
@@ -2499,7 +2457,7 @@ ${stack}  [error ${myName}]`);
    * @param {Array} [args]
    */
   default(...args) {
-    Loggers.levelLog(this, this.props.logLevel.default, ...args);
+    Loggers.logLevel(this, 'default', ...args);
   }
 
   /**

@@ -58,8 +58,6 @@ function init(colors) {
   hasCloudWatch = loggers.props.cloudWatchStream ? 1 : 0;
 
   ({ unitTest } = loggers);
-
-  if (!loggers.ready) throw new Error('Not ready');
 }
 
 /**
@@ -67,12 +65,18 @@ function init(colors) {
  */
 beforeAll(()=>init(true));
 
+test('ready', () => {
+  expect(loggers.ready).toBe(true);
+  expect(loggers.logger().ready).toBe(true);
+});
+
 test('null message', () => {
   const count = unitTest.entries.length;
   loggers.info(null);
   expect(unitTest.entries.length).toBe(count+1);
   const item = unitTest.entries[count];
   expect(item.message).toBe(null);
+  expect(item.level).toBe('info');
 });
 
 test('undefined message', () => {
@@ -81,9 +85,5 @@ test('undefined message', () => {
   expect(unitTest.entries.length).toBe(count+1);
   const item = unitTest.entries[count];
   expect(item.message).toBe('');
+  expect(item.level).toBe('info');
 });
-
-test('child logger is ready', () => {
-  expect(loggers.logger().ready).toBe(true);
-}
-);
