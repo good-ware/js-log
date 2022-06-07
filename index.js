@@ -1650,14 +1650,17 @@ ${error}  [error ${myName}]`);
       loggers[category] = logger;
       return logger;
     }
+
     logger = loggers[category];
     if (logger) return logger;
+
     if (category === this.options.defaultCategory) {
       logger = this;
     } else {
       // eslint-disable-next-line no-use-before-define
       logger = new Logger(this, undefined, undefined, category);
     }
+
     loggers[category] = logger;
     return logger;
   }
@@ -1781,8 +1784,6 @@ ${error}  [error ${myName}]`);
       message,
       data,
     };
-
-    console.log(JSON.stringify(ret))
 
     return Object.assign(new LogArgs(), ret);
   }
@@ -2580,9 +2581,6 @@ class Logger {
   /**
    * @private
    * @ignore
-   * @param {Array} [args]
-   * @description Tranforms arguments sent to log methods, child(), and isLoggerEnabled(). Mixes in the tags, data,
-   * and category properties.
    */
   transformArgs(...args) {
     const { loggers } = this.props;
@@ -2607,37 +2605,30 @@ class Logger {
   }
 
   /**
-   * @description Returns a Winston logger associated with a category
-   * @param {string} [category]
-   * @returns {object} A Winston logger
    */
   winstonLogger(category) {
     return this.props.loggers.winstonLogger(this.category(category));
   }
 
   /**
-   * @returns {boolean}
    */
   get ready() {
     return this.props.loggers.ready;
   }
 
   /**
-   * @returns {Loggers}
    */
   get loggers() {
     return this.props.loggers;
   }
 
   /**
-   * @returns {Loggers|object}
    */
   get parent() {
     return this.props.parent;
   }
 
   /**
-   * @returns {object}
    */
   logger(category, logger) {
     category = this.category(category);
@@ -2646,62 +2637,48 @@ class Logger {
   }
 
   /**
-   * @param {*} [tags]
-   * @param {*} [context]
-   * @param {string} [category]
-   * @returns {object}
    */
   child(tags, context, category) {
     return new Logger(this, tags, context, category);
   }
 
   /**
-   * @param {string} name
-   * @returns {Stack}
    */
   stack(name = 'default') {
     return this.props.loggers.stack(name);
   }
 
   /**
-   * @returns {Promise}
    */
   start() {
     return this.props.loggers.start();
   }
 
   /**
-   * @returns {Promise}
    */
   stop() {
     return this.props.loggers.stop();
   }
 
   /**
-   * @returns {Promise}
    */
   restart() {
     return this.props.loggers.restart();
   }
 
   /**
-   * @returns {Promise}
    */
   flush() {
     return this.props.loggers.flush();
   }
 
   /**
-   * @returns {Promise}
    */
   flushCloudWatchTransports() {
     return this.props.loggers.flushCloudWatchTransports();
   }
 
   /**
-   * @param {*} [tagsOrNamedParameters]
-   * @param {string} [category]
-   * @returns {boolean}
    */
   isLevelEnabled(tagsOrNamedParameters, category) {
     return this.props.loggers.isLevelEnabled(
@@ -2709,16 +2686,12 @@ class Logger {
   }
 
   /**
-   * @description Alias for isLevelEnabled
    */
   levelEnabled(...args) {
     return this.isLevelEnabled(...args);
   }
 
   /**
-   * @param (*) tags
-   * @param {*} moreTags
-   * @returns {object}
    */
   tags(...args) {
     const { loggers, tags } = this.props;
@@ -2727,8 +2700,6 @@ class Logger {
   }
 
   /**
-   * @param {string} category
-   * @returns {string}
    */
   category(category) {
     if (category) return this.props.loggers.category(category);
@@ -2738,11 +2709,6 @@ class Logger {
   /**
    * @private
    * @ignore
-   * @param {string} [level]
-   * @param {*} [tags]
-   * @param {string} [category]
-   * @param {Array} [args]
-   * @returns {object}
    */
   mergeContext(level, tags, category, ...args) {
     const { loggers, context } = this.props;
@@ -2756,6 +2722,18 @@ class Logger {
    */
   context() {
     return this.context;
+  }
+
+  /**
+   * @private
+   * @ignore
+   * @param {Array} [args]
+   */
+  logLevel(level, ...args) {
+    if(args.length && !(args[0] instanceof Array)) args.unshift(undefined);
+    const logArgs = this.transformArgs(...args);
+    logArgs.tags.logLevel = level;
+    this.props.loggers.log(logArgs);
   }
 
   /**
