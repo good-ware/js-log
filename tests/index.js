@@ -174,7 +174,7 @@ async function go(colors) {
   }
 
   // Now 'dog' logs at silly because warn is added
-  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof' }));
+  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
 
   // Check the category of a saved logger is the same as the category provided to Loggers.logger(category, loggerObj)
   if (loggers.logger('dog').category() !== 'dog') throw new Error();
@@ -189,12 +189,13 @@ async function go(colors) {
     const count = unitTest.entries.length;
     loggers.logger('dog').silly('a'); // logLevel is specified via silly()
     if (count !== unitTest.entries.length) throw new Error();
-    loggers.logger('dog').log('a'); // Use the tags for dog's logger
+    loggers.logger('dog').log('a', null, {a: 5}); // Use the tags for dog's logger
     // Nothing was logged to thie console?
     if (count === unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.context.dog !== 'woof') throw new Error();
   }
+  process.exit()
   // ============ logger() tests end
 
   // Specify the level
