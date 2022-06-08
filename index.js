@@ -61,17 +61,6 @@ transportNames.forEach((transport) => {
 /**
  * @private
  * @ignore
- * Which datatypes are scalars
- */
-const scalars = {
-  number: true,
-  string: true,
-  boolean: true,
-};
-
-/**
- * @private
- * @ignore
  * Category names for internal loggers
  */
 const reservedCategories = {
@@ -500,7 +489,7 @@ class Loggers extends EventEmitter {
    */
   addLevelMethods(target) {
     // eslint-disable-next-line no-return-assign
-    this.props.levels.forEach((level) => target[level] = (...args) => target.logLevel(level, ...args));
+    this.props.levels.forEach((level) => target[level] = (...args) => Loggers.logLevel(target, level, ...args));
   }
 
   /**
@@ -961,6 +950,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
       if (codes) {
         [colorBegin, colorEnd] = codes;
       } else {
+        // eslint-disable-next-line no-multi-assign
         colorBegin = colorEnd = '';
       }
     }
@@ -1687,7 +1677,11 @@ ${error}  [error ${myName}]`);
    */
   stack(name) {
     let { stacks } = this.props;
-    if (!stacks) this.props.stacks = stacks = {};
+    if (!stacks) {
+      stacks = {};
+      this.props.stacks = {};
+    }
+
     let stack = stacks[name];
     if (stack) return stack;
 
@@ -1773,6 +1767,13 @@ ${error}  [error ${myName}]`);
       }
     } else if (context !== undefined && context !== null) {
       context = [context];
+    }
+
+    // Swap message and data
+    if (message instanceof Object && data !== undefined && !(data instanceof Object)) {
+      const data2 = data;
+      data = message;
+      message = data2;
     }
 
     if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
@@ -2069,11 +2070,14 @@ ${stack}  [error ${myName}]`);
     if (key in this.props.redact) return;
 
     if (!state.currentData) {
-      state.currentData = state.data = {};
+      state.data = {};
+      state.currentData = state.data;
     } else if (state.currentData === state.data && key in state.data && value !== state.data[key]) {
       // message and data overlap; their values differ
-      state.currentData = state.dataData = {};
+      state.dataData = {};
+      state.currentData = state.dataData;
     }
+
     state.currentData[key] = value;
   }
 
@@ -2167,6 +2171,7 @@ ${stack}  [error ${myName}]`);
         items.push(this.objectToString(message));
       }
     }
+    console.log(JSON.stringify(items))
 
     if (data !== undefined && typeof data !== 'function') items.push(Loggers.toObject(data, 'data'));
 
@@ -2175,9 +2180,10 @@ ${stack}  [error ${myName}]`);
         // Object.keys is not used in order to get inherited properties
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in item) {
+
           const value = item[key];
           // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
-          if (typeof value !== 'function' && key !== 'stack' && key !== 'message') {
+          if (typeof value !== 'function') { // && key !== 'stack' && key !== 'message') {
             // stack and message are handled below
             // copyData also handles redaction
             this.copyData(level, tags, state, key, value);
@@ -2207,12 +2213,11 @@ ${stack}  [error ${myName}]`);
 
       this.props.metaProperties.forEach((key) => {
         let value = context[key];
-        if (value === undefined) return;
+        if (value === null || value === undefined || typeof value === 'function') return;
 
         if (value instanceof Date) value = value.toISOString();
-        else if (!scalars[typeof value]) return;
+        else if (value instanceof Object) return;
 
-        // Copy context
         if (!foundKey) {
           context = { ...context };
           foundKey = true;
@@ -2223,8 +2228,9 @@ ${stack}  [error ${myName}]`);
         delete context[key];
       });
 
-      if (!foundKey) context = {...context}; // This stops the data console transport from logging context
-      // like context: Context {}
+      // Stop the data console transport from logging context like "context: Context {...}"
+      if (!foundKey) context = {...context};
+
       if (Loggers.hasKeys(context)) entry.context = context;
     }
 
@@ -2234,14 +2240,13 @@ ${stack}  [error ${myName}]`);
     if (entryData) {
       this.props.metaProperties.forEach((key) => {
         let value = entryData[key];
-        if (value === undefined) return;
+        if (value === null || value === undefined || typeof value === 'function') return;
 
         if (value instanceof Date) value = value.toISOString();
-        else if (value !== null && !scalars[typeof value]) return;
+        else if (value instanceof Object) return;
 
         // Rename object key to meta property
         entry[this.props.meta[key]] = value;
-
         delete entryData[key];
       });
 
@@ -2318,7 +2323,8 @@ ${stack}  [error ${myName}]`);
 
     // If message is an Error, don't log it again
     // Not sure this does anything
-    if (message instanceof Error) errors.add(message);
+    // if (message instanceof Error) errors.add(message);
+    if (message === undefined && data instanceof Error) errors.add(data);
 
     /**
      * Objects added to dataMessages are sent to this method
@@ -2435,8 +2441,9 @@ ${stack}  [error ${myName}]`);
     // Log child errors
     if (dataData) this.send(info, dataData, undefined, context, errors, depth, groupId || entry.id);
 
-    dataMessages.forEach((dataMessage) =>
-      this.send(info, dataMessage, data, context, errors, depth, groupId || entry.id)
+    dataMessages.forEach((dataMessage) => {
+      this.send(info, dataMessage, data, context, errors, depth, groupId || entry.id);
+    }
     );
   }
 
@@ -2444,14 +2451,18 @@ ${stack}  [error ${myName}]`);
    * @private
    * @ignore
    * Internal function called by methods that are named after levels. Allows tags to be provided.
+   * @param {Loggers|logger} target 
    * @param {string} level
    * @param {Array} args
    */
-  logLevel(level, ...args) {
-    if(args.length && !(args[0] instanceof Array)) args.unshift(undefined);
-    const logArgs = this.transformArgs(...args);
+  static logLevel(target, level, ...args) {
+    if (args.length) {
+      const [arg0] = args;
+      if (!(arg0 instanceof Error) && !(arg0 instanceof Array)) args.unshift(undefined);
+    }
+    const logArgs = target.transformArgs(...args);
     logArgs.tags.logLevel = level;
-    this.log(logArgs);
+    target.log(logArgs);
   }
 
   /**
@@ -2740,11 +2751,8 @@ class Logger {
    * @ignore
    * @param {Array} [args]
    */
-  logLevel(level, ...args) {
-    if(args.length && !(args[0] instanceof Array)) args.unshift(undefined);
-    const logArgs = this.transformArgs(...args);
-    logArgs.tags.logLevel = level;
-    this.props.loggers.log(logArgs);
+  logLevel(_, ...args) {
+    this.props.loggers.logLevel(this, ...args);
   }
 
   /**

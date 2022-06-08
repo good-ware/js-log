@@ -71,13 +71,6 @@ async function go(colors) {
   // Ready for testing
   //
 
-  {
-    logger.info({ tags: ['extra'], category: 'dragon' });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (!entry.category === 'dragon') throw new Error();
-    if (!entry.tags.includes('extra')) throw new Error();
-  }
-  process.exit()
   // console.log(loggers.child(['warn', 'goofy'], { dog: 'woof' }).context())
   // console.log(loggers.tags('error'));
   // console.log(loggers.tags('error', 'five'));
@@ -132,11 +125,12 @@ async function go(colors) {
 
   // An error is provided and the message is blank
   // errors add stack
+  if (0)
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
-    if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 1].logStack) throw new Error();
   }
   {
     const count = unitTest.entries.length;
