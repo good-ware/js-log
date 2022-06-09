@@ -2217,9 +2217,9 @@ ${stack}  [error ${myName}]`);
         // Object.keys is not used in order to get inherited properties
         // eslint-disable-next-line no-restricted-syntax
         for (const key in item) {
+          // message and stack are handled later
           if (!['message', 'stack'].includes(key)) this.copyData(state, key, item[key]);
         }
-        // message and stack are handled later
 
         const { stack } = item;
         if (stack && typeof stack === 'string') this.copyData(state, 'stack', stack);
