@@ -1769,15 +1769,22 @@ ${error}  [error ${myName}]`);
       context = [context];
     }
 
-    // Swap message and data
-    if (message instanceof Object && data !== undefined && !(data instanceof Object)) {
-      const data2 = data;
-      data = message;
-      message = data2;
-    }
+    if (message === undefined && data instanceof Error) {
+      message = data;
+      data = undefined;
+    } else {
+      // Swap message and data
+      if ((message instanceof Object && data !== null && data !== undefined && !(data instanceof Object)) 
+        // || ((message instanceof Object && data !== undefined && !(data instanceof Object))
+        ) {
+        const data2 = data;
+        data = message;
+        message = data2;
+      }
 
-    if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
-    if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
+      if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
+      if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
+    }
 
     tags = this.tags(tags);
 
@@ -2058,15 +2065,15 @@ ${stack}  [error ${myName}]`);
    * Does nothing if the provided key is redacted. Helper function to combine 'message' and 'data'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.dataData and then sets
    * state.currentData[key] to value.
-   * @param {string} level
-   * @param {object} tags
    * @param {object} state An object with keys data, dataData, and currentData
    * @param {string} key
    * @param {*} value Value to store in the property named 'key'
    */
-  copyData(level, tags, state, key, value) {
+  copyData(state, key, value) {
     // Check redaction (nonrecursive)
     if (value === undefined) return;
+    if (typeof value === 'function') return;
+
     if (key in this.props.redact) return;
 
     if (!state.currentData) {
@@ -2171,7 +2178,6 @@ ${stack}  [error ${myName}]`);
         items.push(this.objectToString(message));
       }
     }
-    console.log(JSON.stringify(items))
 
     if (data !== undefined && typeof data !== 'function') items.push(Loggers.toObject(data, 'data'));
 
@@ -2180,29 +2186,25 @@ ${stack}  [error ${myName}]`);
         // Object.keys is not used in order to get inherited properties
         // eslint-disable-next-line guard-for-in, no-restricted-syntax
         for (const key in item) {
-
           const value = item[key];
-          // Despite being non-enumerable, if these properties are added explicitly, they will be found via 'in'
-          if (typeof value !== 'function') { // && key !== 'stack' && key !== 'message') {
-            // stack and message are handled below
-            // copyData also handles redaction
-            this.copyData(level, tags, state, key, value);
-          }
+          this.copyData(state, key, value);
         }
 
         const { stack } = item;
-        if (stack && typeof stack === 'string') this.copyData(level, tags, state, 'stack', stack);
+        if (stack && typeof stack === 'string') this.copyData(state, 'stack', stack);
 
         // If the object has a conversion to string, use it. Otherwise, use its message property if it's a scalar.
         const str = this.objectToString(item);
-        if (str) {
-          this.copyData(level, tags, state, 'message', str);
-        } else if ('message' in item) {
-          this.copyData(level, tags, state, 'message', item.message);
+        if (str) this.copyData(state, 'message', str);
+
+        if ('message' in item) {
+          const { message: msg } = item;
+          // if (msg !== str) 
+          if (msg !== undefined) this.copyData(state, str ? '_message' : 'message', msg);
         }
       } else {
         // Copy message to data where it will be moved to meta
-        this.copyData(level, tags, state, 'message', item.toString());
+        this.copyData(state, 'message', item.toString());
       }
     });
 
@@ -2213,7 +2215,7 @@ ${stack}  [error ${myName}]`);
 
       this.props.metaProperties.forEach((key) => {
         let value = context[key];
-        if (value === null || value === undefined || typeof value === 'function') return;
+        if (value === undefined || typeof value === 'function') return;
 
         if (value instanceof Date) value = value.toISOString();
         else if (value instanceof Object) return;
@@ -2235,12 +2237,12 @@ ${stack}  [error ${myName}]`);
     }
 
     // =========================
-    // Move keys in data to meta
+    // Move keys in both to meta
     const { data: entryData } = state;
     if (entryData) {
       this.props.metaProperties.forEach((key) => {
         let value = entryData[key];
-        if (value === null || value === undefined || typeof value === 'function') return;
+        if (value === undefined || typeof value === 'function') return;
 
         if (value instanceof Date) value = value.toISOString();
         else if (value instanceof Object) return;
@@ -2324,7 +2326,7 @@ ${stack}  [error ${myName}]`);
     // If message is an Error, don't log it again
     // Not sure this does anything
     // if (message instanceof Error) errors.add(message);
-    if (message === undefined && data instanceof Error) errors.add(data);
+    // if (message === undefined && data instanceof Error) errors.add(data);
 
     /**
      * Objects added to dataMessages are sent to this method
@@ -2744,15 +2746,6 @@ class Logger {
    */
   context() {
     return this.props.context;
-  }
-
-  /**
-   * @private
-   * @ignore
-   * @param {Array} [args]
-   */
-  logLevel(_, ...args) {
-    this.props.loggers.logLevel(this, ...args);
   }
 
   /**
