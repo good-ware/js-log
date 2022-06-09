@@ -289,16 +289,39 @@ class Loggers extends EventEmitter {
   /**
    * @private
    * @ignore
+   * @param {WeakSet} processed
+   * @param {object} obj
+   * @param {object} result
+   */
+  static deepCopy(processed, obj) {
+    processed.add(obj);
+
+    // eslint-disable-next-line no-restricted-syntax, guard-for-in
+    for (const key in obj) {
+      let value = obj[key];
+      if (value instanceof Object && !processed.has(value)) {
+        if ('stack' in value || 'message' in value) {
+          value = {...value, stack: value.stack, message: value.message};
+          obj[key] = value;
+        }
+        Loggers.deepCopy(processed, value);
+      }
+    }
+  }
+
+  /**
+   * @private
+   * @ignore
    * Determines whether an object has any properties. Faster than Object.keys(object).length.
    * See https://jsperf.com/testing-for-any-keys-in-js
    * @param {object} object An object to test
    * @returns {boolean} true if object has properties (including inherited)
    */
-  static hasKeys(object) {
+  static hasProperty(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
     if (!object || !(object instanceof Object) || object instanceof Array) return false;
     // message and stack are invisible; any others?
-    if (object instanceof Error) return true;
+    if ('message' in object || 'stack' in object) return true;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
     for (const prop in object) return true;
     return false;
@@ -409,7 +432,8 @@ class Loggers extends EventEmitter {
     }
 
     // Redact context
-    const result = {};
+    const result = ('message' in context || 'stack' in context) ? 
+     {...context, message: context.message, stack: context.stack} : {};
     const { redact } = this.props;
 
     // eslint-disable-next-line no-restricted-syntax
@@ -420,7 +444,8 @@ class Loggers extends EventEmitter {
       }
     }
 
-    return Loggers.hasKeys(result) ? result:undefined;
+    Loggers.deepCopy(new WeakSet(), result);
+    return Loggers.hasProperty(result) ? result:undefined;
   }
 
   /**
@@ -1759,7 +1784,7 @@ ${error}  [error ${myName}]`);
       delete copy.data;
       ({ context } = copy);
       delete copy.context;
-      if (Loggers.hasKeys(copy)) {
+      if (Loggers.hasProperty(copy)) {
         if (context !== undefined && context !== null) context = [copy, context];
         else context = [copy];
       } else if (context !== undefined && context !== null) {
@@ -1782,8 +1807,8 @@ ${error}  [error ${myName}]`);
         message = data2;
       }
 
-      if (message instanceof Object && !(message instanceof Array) && !Loggers.hasKeys(message)) message = undefined;
-      if (data instanceof Object && !(data instanceof Array) && !Loggers.hasKeys(data)) data = undefined;
+      if (message instanceof Object && !(message instanceof Array) && !Loggers.hasProperty(message)) message = undefined;
+      if (data instanceof Object && !(data instanceof Array) && !Loggers.hasProperty(data)) data = undefined;
     }
 
     tags = this.tags(tags);
@@ -1998,7 +2023,7 @@ ${stack}  [error ${myName}]`);
             return true;
           });
 
-          return !transports || Loggers.hasKeys(transports);
+          return !transports || Loggers.hasProperty(transports);
         })
       ) {
         return false;
@@ -2233,7 +2258,7 @@ ${stack}  [error ${myName}]`);
       // Stop the data console transport from logging context like "context: Context {...}"
       if (!foundKey) context = {...context};
 
-      if (Loggers.hasKeys(context)) entry.context = context;
+      if (Loggers.hasProperty(context)) entry.context = context;
     }
 
     // =========================
@@ -2323,10 +2348,8 @@ ${stack}  [error ${myName}]`);
     // ==========================================================================================================
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
 
-    // If message is an Error, don't log it again
-    // Not sure this does anything
-    // if (message instanceof Error) errors.add(message);
-    // if (message === undefined && data instanceof Error) errors.add(data);
+    if (message instanceof Error) errors.add(message);
+    else if (message === undefined && data instanceof Error) errors.add(data);
 
     /**
      * Objects added to dataMessages are sent to this method
@@ -2346,6 +2369,7 @@ ${stack}  [error ${myName}]`);
     let firstError;
 
     const { data: entryData } = entry;
+
     if (entryData) {
       if (addData) {
         // ======================================================================
@@ -2386,7 +2410,7 @@ ${stack}  [error ${myName}]`);
         if (recursiveRedact.length) deepCleaner(newData, recursiveRedact);
       }
 
-      if (Loggers.hasKeys(newData)) entry.data = newData;
+      if (Loggers.hasProperty(newData)) entry.data = newData;
       else delete entry.data;
     }
 
@@ -2460,7 +2484,7 @@ ${stack}  [error ${myName}]`);
   static logLevel(target, level, ...args) {
     if (args.length) {
       const [arg0] = args;
-      if (!(arg0 instanceof Error) && !(arg0 instanceof Array)) args.unshift(undefined);
+      if (!(arg0 instanceof Object)) args.unshift(undefined);
     }
     const logArgs = target.transformArgs(...args);
     logArgs.tags.logLevel = level;

@@ -71,12 +71,17 @@ async function go(colors) {
   // Ready for testing
   //
   {
-    logger.info({ tags: ['extra'], category: 'dragon' });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (!entry.category === 'dragon') throw new Error();
-    if (!entry.tags.includes('extra')) throw new Error();
+    logger.error({ context: new Error('inner error') });
   }
-
+  process.exit()
+  {
+    logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    // if (!entry.data.error) throw new Error();
+    if (entry.message !== 'Foo') throw new Error();
+    if (!entry.data.a) throw new Error();
+  }
 
   // console.log(loggers.child(['warn', 'goofy'], { dog: 'woof' }).context())
   // console.log(loggers.tags('error'));
