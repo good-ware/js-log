@@ -435,16 +435,19 @@ class Loggers extends EventEmitter {
     const result = ('message' in context || 'stack' in context) ? 
      {...context, message: context.message, stack: context.stack} : {};
     const { redact } = this.props;
+    let hasObject;
 
     // eslint-disable-next-line no-restricted-syntax
     for (const key in context) {
       if (!(key in redact)) {
         const value = context[key];
         if (typeof value !== 'function') result[key] = value;
+        if (value instanceof Object) hasObject = true;
       }
     }
 
-    Loggers.deepCopy(new WeakSet(), result);
+    // Recursively reveal objects that have message and stack
+    if (hasObject) Loggers.deepCopy(new WeakSet(), result);
     return Loggers.hasProperty(result) ? result:undefined;
   }
 
@@ -1807,7 +1810,10 @@ ${error}  [error ${myName}]`);
         message = data2;
       }
 
-      if (message instanceof Object && !(message instanceof Array) && !Loggers.hasProperty(message)) message = undefined;
+      if (message instanceof Object && !(message instanceof Array) && !Loggers.hasProperty(message)) {
+        message = undefined;
+      }
+
       if (data instanceof Object && !(data instanceof Array) && !Loggers.hasProperty(data)) data = undefined;
     }
 
@@ -2209,11 +2215,11 @@ ${stack}  [error ${myName}]`);
     items.forEach((item) => {
       if (item instanceof Object) {
         // Object.keys is not used in order to get inherited properties
-        // eslint-disable-next-line guard-for-in, no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax
         for (const key in item) {
-          const value = item[key];
-          this.copyData(state, key, value);
+          if (!['message', 'stack'].includes(key)) this.copyData(state, key, item[key]);
         }
+        // message and stack are handled later
 
         const { stack } = item;
         if (stack && typeof stack === 'string') this.copyData(state, 'stack', stack);
@@ -2222,11 +2228,8 @@ ${stack}  [error ${myName}]`);
         const str = this.objectToString(item);
         if (str) this.copyData(state, 'message', str);
 
-        if ('message' in item) {
-          const { message: msg } = item;
-          // if (msg !== str) 
-          if (msg !== undefined) this.copyData(state, str ? '_message' : 'message', msg);
-        }
+        const msg = item.message;
+        if (msg !== undefined) this.copyData(state, str ? '_message' : 'message', msg);
       } else {
         // Copy message to data where it will be moved to meta
         this.copyData(state, 'message', item.toString());
