@@ -293,16 +293,16 @@ class Loggers extends EventEmitter {
    * @param {object} obj
    * @param {object} result
    */
-  static deepCopy(processed, obj) {
-    processed.add(obj);
+  static deepCopy(processed, object) {
+    processed.add(object);
 
     // eslint-disable-next-line no-restricted-syntax, guard-for-in
-    for (const key in obj) {
-      let value = obj[key];
-      if (value instanceof Object && !processed.has(value)) {
+    for (const key in object) {
+      let value = object[key];
+      if (value instanceof Object && !(value instanceof Array) && !processed.has(value)) {
         if ('stack' in value || 'message' in value) {
           value = {...value, stack: value.stack, message: value.message};
-          obj[key] = value;
+          object[key] = value;
         }
         Loggers.deepCopy(processed, value);
       }
@@ -319,11 +319,11 @@ class Loggers extends EventEmitter {
    */
   static hasProperty(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
-    if (!object || !(object instanceof Object) || object instanceof Array) return false;
+    if (!(object instanceof Object) || (object instanceof Array)) return false;
     // message and stack are invisible; any others?
-    if ('message' in object || 'stack' in object) return true;
     // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
     for (const prop in object) return true;
+    if ('message' in object || 'stack' in object) return true;
     return false;
   }
 
@@ -433,7 +433,7 @@ class Loggers extends EventEmitter {
 
     // Redact context
     const result = ('message' in context || 'stack' in context) ? 
-     {...context, message: context.message, stack: context.stack} : {};
+     {message: context.message, stack: context.stack} : {};
     const { redact } = this.props;
     let hasObject;
 

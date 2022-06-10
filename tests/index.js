@@ -70,18 +70,6 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
-  {
-    logger.error({ context: new Error('inner error') });
-  }
-  process.exit()
-  {
-    logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (entry.level !== 'error') throw new Error();
-    // if (!entry.data.error) throw new Error();
-    if (entry.message !== 'Foo') throw new Error();
-    if (!entry.data.a) throw new Error();
-  }
 
   // console.log(loggers.child(['warn', 'goofy'], { dog: 'woof' }).context())
   // console.log(loggers.tags('error'));
@@ -386,11 +374,14 @@ async function go(colors) {
 
   // Error + message, call logLevel method on logger
   {
+    const count = unitTest.entries.length;
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.entries[unitTest.entries.length - 2];
+    if (count + 1 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
-    // if (!entry.data.error) throw new Error();
     if (entry.message !== 'Foo') throw new Error();
+    // eslint-disable-next-line no-underscore-dangle
+    if (!entry.data._message) throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
@@ -398,47 +389,48 @@ async function go(colors) {
   {
     logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
-    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
 
   // Error + message + tag
   {
+    const count = unitTest.entries.length;
     logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!entry.tags.includes('info')) throw new Error();
-    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
-    if (!entry.data.a) throw new Error();
+    if (!entry.data.message.a) throw new Error();
   }
 
   // Error + message, call log() on logger
   {
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     const entry = unitTest.entries[unitTest.entries.length - 2];
-    // if (!entry.data.error) throw new Error();
     if (!colors && entry.message !== 'Foo') throw new Error();
-    if (!entry.data.a) throw new Error();
+    if (!entry.data.message.a) throw new Error();
   }
 
   // Error + message, call log() on child
   {
     logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    // if (!entry.data.error) throw new Error();
+    let entry = unitTest.entries[unitTest.entries.length - 2];
     if (!colors && entry.message !== 'Foo') throw new Error();
+    entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.data.a) throw new Error();
   }
 
   // Pass an object to child(). data is a string.
   {
     // logging-level methods override tags
-    loggers.child({ tags: 'error', data: 'doo' }).info('Yabba dabba');
+    loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (!entry.tags.includes('error')) throw new Error();
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
-    const { data, level } = obj;
+    const { context, level } = obj;
     if (level !== 'info') throw new Error();
-    if (data.data !== 'doo') throw new Error();
+    if (context.context !== 'doo') throw new Error();
   }
 
   // message is an object 1
@@ -446,8 +438,9 @@ async function go(colors) {
     logger.info(['c'], { message: { a: 1, b: 2 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
-    if (!entry.data.a) throw new Error();
-    if (!entry.data.b) throw new Error();
+    const { message } = entry.data;
+    if (!message.a) throw new Error();
+    if (!message.b) throw new Error();
   }
 
   // message is an object 1
@@ -455,15 +448,15 @@ async function go(colors) {
     logger.child().info(['c'], { message: { a: 1, b: 2 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
-    if (!entry.data.a) throw new Error();
-    if (!entry.data.b) throw new Error();
+    const { message } = entry.data;
+    if (!message.a) throw new Error();
+    if (!message.b) throw new Error();
   }
 
   // log level method with data and tags
   {
     logger.error({ tags: ['d'], a: 1, b: 2, data: { d: 5 } });
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
-    process.exit();
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();

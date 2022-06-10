@@ -70,15 +70,6 @@ test('ready', () => {
   expect(loggers.logger().ready).toBe(true);
 });
 
-test('null message info', () => {
-  const count = unitTest.entries.length;
-  loggers.info(null);
-  expect(unitTest.entries.length).toBe(count+1);
-  const item = unitTest.entries[count];
-  expect(item.message).toBe(null);
-  expect(item.level).toBe('info');
-});
-
 test('null message default', () => {
   const count = unitTest.entries.length;
   loggers.log(null, null);
@@ -86,6 +77,15 @@ test('null message default', () => {
   const item = unitTest.entries[count];
   expect(item.message).toBe(null);
   expect(item.level).toBe('debug');
+});
+
+test('null message info', () => {
+  const count = unitTest.entries.length;
+  loggers.info(null);
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe(null);
+  expect(item.level).toBe('info');
 });
 
 test('null message info 2', () => {
@@ -113,4 +113,20 @@ test('default method', () => {
   const item = unitTest.entries[count];
   expect(item.message).toBe('hello');
   expect(item.level).toBe('debug');
+});
+
+test('null context', () => {
+  const count = unitTest.entries.length;
+  loggers.info({context: null});
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.context).toBe();
+});
+
+test('array context', () => {
+  const count = unitTest.entries.length;
+  loggers.info({context: []});
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.context.context.length).toBe(0);
 });
