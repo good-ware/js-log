@@ -253,7 +253,7 @@ async function go(colors) {
   {
     const count = unitTest.console.entries.length;
     loggers.silly('msg', {}, null, 'briefConsole');
-    if (count+1 !== unitTest.console.entries.length) throw new Error();
+    if (count !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message (default category)
   {
@@ -337,21 +337,43 @@ async function go(colors) {
   // console end
   // ===========
 
-  // log({message: error: Error})
-  {
-    const count = unitTest.entries.length;
-    logger.log({ message: { error: new Error('err') } });
-    if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.level !== 'error') throw new Error();
-  }
-  // log({message: Error})
+  // message: Error
   {
     const count = unitTest.entries.length;
     logger.log({ message: new Error('err') });
     if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
+  }
+  // data: {error: Error}
+  {
+    const count = unitTest.entries.length;
+    logger.log({ data: { error: new Error('err') } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+    if (entry.message !== 'Error: err') throw new Error();
+  }
+  // message: {error: Error} - same as the above
+  {
+    const count = unitTest.entries.length;
+    logger.log({ message: { error: new Error('err') } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+    if (entry.message !== 'Error: err') throw new Error();
+  }
+  // message: {error: Error, message: 's'}
+  {
+    const count = unitTest.entries.length;
+    logger.log({ message: { message: 's', error: new Error('err') } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
+    let entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'error') throw new Error();
+    if (entry.message !== 'Error: err') throw new Error();
+    entry = unitTest.entries[unitTest.entries.length - 2];
+    if (entry.level !== 'error') throw new Error();
+    if (entry.message !== 's') throw new Error();
   }
   // log({error: Error})
   {
@@ -381,10 +403,15 @@ async function go(colors) {
   {
     const count = unitTest.entries.length;
     logger.info(new Error('err'), 'message');
-    if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (count +2 !== unitTest.entries.length) throw new Error();
+    let entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'info') throw new Error();
-    if (!entry.data.message === 'message') throw new Error();
+    if (entry.message !== 'message') throw new Error();
+    if (entry.stack) throw new Error();
+    entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.level !== 'info') throw new Error();
+    if (!entry.tags.includes('error')) throw new Error();
+    if (!entry.data.message === 'Error: err') throw new Error();
     if (!entry.stack) throw new Error();
   }
   {
@@ -426,7 +453,6 @@ async function go(colors) {
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Foo') throw new Error();
     // eslint-disable-next-line no-underscore-dangle
-    if (!entry.data._message) throw new Error();
     if (!entry.data.a) throw new Error();
   }
   // Error + message, call logLevel method on child

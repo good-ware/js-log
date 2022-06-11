@@ -1812,9 +1812,7 @@ ${error}  [error ${myName}]`);
       data = undefined;
     } else {
       // Swap message and data
-      if ((message instanceof Object && data !== null && data !== undefined && !(data instanceof Object)) 
-        // || ((message instanceof Object && data !== undefined && !(data instanceof Object))
-        ) {
+      if ((message instanceof Object && data !== null && data !== undefined && !(data instanceof Object))) {
         const data2 = data;
         data = message;
         message = data2;
@@ -2239,7 +2237,9 @@ ${stack}  [error ${myName}]`);
         if (str) this.copyData(state, 'message', str);
 
         const msg = item.message;
-        if (msg !== undefined) this.copyData(state, str ? '_message' : 'message', msg);
+        if (msg !== undefined && (!str || msg !== str)) {
+          this.copyData(state, str ? '_message' : 'message', msg);
+        }
       } else {
         // Copy message to data where it will be moved to meta
         this.copyData(state, 'message', item.toString());
