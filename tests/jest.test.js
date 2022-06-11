@@ -130,3 +130,44 @@ test('array context', () => {
   const item = unitTest.entries[count];
   expect(item.context.context.length).toBe(0);
 });
+
+test('message is object with message', () => {
+  const count = unitTest.entries.length;
+  loggers.info({message: {message: 'x'}});
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.message).toBe('x');
+  // 'message' gets promoted out of data but _message remains
+  expect(item.data._message).toBe('x');
+});
+
+test('message is object with message and data provided', () => {
+  const count = unitTest.entries.length;
+  loggers.info({message: {message: 'x'}, data: {a: 1}});
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.data.a).toBe(1);
+  expect(item.message).toBe('x');
+  // 'message' gets promoted out of data but _message remains
+  expect(item.data._message).toBe('x');
+});
+
+test('message is object with message and others and data object overlaps message', () => {
+  const count = unitTest.entries.length;
+  loggers.info({message: {message: 'x', a:2}, data: {a: 1}});
+  expect(unitTest.entries.length).toBe(count+2);
+  {
+    const item = unitTest.entries[count];
+    expect(item.data.a).toBe(2);
+    expect(item.message).toBe('x');
+    // 'message' gets promoted out of data but _message remains
+    expect(item.data._message).toBe('x');
+  }
+  {
+    const item = unitTest.entries[count+1];
+    expect(item.data.a).toBe(1);
+    expect(item.message).toBe('');
+    // 'message' gets promoted out of data but _message remains
+    expect(item.data._message).toBe();
+  }
+});

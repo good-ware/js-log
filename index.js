@@ -1654,7 +1654,17 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * Returns a logger associated with a category. Optionally assocates a logger with a category.
+   * Associates a logger with a category
+   * @param {string} [category]
+   * @param {Loggers|object} [logger]
+   * @returns {Loggers|object}
+   */
+  setLogger(category, logger) {
+    return this.logger(category, logger);
+  }
+
+  /**
+   * Returns a logger associated with a category. Optionally associates a logger with a category.
    * @param {string} [category]
    * @param {Loggers|object} [logger]
    * @returns {Loggers|object}
@@ -2677,6 +2687,12 @@ class Logger {
    */
   get parent() {
     return this.props.parent;
+  }
+
+  /**
+   */
+  setLogger(category, logger) {
+    return this.logger(category, logger);
   }
 
   /**

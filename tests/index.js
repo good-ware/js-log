@@ -50,8 +50,9 @@ async function go(colors) {
     console: 'info',
     tags: { coordinator: { level: 'info' }, tag2: { level: 'error' } },
   };
-  // Configuration for tags that affect logging levels - end
-  // =========================================================
+
+  // Configuration for tags that affect logging levels end
+  // =====================================================
 
   // =========================
   // Create a Loggers instance
@@ -71,60 +72,125 @@ async function go(colors) {
   // Ready for testing
   //
 
-  // console.log(loggers.child(['warn', 'goofy'], { dog: 'woof' }).context())
-  // console.log(loggers.tags('error'));
-  // console.log(loggers.tags('error', 'five'));
-  // console.log(loggers.tags('error', ['five']));
-  // console.log(loggers.tags('error', {five: 5}));
-  // console.log(loggers.context(5, {a:{b: 3}}));
-  // loggers.context(tags, category, null, undefined)
-  // loggers.context({a: 5,d: {a: 5}}, {b:6}, 8, [2], {a: 2}));
-  // loggers.log('info', {message: 'hello', data: {a: 5}, context: {}});
-  // loggers.log('info', 'hello');
-  // loggers.log('info', 'hello', null);
-  // loggers.log('info', null);
-  // loggers.log('info', {context: null, data: null});
-  // loggers.log('info', {message: 'hello', data: {a: 5}, context: 5, a:{b: 3}});
-  // loggers.info({ message: 'Foo', context: new Error('I am a message'), });
-  // loggers.log(new Error('1'), {a: 5});
-  // loggers.log('info', {a: 6}, {a: 5});
-  // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
-  // loggers.log('info', '', new Error('x'))
-  // loggers.log(null, undefined, new Error('x'))
-  // loggers.log(undefined, undefined, new Error('x'))
-  // loggers.log(undefined, new Error('x'))
-  // loggers.log('info', null, new Error('x'))
-  // loggers.log('info');
-  // loggers.log(new Error('1'));
-  // loggers.log(new Error('1'), {a: 5});
-  // loggers.log(new Error('1'), {a: 5},'category');
-  // loggers.log('hi', {a:5},new Error('1'));
-  // loggers.log({a:5},new Error('1'));
-  // loggers.log(null, new Error('1'));
-  // loggers.log('info', new Error('1'));
-  // loggers.log('info', {a:5},new Error('1'));
-  // loggers.log('info', {a:5}, {error:new Error('1')});
-  // loggers.log('info', 'whw', {error: new Error('1'), error2: new Error('2'), a: 5});
-  // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5});
-  // loggers.log('info', {error: new Error('1'), error2: new Error('2'), a: 5}, {c: 2});
-  // Log as error
-  // loggers.log('info', new Error('1'), {a: 5});
-  // Log as error
-  // loggers.log('info', undefined, new Error('1'));
-  // Log as default
-  // loggers.log({error: false}, new Error('1'));
-  // loggers.log('info', null, new Error('1'));
-  // loggers.log('info', null, new Error('1'));
-  // loggers.log('info', {error: new Error('1')});
-  // loggers.log('info', {message: 'a', error: new Error('1')});
-  // loggers.log('info', {message: {a: 5, error: new Error('2')}, error: new Error('1')});
-  // loggers.log('info', {message: {a: 5, error: new Error('2')}}, {error: new Error('1')});
-  // loggers.log('info', {message: {a: 5, error: new Error('2')}}, new Error('1'));
-  // loggers.log('info', 'message', {a: 5, error: new Error('1')});
-  // loggers.log('info', {error: new Error('1'), error2: new Error('2')});
+  // loggers.tags()
+  {
+    const tags = loggers.tags('message');
+    if (!tags.message) throw new Error();
+  }
 
-  // An error is provided and the message is blank
-  // errors add stack
+  // ====================
+  // isLevelEnabled begin
+
+  if (!loggers.isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
+  if (!loggers.isLevelEnabled('more')) throw new Error('isLevelEnabled failed');
+
+  // logging at any level works
+  if (!loggers.child(null, null, 'foo').isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
+  // disable a tag
+  if (!loggers.isLevelEnabled(loggers.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
+
+  // two level names in tags
+  {
+    const result = loggers.isLevelEnabled({ error: true, debug: true });
+    if (result.level !== 'error') throw new Error();
+    if (!result.tags.error) throw new Error();
+    if (!result.tags.debug) throw new Error();
+  }
+
+  // logLevel tag
+  {
+    const result = loggers.isLevelEnabled({ error: true, logLevel: 'debug' });
+    if (result.level !== 'debug') throw new Error();
+    if (!result.tags.error) throw new Error();
+    if (!result.tags.debug) throw new Error();
+    if ('logLevel' in result.tags) throw new Error();
+  }
+
+  // isLevelEnabled end
+  // ==================
+
+  // categoryOptions
+  if (loggers.categoryOptions('bar')) throw new Error('categoryOptions failed');
+  if (!loggers.categoryOptions('default')) throw new Error('categoryOptions failed');
+
+  // category must be a string or falsy - output warning
+  // eslint-disable-next-line no-lone-blocks
+  {
+    loggers.options.unitTest = false;
+    logger.info('message', null, null, [5]);
+    loggers.options.unitTest = true;
+  }
+
+  {
+    let failed = true;
+    try {
+      loggers.child(null, null, [5]);
+      failed = false;
+    } catch (error) {
+      //
+    }
+
+    if (!failed) throw new Error('Should have failed');
+
+    failed = true;
+    try {
+      loggers.log(null, null, null, null, [5]);
+      failed = false;
+    } catch (error) {
+      //
+    }
+    if (!failed) throw new Error('Should have failed');
+  }
+
+  // ==============
+  // logger() begin
+
+  // eslint-disable-next-line no-self-compare
+  if (loggers.logger('dog') !== loggers.logger('dog')) throw new Error();
+
+  // 'dog' doesn't log at silly
+  {
+    const count = unitTest.entries.length;
+    loggers.logger('dog').silly('a');
+    if (count !== unitTest.entries.length) throw new Error();
+  }
+
+  // Check disabling the warn tag
+  if (loggers.isLevelEnabled({ tags: { silly: true, warn: false }, category: 'dog' })) throw new Error();
+
+  // 'dog' will log at silly because warn is added
+  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
+
+  if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
+
+  // Check the category of a saved logger is the same as the category provided to Loggers.logger(category, loggerObj)
+  if (loggers.logger('dog').category() !== 'dog') throw new Error();
+
+  {
+    const count = unitTest.entries.length;
+    loggers.logger('dog').silly('a'); // logLevel is specified via silly()
+    if (count !== unitTest.entries.length) throw new Error();
+    loggers.logger('dog').log('a', null, {a: 5}); // Use the tags for dog's logger
+    // Nothing was logged to thie console?
+    if (count+1 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (entry.context.dog !== 'woof') throw new Error();
+  }
+
+  // get/getLoggers and a category that is not in config (flyweight)
+  {
+    const count = unitTest.entries.length;
+    loggers.child(null, null, 'foo').debug('debug');
+    if (count +1 !== unitTest.entries.length) throw new Error();
+  }
+
+  // logger() end
+  // ============
+
+  // ================
+  // log() etc. begin
+
+  // An error is provided and the message is blank. errors add logStack
   {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
@@ -133,8 +199,10 @@ async function go(colors) {
   }
   {
     const count = unitTest.entries.length;
+    const groupIds = Object.keys(unitTest.groupIds).length;
     loggers.error(null, new Error('abc'));
     if (count + 2 !== unitTest.entries.length) throw new Error();
+    if (groupIds + 1 !== Object.keys(unitTest.groupIds).length) throw new Error();
     if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
   }
   {
@@ -161,48 +229,11 @@ async function go(colors) {
     if (!entry.groupId) throw new Error();
   }
 
-  // ============ logger() tests begin
-  // eslint-disable-next-line no-self-compare
-  if (loggers.logger('dog') !== loggers.logger('dog')) throw new Error();
-
-  // 'dog' doesn't log at silly
-  if (loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
-  {
-    const count = unitTest.entries.length;
-    loggers.logger('dog').silly('a');
-    if (count !== unitTest.entries.length) throw new Error();
-  }
-
-  // Now 'dog' logs at silly because warn is added
-  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
-
-  // Check the category of a saved logger is the same as the category provided to Loggers.logger(category, loggerObj)
-  if (loggers.logger('dog').category() !== 'dog') throw new Error();
-
-  // Check logging at any level works
-  if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
-
-  // Check disabling the warn tag
-  if (loggers.isLevelEnabled({ tags: { silly: true, warn: false }, category: 'dog' })) throw new Error();
-
-  {
-    const count = unitTest.entries.length;
-    loggers.logger('dog').silly('a'); // logLevel is specified via silly()
-    if (count !== unitTest.entries.length) throw new Error();
-    loggers.logger('dog').log('a', null, {a: 5}); // Use the tags for dog's logger
-    // Nothing was logged to thie console?
-    if (count === unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (entry.context.dog !== 'woof') throw new Error();
-  }
-
-  // ============ logger() tests end
-
   // Specify the level
   {
     const count = unitTest.entries.length;
     logger.log('warn', new Error());
-    if (count === unitTest.entries.length) throw new Error();
+    if (count+1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'warn') throw new Error();
   }
@@ -210,24 +241,25 @@ async function go(colors) {
   {
     const count = unitTest.entries.length;
     logger.log(new Error());
-    if (count === unitTest.entries.length) throw new Error();
+    if (count+1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
 
   // =============
-  // Console tests
+  // Console begin 
+
   // No output (specify category)
   {
     const count = unitTest.console.entries.length;
     loggers.silly('msg', {}, null, 'briefConsole');
-    if (count !== unitTest.console.entries.length) throw new Error();
+    if (count+1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs message (default category)
   {
     const count = unitTest.console.entries.length;
     loggers.silly('msg', { a: 1 });
-    if (count === unitTest.console.entries.length) throw new Error();
+    if (count+1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.id) throw new Error();
   }
@@ -240,7 +272,7 @@ async function go(colors) {
   // Outputs error (specify category)
   {
     const count = unitTest.console.entries.length;
-    loggers.error(new Error('fail'), null, 'briefConsole');
+    loggers.error(new Error('fail'), null, null, 'briefConsole');
     if (count + 1 !== unitTest.console.entries.length) throw new Error();
   }
   // Outputs a message without an error (specify category)
@@ -289,7 +321,7 @@ async function go(colors) {
   {
     const count = unitTest.console.entries.length;
     loggers.info('msg', { a: 1 }, null, 'briefConsole');
-    if (count === unitTest.console.entries.length) throw new Error();
+    if (count +1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') >= 0) throw new Error();
   }
@@ -297,81 +329,94 @@ async function go(colors) {
   {
     const count = unitTest.console.entries.length;
     loggers.info('msg', { a: 1 }, null, 'dataConsole');
-    if (count === unitTest.console.entries.length) throw new Error();
+    if (count +1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') < 0) throw new Error();
   }
 
-  // Pass an object to child(). data is a string.
-  // log({message: { error: Error })
+  // console end
+  // ===========
+
+  // log({message: error: Error})
   {
+    const count = unitTest.entries.length;
     logger.log({ message: { error: new Error('err') } });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
   // log({message: Error})
   {
+    const count = unitTest.entries.length;
     logger.log({ message: new Error('err') });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
   // log({error: Error})
   {
+    const count = unitTest.entries.length;
     logger.log({ error: new Error('err') });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
   // log(Error)
   {
+    const count = unitTest.entries.length;
     logger.log(new Error('err'));
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'error') throw new Error();
   }
   // log(Error, 'message')
   {
+    const count = unitTest.entries.length;
     logger.log(new Error('err'), 'message');
+    if (count +2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'error') throw new Error();
     if (!entry.message === 'message') throw new Error();
-    // if (!entry.data.error) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.info(new Error('err'), 'message');
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.level !== 'info') throw new Error();
     if (!entry.data.message === 'message') throw new Error();
     if (!entry.stack) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.child().info(new Error('err'), 'message');
+    if (count +2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
     // if (!entry.data.error) throw new Error();
   }
-
-  // Test passing category to logLevel
+  // passing category to logLevel
   {
+    const count = unitTest.entries.length;
     logger.info(['extra'], 'A message', null, null, 'dragon');
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (entry.category !== 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
-
   {
     logger.info({ tags: ['extra'], category: 'dragon' });
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
-
   // This is logged as info
   {
     loggers.child('error').info('Yabba dabba');
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'info') throw new Error();
   }
-
   // Error + message, call logLevel method on logger
   {
     const count = unitTest.entries.length;
@@ -384,7 +429,6 @@ async function go(colors) {
     if (!entry.data._message) throw new Error();
     if (!entry.data.a) throw new Error();
   }
-
   // Error + message, call logLevel method on child
   {
     logger.child().error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
@@ -392,7 +436,6 @@ async function go(colors) {
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
-
   // Error + message + tag
   {
     const count = unitTest.entries.length;
@@ -403,28 +446,31 @@ async function go(colors) {
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.message.a) throw new Error();
   }
-
   // Error + message, call log() on logger
   {
+    const count = unitTest.entries.length;
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 2];
     if (!colors && entry.message !== 'Foo') throw new Error();
     if (!entry.data.message.a) throw new Error();
   }
-
   // Error + message, call log() on child
   {
+    const count = unitTest.entries.length;
     logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
     let entry = unitTest.entries[unitTest.entries.length - 2];
     if (!colors && entry.message !== 'Foo') throw new Error();
     entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.data.a) throw new Error();
   }
-
   // Pass an object to child(). data is a string.
+  // logging-level methods override tags
   {
-    // logging-level methods override tags
+    const count = unitTest.entries.length;
     loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[unitTest.entries.length - 1];
     if (!entry.tags.includes('error')) throw new Error();
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
@@ -432,352 +478,88 @@ async function go(colors) {
     if (level !== 'info') throw new Error();
     if (context.context !== 'doo') throw new Error();
   }
-
   // message is an object 1
   {
+    const count = unitTest.entries.length;
     logger.info(['c'], { message: { a: 1, b: 2 } });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     const { message } = entry.data;
     if (!message.a) throw new Error();
     if (!message.b) throw new Error();
   }
-
   // message is an object 1
   {
+    const count = unitTest.entries.length;
     logger.child().info(['c'], { message: { a: 1, b: 2 } });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     const { message } = entry.data;
     if (!message.a) throw new Error();
     if (!message.b) throw new Error();
   }
-
   // log level method with data and tags
   {
+    const count = unitTest.entries.length;
     logger.error({ tags: ['d'], a: 1, b: 2, data: { d: 5 } });
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
     if (!entry.data.d) throw new Error();
   }
-
   // Child data is passed to logger()
   {
+    const count = unitTest.entries.length;
     loggers.logger('a').child(null, { b: 5 }).child(null, { a: 1 }).logger('b').info('hi');
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.data.a) throw new Error();
     if (!entry.data.b) throw new Error();
   }
-
   // This is logged as debug
   {
+    const count = unitTest.entries.length;
     loggers.child('error').log(loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'debug') throw new Error();
   }
-
   // Error
   {
+    const count = unitTest.entries.length;
     logger.error('some error', new Error('5'));
+    if (count +2 !== unitTest.entries.length) throw new Error();
     const entry1 = unitTest.file.entries[unitTest.file.entries.length - 2];
     if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (entry.message !== 'Error: 5') throw new Error();
   }
-
   // Blank message, Error provided
   {
+    const count = unitTest.entries.length;
     logger.error('', new Error('5'));
+    if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (entry.message !== 'Error: 5') throw new Error(JSON.stringify(entry));
   }
-
-  const tags = loggers.tags('message');
-  if (!tags.message) throw new Error();
-
-  // Test disabling a tag
-  if (!loggers.isLevelEnabled(loggers.tags({ silly: 1 }, { silly: 0 }))) throw new Error('isLevelEnabled failed');
-
-  // Test isLevelEnabled
-  if (!loggers.isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
-  if (!loggers.isLevelEnabled('more')) throw new Error('isLevelEnabled failed');
-
-  // test 'on'
-  let onRan;
-  loggers.winstonLogger().on('close', () => {
-    // eslint-disable-next-line no-console
-    console.log('** closed **');
-    onRan = true;
-  });
-
-  // Test 'ready'
-  if (!loggers.ready) throw new Error('ready failed');
-
-  // Test two level names in tags
+  // passing tags as first parameter to level names
   {
-    const result = loggers.isLevelEnabled({ error: true, debug: true });
-    if (result.level !== 'error') throw new Error();
-    if (!result.tags.error) throw new Error();
-    if (!result.tags.debug) throw new Error();
-  }
-
-  // Test logLevel tag
-  {
-    const result = loggers.isLevelEnabled({ error: true, logLevel: 'debug' });
-    if (result.level !== 'debug') throw new Error();
-    if (!result.tags.error) throw new Error();
-    if (!result.tags.debug) throw new Error();
-    if ('logLevel' in result.tags) throw new Error();
-  }
-
-  // Test categoryOptions
-  if (loggers.categoryOptions('bar')) throw new Error('categoryOptions failed');
-  if (!loggers.categoryOptions('default')) throw new Error('categoryOptions failed');
-
-  {
-    // category must be a string or falsy - output warning
-    loggers.options.unitTest = false;
-    logger.info('message', null, [5]);
-
-    loggers.options.unitTest = true;
-
-    let failed = true;
-    try {
-      loggers.child(null, null, [5]);
-      failed = false;
-    } catch (error) {
-      //
-    }
-
-    if (!failed) throw new Error('Should have failed');
-
-    failed = true;
-    try {
-      loggers.log(null, null, null, [5]);
-      failed = false;
-    } catch (error) {
-      //
-    }
-    if (!failed) throw new Error('Should have failed');
-  }
-
-  // Test passing tags as first parameter to level names
-  {
-    const entries = unitTest.entries.length;
+    const count = unitTest.entries.length;
     const log = loggers.child(null, { operationId: 5 });
     log.default(['purge', 'begin'], 'Purging files', { directory: 5 });
-    if (unitTest.entries.length !== entries + 1) throw new Error();
+    if (count+1 !== unitTest.entries.length) throw new Error();
   }
-
-  // =========================================
-  // Tag filtering
-  // Repeat to test switch caching
-  [1, 2].forEach(() => {
-    // SQL tag
-    {
-      const entries = unitTest.entries.length;
-      loggers.log(['info', 'sql'], 'SQL info');
-      if (entries !== unitTest.entries.length) throw new Error();
-    }
-    {
-      const entries = unitTest.entries.length;
-      loggers.log(['error', 'sql'], 'SQL error');
-      if (entries === unitTest.entries.length) throw new Error();
-    }
-    {
-      const entries = unitTest.entries.length;
-      loggers.log(['warn', 'sql'], 'SQL warn');
-      if (entries === unitTest.entries.length) throw new Error();
-    }
-
-    // Barber tag
-    {
-      const entries = unitTest.entries.length;
-      loggers.log(['info', 'barber'], 'Barber message');
-      if (entries === unitTest.entries.length) throw new Error();
-    }
-    {
-      const entries = unitTest.entries.length;
-      loggers.log(['error', 'barber'], 'Barber error');
-      if (entries === unitTest.entries.length) throw new Error();
-    }
-    {
-      const entries = unitTest.file.entries.length;
-      loggers.log(['warn', 'barber'], 'Barber warn');
-      if (entries !== unitTest.file.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      loggers.log(['more', 'barber'], 'Barber message', null, 'barber');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-      // Did not write to file
-      if (fileEntries !== unitTest.file.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      loggers.log(['error', 'barber'], 'Barber error', null, 'barber');
-      if (consoleEntries === unitTest.console.entries.length) throw new Error();
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
-    }
-
-    // Nurse tag
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
-      loggers.log(['info', 'nurse'], 'nurse info', null, 'nurse');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-      if (fileEntries !== unitTest.file.entries.length) throw new Error();
-      if (hasCloudWatch + cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      loggers.log(['error', 'nurse'], 'Nurse error', null, 'nurse');
-      if (consoleEntries === unitTest.console.entries.length) throw new Error();
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      loggers.log(['warn', 'nurse'], 'Nurse warning', null, 'nurse');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-    }
-
-    // Doctor category with sql tag
-    {
-      const fileEntries = unitTest.file.entries.length;
-      logger.logger('doctor').more(['sql'], 'xyz');
-      const entry = unitTest.entries[unitTest.entries.length - 1];
-      if (entry.message !== 'xyz') throw new Error();
-      if (entry.level !== 'more') throw new Error();
-      // Log to file because 'other' defined at category level
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
-    }
-
-    // Doctor tag
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
-      // Do not log to console
-      logger.more(['doctor'], 'Doctor more', null, 'doctor');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-      if (cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      loggers.log(['error', 'doctor'], 'Doctor error', null, 'doctor');
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
-    }
-    {
-      const consoleEntries = unitTest.console.entries.length;
-      const fileEntries = unitTest.file.entries.length;
-      loggers.log(['warn', 'doctor'], 'Doctor warning', null, 'doctor');
-      if (fileEntries === unitTest.file.entries.length) throw new Error();
-      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
-    }
-  });
-
-  // Test overriding level - coordinator
   {
-    const entries = unitTest.console.entries.length;
-    logger.silly('a message', null, 'coordinator');
-    if (entries !== unitTest.console.entries.length) throw new Error();
-    logger.silly('coordinator', 'Silly changed to info', null, 'coordinator');
-    if (entries === unitTest.console.entries.length) throw new Error();
+    const count = unitTest.entries.length;
+    logger.debug('debug message', null, null, 'foo');
+    if (count +1 !== unitTest.entries.length) throw new Error();
   }
 
-  // Test overriding level - coordinator & tag2
-  {
-    const entries = unitTest.console.entries.length;
-    logger.silly(['tag2', 'coordinator'], 'Silly changed to error', null, 'coordinator');
-    if (entries === unitTest.console.entries.length) throw new Error();
-    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
-    if (entry.level.indexOf('error') === -1) throw entry;
-  }
-
-  // circular test 1
-  {
-    const before = unitTest.entries.length;
-    const err = new Error('error 1');
-    const err2 = new Error('error 2');
-    err.error = err2;
-    err2.cause = err;
-    logger.error(err);
-    const after = unitTest.entries.length;
-    if (after - before !== 2) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
-  }
-
-  // circular test 2
-  {
-    const before = unitTest.entries.length;
-    const err = new Error('error 1');
-    const err2 = new Error('error 2');
-    err.error = err2;
-    err2.cause = err;
-    logger.error('hey', err);
-    const after = unitTest.entries.length;
-    if (after - before !== 3) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 3].message.startsWith('hey')) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
-  }
-
-  // circular test 3
-  {
-    const err = new Error('error 1');
-    const err2 = new Error('error 2');
-    const err3 = new Error('error 3');
-    err.error = err2;
-    err2.error = err3;
-    err3.error = err;
-    err3.cause = err2;
-    logger.error(err);
-    logger.error(err2);
-    logger.error(err3);
-    logger.error(new Error(), err);
-    logger.error(new Error(), err2);
-    logger.error(new Error(), err3);
-  }
-
-  {
-    const extra = { error: new Error('outer error') };
-    // Logs two entries: 1. message 2. Error: outer error
-    logger.error('message', extra);
-    // extra is not modified
-    if (!extra.error) throw new Error();
-  }
-
-  {
-    const dataLogger = loggers.child('cxt', { cxtExtra: 5 }, 'logger');
-    dataLogger.debug('logging with data logger');
-    if (unitTest.entries[unitTest.entries.length - 1].data.cxtExtra !== 5) throw new Error();
-  }
-
-  loggers.logger('cat').info('Cat logger');
-  if (unitTest.entries[unitTest.entries.length - 1].message !== 'Cat logger') throw new Error();
-
-  // Flush followed by logging works
-  await loggers.flushCloudWatchTransports();
-  logger.info('message2');
-
-  // Flushing with nothing works
-  await loggers.flushCloudWatchTransports();
-  await loggers.flushCloudWatchTransports();
-
-  // Test isLevelEnabled
-  if (!loggers.child(null, null, 'foo').isLevelEnabled('debug')) throw new Error('isLevelEnabled failed');
-
-  // Test get/getLoggers and a category that is not in config (flyweight)
-  loggers.child(null, null, 'foo').debug('debug');
-  logger.debug('debug message', null, 'foo');
+  // TODO the following tests need to at least check the count
 
   // Log an array
   logger.debug([0, 1, 2, 3]);
@@ -793,7 +575,7 @@ async function go(colors) {
   loggers.log('debug', 'Debug');
   loggers.log(['tag'], 'Debug default');
 
-  // Test passing object to log()
+  // passing object to log()
   loggers.log({
     level: 'info',
     tags: ['money'],
@@ -892,25 +674,230 @@ async function go(colors) {
     if (!item.stack) throw new Error();
   }
 
-  // test error in extra AND message
+  // error in extra AND message
   logger.error(new Error('an error'), new Error('extra error'));
 
   logger.error({ message: 'x', error: new Error('an error') }, new Error('extra error'));
 
-  const err = new Error('shared error');
-  logger.error(err, err);
-  logger.error({ message: 'another shared error', error: err }, err);
+  {
+    const err = new Error('shared error');
+    logger.error(err, err);
+    logger.error({ message: 'another shared error', error: err }, err);
+  }
+
+
+  // log() etc. end
+  // ==============
+
+  // ===================
+  // Tag filtering begin
+
+  // Repeat to test switch caching
+  [1, 2].forEach(() => {
+    // SQL tag
+    {
+      const entries = unitTest.entries.length;
+      loggers.log(['info', 'sql'], 'SQL info');
+      if (entries !== unitTest.entries.length) throw new Error();
+    }
+    {
+      const entries = unitTest.entries.length;
+      loggers.log(['error', 'sql'], 'SQL error');
+      if (entries === unitTest.entries.length) throw new Error();
+    }
+    {
+      const entries = unitTest.entries.length;
+      loggers.log(['warn', 'sql'], 'SQL warn');
+      if (entries === unitTest.entries.length) throw new Error();
+    }
+    // Barber tag
+    {
+      const entries = unitTest.entries.length;
+      loggers.log(['info', 'barber'], 'Barber message');
+      if (entries === unitTest.entries.length) throw new Error();
+    }
+    {
+      const entries = unitTest.entries.length;
+      loggers.log(['error', 'barber'], 'Barber error');
+      if (entries === unitTest.entries.length) throw new Error();
+    }
+    {
+      const entries = unitTest.file.entries.length;
+      loggers.log(['warn', 'barber'], 'Barber warn');
+      if (entries !== unitTest.file.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      loggers.log(['more', 'barber'], 'Barber message', null, null, 'barber');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      // Did not write to file
+      if (fileEntries !== unitTest.file.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      loggers.log(['error', 'barber'], 'Barber error', null, null, 'barber');
+      if (consoleEntries === unitTest.console.entries.length) throw new Error();
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
+    }
+    // Nurse tag
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
+      loggers.log(['info', 'nurse'], 'nurse info', null, null, 'nurse');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if (fileEntries !== unitTest.file.entries.length) throw new Error();
+      if (hasCloudWatch + cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      loggers.log(['error', 'nurse'], 'Nurse error', null, null, 'nurse');
+      if (consoleEntries === unitTest.console.entries.length) throw new Error();
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      loggers.log(['warn', 'nurse'], 'Nurse warning', null, null, 'nurse');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+    }
+    // Doctor category with sql tag
+    {
+      const fileEntries = unitTest.file.entries.length;
+      logger.logger('doctor').more(['sql'], 'xyz');
+      const entry = unitTest.entries[unitTest.entries.length - 1];
+      if (entry.message !== 'xyz') throw new Error();
+      if (entry.level !== 'more') throw new Error();
+      // Log to file because 'other' defined at category level
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
+    }
+    // Doctor tag
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const cloudWatchEntries = unitTest.cloudWatch.entries.length;
+      // Do not log to console
+      logger.more(['doctor'], 'Doctor more', null, null, 'doctor');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if (cloudWatchEntries !== unitTest.cloudWatch.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      loggers.log(['error', 'doctor'], 'Doctor error', null, null, 'doctor');
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
+    }
+    {
+      const consoleEntries = unitTest.console.entries.length;
+      const fileEntries = unitTest.file.entries.length;
+      loggers.log(['warn', 'doctor'], 'Doctor warning', null, null, 'doctor');
+      if (fileEntries === unitTest.file.entries.length) throw new Error();
+      if (consoleEntries !== unitTest.console.entries.length) throw new Error();
+    }
+  });
+  // overriding level - coordinator
+  {
+    const entries = unitTest.console.entries.length;
+    logger.silly('a message', null, null, 'coordinator');
+    if (entries !== unitTest.console.entries.length) throw new Error();
+    logger.silly('coordinator', 'Silly changed to info', null, 'coordinator');
+    if (entries === unitTest.console.entries.length) throw new Error();
+  }
+  // overriding level - coordinator & tag2
+  {
+    const entries = unitTest.console.entries.length;
+    logger.silly(['tag2', 'coordinator'], 'Silly changed to error', null, null, 'coordinator');
+    if (entries === unitTest.console.entries.length) throw new Error();
+    const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
+    if (entry.level.indexOf('error') === -1) throw entry;
+  }
+
+  // Tag filtering end
+  // =================
+
+  // circular test 1
+  {
+    const before = unitTest.entries.length;
+    const err = new Error('error 1');
+    const err2 = new Error('error 2');
+    err.error = err2;
+    err2.cause = err;
+    logger.error(err);
+    const after = unitTest.entries.length;
+    if (after - before !== 2) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+  }
+
+  // circular test 2
+  {
+    const before = unitTest.entries.length;
+    const err = new Error('error 1');
+    const err2 = new Error('error 2');
+    err.error = err2;
+    err2.cause = err;
+    logger.error('hey', err);
+    const after = unitTest.entries.length;
+    if (after - before !== 3) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 3].message.startsWith('hey')) throw new Error();
+    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+  }
+
+  // circular test 3
+  {
+    const err = new Error('error 1');
+    const err2 = new Error('error 2');
+    const err3 = new Error('error 3');
+    err.error = err2;
+    err2.error = err3;
+    err3.error = err;
+    err3.cause = err2;
+    logger.error(err);
+    logger.error(err2);
+    logger.error(err3);
+    logger.error(new Error(), err);
+    logger.error(new Error(), err2);
+    logger.error(new Error(), err3);
+  }
+
+  {
+    const extra = { error: new Error('outer error') };
+    // Logs two entries: 1. message 2. Error: outer error
+    logger.error('message', extra);
+    // extra is not modified
+    if (!extra.error) throw new Error();
+  }
+
+  {
+    const dataLogger = loggers.child('cxt', { cxtExtra: 5 }, 'logger');
+    dataLogger.debug('logging with data logger');
+    if (unitTest.entries[unitTest.entries.length - 1].data.cxtExtra !== 5) throw new Error();
+  }
+
+  loggers.logger('cat').info('Cat logger');
+  if (unitTest.entries[unitTest.entries.length - 1].message !== 'Cat logger') throw new Error();
+
+  // Flush followed by logging works
+  await loggers.flushCloudWatchTransports();
+  logger.info('message2');
+
+  // Flushing with nothing works
+  await loggers.flushCloudWatchTransports();
+  await loggers.flushCloudWatchTransports();
 
   // =========================
   // Transform data via events
-  loggers.once('data', (obj) => {
-    if (!obj.data.one) throw new Error();
+  loggers.once('redact', (obj) => {
+    if (!obj.arg.one) throw new Error();
     // eslint-disable-next-line no-param-reassign
     obj.data = { x: 'hi' };
   });
 
-  loggers.once('data', (obj) => {
-    if (obj.data.x !== 'hi') throw new Error();
+  loggers.once('redact', (obj) => {
+    if (obj.arg.x !== 'hi') throw new Error();
   });
 
   loggers.info('message', { one: true });
@@ -979,8 +966,8 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
-  // ===========
-  // Stack Tests
+  // =====
+  // Stack
   {
     const stack = loggers.stack('joe');
     if (!stack) throw new Error();
@@ -1010,53 +997,33 @@ async function go(colors) {
     //
   }
 
-  // ===============
-  // Stop the logger
+  // ===========================
+  // Stop/start/flush the logger
+
+  // Handle close event
+  let onRan;
+  loggers.winstonLogger().on('close', () => {
+    // eslint-disable-next-line no-console
+    console.log('** closed **');
+    onRan = true;
+  });
+
   if (!loggers.ready) throw new Error('ready failed');
   await loggers.stop();
   if (loggers.ready) throw new Error('ready failed');
+  if (!onRan) throw new Error();
 
   logger.info(`I've stopped and I can't get up`);
 
-  // ====================================================================
-  // Check the number of logged messages. If this is off when CloudWatch
-  // Logs is enabled, search ../index.js for InvalidParameterException.
-  // That check probably isn't working and winston-cloudwatch is throwing
-  // an error when the transport is disabled for particular tags.
-  {
-    const { length } = unitTest.entries;
-    // This value must be tweaked whenever more entries are logged
-    const expectedEntries = 199 + hasCloudWatch;
-
-    if (length !== expectedEntries) throw new Error(`Entries: ${colors} ${length} !== ${expectedEntries}`);
-  }
-
-  // =====================================================
-  // Check the number of logged messages with child errors
-  {
-    // This value must be tweaked whenever more entries are logged
-    const expectedErrors = 40;
-    const { length } = Object.keys(unitTest.groupIds);
-    if (length !== expectedErrors) throw new Error(`Group ids: ${colors} ${length} !== ${expectedErrors}`);
-  }
-
-  // =====================================================
-  // Check the number of logged messages with data/data
-  {
-    // This value must be tweaked whenever more entries are logged
-    const expectedData = 44;
-    const { dataCount } = unitTest;
-    if (dataCount !== expectedData) throw new Error(`Data count: ${colors} ${dataCount} !== ${expectedData}`);
-  }
-
-  if (!onRan) throw new Error();
-
   // Start it again
   loggers.start();
+  if (loggers.ready) throw new Error('ready failed');
   logger.info('Restarted');
 
   await loggers.stop();
+  if (loggers.ready) throw new Error('ready failed');
   loggers.start();
+
   await loggers.flushCloudWatchTransports();
   await loggers.flushCloudWatchTransports();
   await loggers.restart();
