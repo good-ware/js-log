@@ -71,6 +71,16 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
+  // Error + message, call log() on child
+  {
+    const count = unitTest.entries.length;
+    logger.child().log({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    if (count +2 !== unitTest.entries.length) throw new Error();
+    let entry = unitTest.entries[unitTest.entries.length - 2];
+    if (!colors && entry.message !== 'Foo') throw new Error();
+    entry = unitTest.entries[unitTest.entries.length - 1];
+    if (!entry.data.a) throw new Error();
+  }
 
   // loggers.tags()
   {
@@ -711,6 +721,8 @@ async function go(colors) {
     logger.error({ message: 'another shared error', error: err }, err);
   }
 
+
+  // TODO if hasCloudwatch then check cloudwatch entries exist
 
   // log() etc. end
   // ==============

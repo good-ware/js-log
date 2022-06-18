@@ -65,6 +65,9 @@ function init(colors) {
  */
 beforeAll(()=>init(true));
 
+// =====
+// Tests
+
 test('ready', () => {
   expect(loggers.ready).toBe(true);
   expect(loggers.logger().ready).toBe(true);
@@ -137,8 +140,6 @@ test('message is object with message', () => {
   expect(unitTest.entries.length).toBe(count+1);
   const item = unitTest.entries[count];
   expect(item.message).toBe('x');
-  // 'message' gets promoted out of data but _message remains
-  expect(item.data._message).toBe('x');
 });
 
 test('message is object with message and data provided', () => {
@@ -148,20 +149,16 @@ test('message is object with message and data provided', () => {
   const item = unitTest.entries[count];
   expect(item.data.a).toBe(1);
   expect(item.message).toBe('x');
-  // 'message' gets promoted out of data but _message remains
-  expect(item.data._message).toBe('x');
 });
 
 test('message is object with message and others and data object overlaps message', () => {
   const count = unitTest.entries.length;
-  loggers.info({message: {message: 'x', a:2}, data: {a: 1}});
+  loggers.info({message: {message: 'message is object...', a:2}, data: {a: 1}});
   expect(unitTest.entries.length).toBe(count+2);
   {
     const item = unitTest.entries[count];
     expect(item.data.a).toBe(2);
-    expect(item.message).toBe('x');
-    // 'message' gets promoted out of data but _message remains
-    expect(item.data._message).toBe('x');
+    expect(item.message).toBe('message is object...');
   }
   {
     const item = unitTest.entries[count+1];

@@ -1777,35 +1777,18 @@ ${error}  [error ${myName}]`);
       !(tags instanceof Array) &&
       message === undefined &&
       data === undefined &&
-      context === undefined &&
-      ('tags' in tags ||
-      'context' in tags ||
-      'message' in tags ||
-      'data' in tags ||
-      'category' in tags
+      context === undefined && (
+        'tags' in tags ||
+        'context' in tags ||
+        'message' in tags ||
+        'data' in tags ||
+        'category' in tags
       )
     ) {
-      const copy = { ...tags };
-      ({ tags } = copy);
-      delete copy.tags;
-      ({ message } = copy);
-      delete copy.message;
-      // Allow category to be passed as a separate parameter
-      if (copy.category) ({ category } = copy);
-      delete copy.category;
-      ({ data } = copy);
-      delete copy.data;
-      ({ context } = copy);
-      delete copy.context;
-      if (Loggers.hasProperty(copy)) {
-        if (context !== undefined && context !== null) context = [copy, context];
-        else context = [copy];
-      } else if (context !== undefined && context !== null) {
-        context = [context];
-      }
-    } else if (context !== undefined && context !== null) {
-      context = [context];
+      ({ tags, message, data, context, category } = tags);
     }
+    
+    if (context !== undefined && context !== null) context = [context];
 
     if (message === undefined && data instanceof Error) {
       message = data;
@@ -2631,6 +2614,7 @@ class Logger {
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
+
     if (context instanceof Array) context = loggers.mergeContext(undefined, tags, category, ...context);
 
     this.props = { loggers, parent, tags, context, category };
@@ -2657,7 +2641,9 @@ class Logger {
 
     let { context } = args2;
     const { context: myContext } = this.props;
-    if (myContext) { // It's either an object or falsy
+
+    // myContext is either an object or falsy
+    if (myContext) {
       if (context) context.unshift(myContext);
       else context = [myContext];
     }
