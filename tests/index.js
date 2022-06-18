@@ -71,6 +71,8 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
+  loggers.error({ password: 5, foo: 1 });
+  process.exit()
 
   // loggers.tags()
   {
@@ -933,7 +935,6 @@ async function go(colors) {
 
   // password is not recursive
   loggers.error({ password: 5, foo: 1 });
-  process.exit()
   if (unitTest.entries[unitTest.entries.length - 1].data.password) throw new Error();
   loggers.info({ b: { password: 5 } });
   if (!unitTest.entries[unitTest.entries.length - 1].data.b.password) throw new Error();

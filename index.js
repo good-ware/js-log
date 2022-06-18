@@ -40,6 +40,8 @@ const { format } = winston;
 
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
+const nonenumerableKeys = ['message', 'stack'];
+
 /**
  * @private
  * @ignore
@@ -1774,7 +1776,6 @@ ${error}  [error ${myName}]`);
       tags = undefined;
     } else if (
       tags instanceof Object &&
-      !(tags instanceof Array) &&
       message === undefined &&
       data === undefined &&
       context === undefined && (
@@ -1785,7 +1786,8 @@ ${error}  [error ${myName}]`);
         'category' in tags
       )
     ) {
-      ({ tags, message, data, context, category } = tags);
+      category = tags.category || category;
+      ({ tags, message, data, context } = tags);
     }
     
     if (context !== undefined && context !== null) context = [context];
@@ -1794,28 +1796,26 @@ ${error}  [error ${myName}]`);
       message = data;
       data = undefined;
     } else {
-      // Swap message and data
-      if ((message instanceof Object && data !== null && data !== undefined && !(data instanceof Object))) {
-        const data2 = data;
-        data = message;
-        message = data2;
-      }
-
       if (message instanceof Object && !(message instanceof Array) && !Loggers.hasProperty(message)) {
         message = undefined;
       }
 
       if (data instanceof Object && !(data instanceof Array) && !Loggers.hasProperty(data)) data = undefined;
+
+      // Swap message and data
+      if ((message instanceof Object) && (data !== null) && (data !== undefined) && !(data instanceof Object)) {
+        const data2 = data;
+        data = message;
+        message = data2;
+      }
     }
 
-    tags = this.tags(tags);
-
     const ret = {
-      tags,
-      context,
-      category,
+      tags: this.tags(tags),
       message,
       data,
+      context,
+      category,
     };
 
     return Object.assign(new LogArgs(), ret);
@@ -2191,12 +2191,14 @@ ${stack}  [error ${myName}]`);
 
     // Combine message and data to state
     const items = [];
+    console.log({message, data})
 
     if (message !== undefined) {
-      if (typeof message === 'object') {
+      const type = typeof message;
+      if (type === 'object') {
         // includes null
         items.push(Loggers.toObject(message, 'message'));
-      } else if (typeof message !== 'function') {
+      } else if (type !== 'function') {
         items.push(this.objectToString(message));
       }
     }
@@ -2209,7 +2211,7 @@ ${stack}  [error ${myName}]`);
         // eslint-disable-next-line no-restricted-syntax
         for (const key in item) {
           // message and stack are handled later
-          if (!['message', 'stack'].includes(key)) this.copyData(state, key, item[key]);
+          if (!nonenumerableKeys.includes(key)) this.copyData(state, key, item[key]);
         }
 
         const { stack } = item;
@@ -2478,10 +2480,18 @@ ${stack}  [error ${myName}]`);
    * @param {Array} args
    */
   static logLevel(target, level, ...args) {
-    if (args.length) {
-      const [arg0] = args;
-      if (!(arg0 instanceof Object)) args.unshift(undefined);
-    }
+    const [tags, message, data, context] = args;
+    if (tags !== null && tags !== undefined && !(tags instanceof Array) && !(tags instanceof Object &&
+      message === undefined &&
+      data === undefined &&
+      context === undefined && (
+        'tags' in tags ||
+        'context' in tags ||
+        'message' in tags ||
+        'data' in tags ||
+        'category' in tags
+    ))) args.unshift(undefined);
+
     const logArgs = target.transformArgs(...args);
     logArgs.tags.logLevel = level;
     target.log(logArgs);
