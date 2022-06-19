@@ -2191,7 +2191,6 @@ ${stack}  [error ${myName}]`);
 
     // Combine message and data to state
     const items = [];
-    console.log({message, data})
 
     if (message !== undefined) {
       const type = typeof message;
@@ -2479,20 +2478,28 @@ ${stack}  [error ${myName}]`);
    * @param {string} level
    * @param {Array} args
    */
-  static logLevel(target, level, ...args) {
-    const [tags, message, data, context] = args;
-    if (tags !== null && tags !== undefined && !(tags instanceof Array) && !(tags instanceof Object &&
+  static logLevel(target, level, tags, message, data, context, category) {
+    let logArgs;
+
+    if (tags instanceof Array) {
+      logArgs = target.transformArgs(tags, message, data, context, category);
+    } else if (tags instanceof Object &&
       message === undefined &&
       data === undefined &&
+      category === undefined &&
       context === undefined && (
         'tags' in tags ||
         'context' in tags ||
         'message' in tags ||
         'data' in tags ||
         'category' in tags
-    ))) args.unshift(undefined);
+    )) {
+      logArgs = target.transformArgs(tags);
+    } else {
+      // tags arg is really message, and so on
+      logArgs = target.transformArgs(undefined, tags, message, data, context);
+    }
 
-    const logArgs = target.transformArgs(...args);
     logArgs.tags.logLevel = level;
     target.log(logArgs);
   }

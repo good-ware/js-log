@@ -10,17 +10,17 @@ let loggers;
 
 /**
  * @description Runs the test
- * @param {Boolean} colors
+ * @param {Boolean} showData
  * @return {Promise}
  */
-async function go(colors) {
+async function go(showData) {
   // eslint-disable-next-line global-require
   const config = require('./config');
 
   config.logging.stage = config.env;
   config.logging.service = config.service;
 
-  Object.assign(config.logging.console, { colors: true, data: colors });
+  Object.assign(config.logging.console, { colors: true, data: showData });
 
   config.logging.version = config.version;
   config.logging.unitTest = true;
@@ -71,8 +71,6 @@ async function go(colors) {
   // =================
   // Ready for testing
   //
-  loggers.error({ password: 5, foo: 1 });
-  process.exit()
 
   // loggers.tags()
   {
@@ -175,7 +173,7 @@ async function go(colors) {
     loggers.logger('dog').log('a', null, {a: 5}); // Use the tags for dog's logger
     // Nothing was logged to thie console?
     if (count+1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.context.dog !== 'woof') throw new Error();
   }
 
@@ -197,7 +195,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     loggers.error(undefined, new Error('abc'));
     if (count + 1 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].logStack) throw new Error();
+    if (!unitTest.entries[count].logStack) throw new Error();
   }
   {
     const count = unitTest.entries.length;
@@ -205,20 +203,20 @@ async function go(colors) {
     loggers.error(null, new Error('abc'));
     if (count + 2 !== unitTest.entries.length) throw new Error();
     if (groupIds + 1 !== Object.keys(unitTest.groupIds).length) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (!unitTest.entries[count+1].groupId) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     loggers.error(null, { a: 5, error: new Error('err') });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (!unitTest.entries[count+1].groupId) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     const error = new Error('x');
     loggers.info(null, { error });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 1].groupId) throw new Error();
+    if (!unitTest.entries[count+1].groupId) throw new Error();
   }
 
   // An error is provided and the message is blank; data data is provided
@@ -227,8 +225,7 @@ async function go(colors) {
     const error = new Error('x');
     loggers.info(undefined, { error, x: 5 });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
-    if (!entry.groupId) throw new Error();
+    if (!unitTest.entries[count+1].groupId) throw new Error();
   }
 
   // Specify the level
@@ -236,7 +233,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log('warn', new Error());
     if (count+1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'warn') throw new Error();
   }
   // Add level 'error' because no level tag is specified
@@ -244,7 +241,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log(new Error());
     if (count+1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
 
@@ -344,7 +341,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log({ message: new Error('err') });
     if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
   // data: {error: Error}
@@ -352,7 +349,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log({ data: { error: new Error('err') } });
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count+1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
   }
@@ -361,7 +358,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log({ message: { error: new Error('err') } });
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count+1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
   }
@@ -370,10 +367,10 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log({ message: { message: 's', error: new Error('err') } });
     if (count +2 !== unitTest.entries.length) throw new Error();
-    let entry = unitTest.entries[unitTest.entries.length - 1];
+    let entry = unitTest.entries[count+1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
-    entry = unitTest.entries[unitTest.entries.length - 2];
+    entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 's') throw new Error();
   }
@@ -382,7 +379,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log({ error: new Error('err') });
     if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
   // log(Error)
@@ -390,7 +387,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log(new Error('err'));
     if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
   // log(Error, 'message')
@@ -398,7 +395,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log(new Error('err'), 'message');
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
     if (!entry.message === 'message') throw new Error();
   }
@@ -406,11 +403,11 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.info(new Error('err'), 'message');
     if (count +2 !== unitTest.entries.length) throw new Error();
-    let entry = unitTest.entries[unitTest.entries.length - 2];
+    let entry = unitTest.entries[count];
     if (entry.level !== 'info') throw new Error();
     if (entry.message !== 'message') throw new Error();
     if (entry.stack) throw new Error();
-    entry = unitTest.entries[unitTest.entries.length - 1];
+    entry = unitTest.entries[count + 1];
     if (entry.level !== 'info') throw new Error();
     if (!entry.tags.includes('error')) throw new Error();
     if (!entry.data.message === 'Error: err') throw new Error();
@@ -420,7 +417,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.child().info(new Error('err'), 'message');
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
     // if (!entry.data.error) throw new Error();
@@ -430,13 +427,15 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.info(['extra'], 'A message', null, null, 'dragon');
     if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.category !== 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.info({ tags: ['extra'], category: 'dragon' });
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    if (count +1 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[count];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
   }
@@ -451,10 +450,9 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     if (count + 1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Foo') throw new Error();
-    // eslint-disable-next-line no-underscore-dangle
     if (!entry.data.a) throw new Error();
   }
   // Error + message + tag
@@ -462,9 +460,9 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
+    const entry = unitTest.entries[count];
     if (!entry.tags.includes('info')) throw new Error();
-    if (!colors && entry.message !== 'Foo') throw new Error();
+    if (entry.message !== '') throw new Error();
     if (!entry.data.message.a) throw new Error();
   }
   // Error + message, call log() on logger
@@ -472,8 +470,8 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (!colors && entry.message !== 'Foo') throw new Error();
+    const entry = unitTest.entries[count];
+    if (entry.message !== '') throw new Error();
     if (!entry.data.message.a) throw new Error();
   }
   // Error + message, call log() on child
@@ -481,8 +479,8 @@ async function go(colors) {
     const count = unitTest.entries.length;
     logger.child().log({ data: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 2];
-    if (!colors && entry.message !== 'Foo') throw new Error();
+    const entry = unitTest.entries[count];
+    if (!showData && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
   // Pass an object to child(). data is a string.
@@ -491,7 +489,7 @@ async function go(colors) {
     const count = unitTest.entries.length;
     loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
     if (count +1 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[unitTest.entries.length - 1];
+    const entry = unitTest.entries[count];
     if (!entry.tags.includes('error')) throw new Error();
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
     const { context, level } = obj;
@@ -555,7 +553,7 @@ async function go(colors) {
     if (count +2 !== unitTest.entries.length) throw new Error();
     const entry1 = unitTest.file.entries[unitTest.file.entries.length - 2];
     if (entry1.message !== 'some error') throw new Error();
-    const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
+    const entry = unitTest.file.entries[count + 1];
     if (entry.message !== 'Error: 5') throw new Error();
   }
   // Blank message, Error provided
@@ -579,6 +577,7 @@ async function go(colors) {
     if (count +1 !== unitTest.entries.length) throw new Error();
   }
 
+  // =========================================================
   // TODO the following tests need to at least check the count
 
   // Log an array
@@ -628,45 +627,53 @@ async function go(colors) {
   loggers.log('warn', 'This is your final warning');
 
   // Error 'foo' goes into message
-  loggers.log('error', '', { foo: new Error('data') });
-  if (!unitTest.entries[unitTest.entries.length - 1].message) throw new Error();
+  {
+    const count = unitTest.entries.length;
+    loggers.log('error', '', { foo: new Error('data') });
+    if (!unitTest.entries[count+1].message) throw new Error();
+  }
 
   {
+    const count = unitTest.entries.length;
     loggers.log(
       'error',
       { message: 'outer error', error: new Error('inner error'), stack: 'x' },
       { requestId: 1, extra: 2 }
     );
-    let item = unitTest.entries[unitTest.entries.length - 2];
+    let item = unitTest.entries[count];
     if (item.data.extra !== 2) throw new Error();
     if (item.message !== 'outer error') throw new Error();
     if (!item.stack) throw new Error();
     // if (item.data.error !== 'Error: inner error') throw new Error();
-    item = unitTest.entries[unitTest.entries.length - 1];
+    item = unitTest.entries[count];
   }
 
   // logStack tests
   {
+    const count = unitTest.entries.length;
     loggers.log({ info: true, logStack: true }, 'hello');
-    let item = unitTest.entries[unitTest.entries.length - 1];
+    let item = unitTest.entries[count];
     if (!item.stack) throw new Error();
     loggers.log({ info: true, logStack: false }, 'hello');
-    item = unitTest.entries[unitTest.entries.length - 1];
+    item = unitTest.entries[count+1];
     if (item.stack) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.info(['logStack'], 'A message');
-    const item = unitTest.entries[unitTest.entries.length - 1];
+    const item = unitTest.entries[count];
     if (!item.stack) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.info(new Error());
-    const item = unitTest.entries[unitTest.entries.length - 1];
+    const item = unitTest.entries[count];
     if (!item.stack) throw new Error();
   }
   {
+    const count = unitTest.entries.length;
     logger.error(['logStack'], new Error());
-    const item = unitTest.entries[unitTest.entries.length - 1];
+    const item = unitTest.entries[count];
     if (!item.stack) throw new Error();
   }
 
@@ -689,8 +696,9 @@ async function go(colors) {
   logger.error({ error: 'I already have an error' }, new Error('naked error'));
 
   {
+    const count = unitTest.entries.length;
     loggers.log('error', 'I will add the stack');
-    const item = unitTest.entries[unitTest.entries.length - 1];
+    const item = unitTest.entries[count];
     if (!item.stack) throw new Error();
   }
 
@@ -787,9 +795,10 @@ async function go(colors) {
     }
     // Doctor category with sql tag
     {
+      const count = unitTest.entries.length;
       const fileEntries = unitTest.file.entries.length;
       logger.logger('doctor').more(['sql'], 'xyz');
-      const entry = unitTest.entries[unitTest.entries.length - 1];
+      const entry = unitTest.entries[count];
       if (entry.message !== 'xyz') throw new Error();
       if (entry.level !== 'more') throw new Error();
       // Log to file because 'other' defined at category level
@@ -841,31 +850,29 @@ async function go(colors) {
 
   // circular test 1
   {
-    const before = unitTest.entries.length;
+    const count = unitTest.entries.length;
     const err = new Error('error 1');
     const err2 = new Error('error 2');
     err.error = err2;
     err2.cause = err;
     logger.error(err);
-    const after = unitTest.entries.length;
-    if (after - before !== 2) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[count].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[count+1].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 2
   {
-    const before = unitTest.entries.length;
+    const count = unitTest.entries.length;
     const err = new Error('error 1');
     const err2 = new Error('error 2');
     err.error = err2;
     err2.cause = err;
     logger.error('hey', err);
-    const after = unitTest.entries.length;
-    if (after - before !== 3) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 3].message.startsWith('hey')) throw new Error();
-    if (!unitTest.entries[unitTest.entries.length - 2].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[unitTest.entries.length - 1].message !== 'Error: error 2') throw new Error();
+    if (count + 3 !== unitTest.entries.length) throw new Error();
+    if (!unitTest.entries[count].message.startsWith('hey')) throw new Error();
+    if (!unitTest.entries[count+1].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[count+2].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 3
@@ -893,8 +900,11 @@ async function go(colors) {
     if (!extra.error) throw new Error();
   }
 
-  loggers.logger('cat').info('Cat logger');
-  if (unitTest.entries[unitTest.entries.length - 1].message !== 'Cat logger') throw new Error();
+  {
+    const count = unitTest.entries.length;
+    loggers.logger('cat').info('Cat logger');
+    if (unitTest.entries[count].message !== 'Cat logger') throw new Error();
+  }
 
   // Flush followed by logging works
   await loggers.flushCloudWatchTransports();
@@ -914,10 +924,11 @@ async function go(colors) {
     };
 
     loggers.on('redact', handler);
-
+    const count = unitTest.entries.length;
     loggers.info('message', { one: true });
     loggers.off('redact', handler);
-    if (unitTest.entries[unitTest.entries.length - 1].data.x !== 'hi') throw new Error();
+
+    if (unitTest.entries[count].data.x !== 'hi') throw new Error();
   }
 
   {
@@ -934,16 +945,28 @@ async function go(colors) {
   // Redaction
 
   // password is not recursive
-  loggers.error({ password: 5, foo: 1 });
-  if (unitTest.entries[unitTest.entries.length - 1].data.password) throw new Error();
-  loggers.info({ b: { password: 5 } });
-  if (!unitTest.entries[unitTest.entries.length - 1].data.b.password) throw new Error();
+  {
+    const count = unitTest.entries.length;
+    loggers.error({ password: 5, foo: 1 });
+    if (unitTest.entries[count].data.password) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
+    loggers.info({ b: { password: 5 } });
+    if (!unitTest.entries[count].data.b.password) throw new Error();
+  }
 
   // passwordx is recursive
-  loggers.info({ passwordx: 5, foo: 1 });
-  if (unitTest.entries[unitTest.entries.length - 1].data.passwordx) throw new Error();
-  loggers.error({ b: { passwordx: 5 }, foo: 1 });
-  if (unitTest.entries[unitTest.entries.length - 1].data.b.passwordx) throw new Error();
+  {
+    const count = unitTest.entries.length;
+    loggers.info({ passwordx: 5, foo: 1 });
+    if (unitTest.entries[count].data.passwordx) throw new Error();
+  }
+  {
+    const count = unitTest.entries.length;
+    loggers.error({ b: { passwordx: 5 }, foo: 1 });
+    if (unitTest.entries[count].data.b.passwordx) throw new Error();
+  }
 
   // ===========================
   // Unhandled promise rejection
@@ -970,22 +993,6 @@ async function go(colors) {
     if (len2 <= len) throw new Error(len2);
   }
 
-  // =====
-  // Stack
-  {
-    const stack = loggers.stack('joe');
-    if (!stack) throw new Error();
-    if (stack !== loggers.stack('joe')) throw new Error();
-    stack.push(loggers);
-    stack.push(loggers);
-    if (stack.push(loggers) !== 3) throw new Error();
-    if (loggers !== stack.pop(2)) throw new Error();
-    if (stack.push(loggers) !== 3) throw new Error();
-    if (stack.pop() !== loggers) throw new Error();
-    if (stack.pop(0) !== loggers) throw new Error();
-    if (stack.length) throw new Error();
-  }
-
   // ==========
   // TaskLogger
   try {
@@ -999,6 +1006,22 @@ async function go(colors) {
     );
   } catch (error) {
     //
+  }
+
+  // =====
+  // Stack
+  {
+    const stack = loggers.stack('joe');
+    if (!stack) throw new Error();
+    // if (stack !== loggers.stack('joe')) throw new Error();
+    stack.push(loggers);
+    stack.push(loggers);
+    if (stack.push(loggers) !== 3) throw new Error();
+    if (loggers !== stack.pop(2)) throw new Error();
+    if (stack.push(loggers) !== 3) throw new Error();
+    if (stack.pop() !== loggers) throw new Error();
+    if (stack.pop(0) !== loggers) throw new Error();
+    if (stack.length) throw new Error();
   }
 
   // ===========================
@@ -1021,7 +1044,7 @@ async function go(colors) {
 
   // Start it again
   loggers.start();
-  if (loggers.ready) throw new Error('ready failed');
+  if (!loggers.ready) throw new Error('ready failed');
   logger.info('Restarted');
 
   await loggers.stop();

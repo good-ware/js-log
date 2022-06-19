@@ -86,7 +86,7 @@ test('null message info', () => {
   const count = unitTest.entries.length;
   loggers.info(null);
   expect(unitTest.entries.length).toBe(count+1);
-  const item = unitTest.entries[count];
+  const item = unitTest.entries[unitTest.entries.length-1];
   expect(item.message).toBe(null);
   expect(item.level).toBe('info');
 });
