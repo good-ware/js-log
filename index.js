@@ -1719,7 +1719,7 @@ ${error}  [error ${myName}]`);
     let { stacks } = this.props;
     if (!stacks) {
       stacks = {};
-      this.props.stacks = {};
+      this.props.stacks = stacks;
     }
 
     let stack = stacks[name];
@@ -1757,12 +1757,12 @@ ${error}  [error ${myName}]`);
    * @private
    * @ignore
    * Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
-   * @param {*} [tags] See description.
+   * @param {*} [tags]
    * @param {*} [message]
    * @param {*} [data]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {object} false or an argument containing new values for tags, message, data, and category
+   * @returns {LogArgs}
    */
   transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
@@ -1776,6 +1776,7 @@ ${error}  [error ${myName}]`);
       tags = undefined;
     } else if (
       tags instanceof Object &&
+      !(tags instanceof Array) &&
       message === undefined &&
       data === undefined &&
       context === undefined && (
@@ -2473,10 +2474,13 @@ ${stack}  [error ${myName}]`);
   /**
    * @private
    * @ignore
-   * Internal function called by methods that are named after levels. Allows tags to be provided.
+   * Called by methods that are named after levels
    * @param {Loggers|logger} target 
    * @param {string} level
-   * @param {Array} args
+   * @param {*} [message]
+   * @param {*} [data]
+   * @param {*} [context]
+   * @param {string} [category]
    */
   static logLevel(target, level, tags, message, data, context, category) {
     let logArgs;
@@ -2486,7 +2490,6 @@ ${stack}  [error ${myName}]`);
     } else if (tags instanceof Object &&
       message === undefined &&
       data === undefined &&
-      category === undefined &&
       context === undefined && (
         'tags' in tags ||
         'context' in tags ||
@@ -2496,7 +2499,7 @@ ${stack}  [error ${myName}]`);
     )) {
       logArgs = target.transformArgs(tags);
     } else {
-      // tags arg is really message, and so on
+      // tags is really message, and so on
       logArgs = target.transformArgs(undefined, tags, message, data, context);
     }
 

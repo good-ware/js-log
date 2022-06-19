@@ -1013,7 +1013,8 @@ async function go(showData) {
   {
     const stack = loggers.stack('joe');
     if (!stack) throw new Error();
-    // if (stack !== loggers.stack('joe')) throw new Error();
+    // test caching
+    if (stack !== loggers.stack('joe')) throw new Error();
     stack.push(loggers);
     stack.push(loggers);
     if (stack.push(loggers) !== 3) throw new Error();
