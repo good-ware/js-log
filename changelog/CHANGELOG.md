@@ -8,6 +8,7 @@ Breaking changes
   - All forms of log functions accept a context
   - Child loggers use context instead of data
 - 'data' event renamed to 'redact'
+- data() method removed from Loggers and Logger classes
 
 ## 7.0.1 2022-05-10
 

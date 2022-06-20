@@ -1789,6 +1789,21 @@ ${error}  [error ${myName}]`);
     ) {
       category = tags.category || category;
       ({ tags, message, data, context } = tags);
+    } else if (
+      message instanceof Object &&
+      !(message instanceof Array) &&
+      data === undefined &&
+      context === undefined && (
+        'tags' in message ||
+        'context' in message ||
+        'message' in message ||
+        'data' in message ||
+        'category' in message
+      )
+    ) {
+      category = message.category || category;
+      ({ message, data, context } = message);
+      if (message.tags) tags = this.tags(tags, message.tags);
     }
     
     if (context !== undefined && context !== null) context = [context];

@@ -458,21 +458,21 @@ async function go(showData) {
   // Error + message + tag
   {
     const count = unitTest.entries.length;
-    logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    logger.child().error(['info'], { data: new Error('inner error'), message: { message: 'Foo', a: 8 } });
     if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (!entry.tags.includes('info')) throw new Error();
-    if (entry.message !== '') throw new Error();
-    if (!entry.data.message.a) throw new Error();
+    if (!entry.data.a) throw new Error();
+    if (entry.message !== 'Foo') throw new Error();
   }
   // Error + message, call log() on logger
   {
     const count = unitTest.entries.length;
-    logger.log(null, { error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
+    logger.log(null, { data: new Error('inner error'), message: { message: 'Foo', a: 5 } });
     if (count +2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
-    if (entry.message !== '') throw new Error();
-    if (!entry.data.message.a) throw new Error();
+    if (!entry.data.a) throw new Error();
+    if (entry.message !== 'Foo') throw new Error();
   }
   // Error + message, call log() on child
   {
