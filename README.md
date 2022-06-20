@@ -116,25 +116,40 @@ redact: {
 
 ### Events
 
-Event listeners must be added to a Loggers instance. The standard `on()`, `once()`, etc. methods are supported.
+The Loggers class inherits from EventEmitter.
 
-#### data Event
+#### redact Event
 
-'data' events are emitted (potentially multiple times) when one log-related method is called. The data event is intended for redacting properties from data objects. These events are emitted once for each object to be logged, including traversed Error objects.
+redact events are emitted (potentially multiple times) when one log-related method is called. This event is intended for redacting properties from message, data, and context objects. These events are emitted once for each object to be logged, including nested Error objects.
 
 Event listeners' return values are ignored. Event listeners are sent an event object consisting of category, level, data, and tags properties. Listeners can modify the event object's data property. Alternatively, the data object can be modified, but mutate input data at your own risk!
 
-The following example removes the response attribute from Error objects:
+Event objects have the following properties when their 'type' property is 'message' or 'data':
+
+- arg: Contains the data to be altered (context, message, or data). It could be an array, string, or object.
+- tags
+- category
+- context
+- level
+
+They have the following properties when 'type' is context:
+
+- arg: Contains the data to be altered (context). It could be an array, string, or object.
+- tags
+- category
+
+The 'arg' property can be modified to avoid mutating input data. For example, the following removes the response attribute from Error objects:
 
 ```js
-loggers.on('data', (item) => {
-  const { data } = item;
+loggers.on('redact', (item) => {
+  const { arg } = item;
   // only process Errors with response properties
-  if (!(data instanceof Error) || !data.response) return;
-  // modify item's data property instead of modifying the error object
-  const copy = { ...data };
+  if (!(arg instanceof Error) || !arg.response) return;
+  // modify item's arg property instead of modifying the error object
+  // Make a shallow copy and remove the response property
+  const copy = { ...arg };
   delete copy.response;
-  item.data = copy;
+  item.arg = copy;
 });
 
 const error = new Error('An http error occurred');
@@ -147,7 +162,14 @@ loggers.log(error);
 
 'log' events are emitted prior to calling Winston's log() method. Due to error object traversal, multiple log events can be emitted when one log-related method is called. Because of transport tag filtering, the entry might not be logged.
 
-Event listeners are sent a log entry object consisting of consisting of id, groupId, category, level, tags, message, and data properties. Listeners can modify event objects.
+Event objects have the following properties:
+
+- tags
+- level
+- message
+- data 
+- context
+- category
 
 ### Stopping and Flushing
 

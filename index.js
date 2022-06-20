@@ -43,8 +43,9 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 const nonenumerableKeys = ['message', 'stack'];
 
 /**
- * @private
  * @ignore
+ * @private
+ * 
  * Removes internal functions from the stack trace. This only works for code that uses this module. It
  * doesn't work for unit tests.
  */
@@ -213,7 +214,6 @@ class Loggers extends EventEmitter {
      */
     this.winstonLevels = levels.levels;
 
-    // Level severity
     this.props.levelSeverity = { ...levels.levels };
     Object.assign(this.props.levelSeverity, {
       off: -1,
@@ -414,7 +414,7 @@ class Loggers extends EventEmitter {
    * @param {object} tags
    * @param {string} category
    * @param {*} context
-   * @returns
+   * @returns {object|undefined}
    */
   toContext(level, tags, category, context) {
     if (context instanceof Context) return context;

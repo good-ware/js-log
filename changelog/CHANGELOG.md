@@ -1,5 +1,14 @@
 # @goodware/log Release History
 
+## 8.0.0 2022-06-20
+
+Breaking changes
+
+- Add 'context'
+  - All forms of log functions accept a context
+  - Child loggers use context instead of data
+- 'data' event renamed to 'redact'
+
 ## 7.0.1 2022-05-10
 
 Do not log error twice
