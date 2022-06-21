@@ -45,7 +45,19 @@ const nonenumerableKeys = ['message', 'stack'];
 /**
  * @ignore
  * @private
- * 
+ * Property names in object passed to transformArgs
+ */
+const transformArgsProperties = {
+  tags: undefined,
+  message: undefined,
+  data: undefined,
+  context: undefined,
+  category: undefined,
+};
+
+/**
+ * @ignore
+ * @private
  * Removes internal functions from the stack trace. This only works for code that uses this module. It
  * doesn't work for unit tests.
  */
@@ -129,6 +141,8 @@ class Loggers extends EventEmitter {
    * Notes to Maintainers
    *  1. tags, message, and data provided to public methods should never be modified
    *  2. The output of Object.keys and Object.entries should be cached for static objects
+   *  3. 'in' is used with caller-supplied objects instead of Object.keys() or Object.entries() in order to work with
+   *     parent classes since keys() and entries() returns 'own' properties only 
    *
    * @todo
    * 1. When console data is requested but colors are disabled, output data without colors using a new formatter
@@ -309,6 +323,23 @@ class Loggers extends EventEmitter {
         Loggers.deepCopy(processed, value);
       }
     }
+  }
+
+  /**
+   * @private
+   * @ignore
+   * Determines any of the arguments is an object with an Error instance
+   * @param {Array} args
+   * @returns {boolean}
+   */
+  static hasError(...args) {
+    return args.some((arg) => {
+      if (arg instanceof Error) return true;
+      if (!(arg instanceof Object) || arg instanceof Array) return false;
+      // eslint-disable-next-line no-restricted-syntax
+      for (const key in arg) if (arg[key] instanceof Error) return true;
+      return false;
+    });
   }
 
   /**
@@ -1767,6 +1798,8 @@ ${error}  [error ${myName}]`);
   transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
 
+    let extra;
+
     // First argument is an Error object?
     if (tags instanceof Error) {
       category = context;
@@ -1777,33 +1810,37 @@ ${error}  [error ${myName}]`);
     } else if (
       tags instanceof Object &&
       !(tags instanceof Array) &&
+      context === undefined &&
       message === undefined &&
-      data === undefined &&
-      context === undefined && (
+      data === undefined && (
         'tags' in tags ||
         'context' in tags ||
         'message' in tags ||
-        'data' in tags ||
-        'category' in tags
-      )
-    ) {
+        'data' in tags )) {
       category = tags.category || category;
+      // eslint-disable-next-line no-restricted-syntax
+      for (const key in tags) if (!(key in transformArgsProperties)) {
+        if (!extra) extra = {};
+        extra[key] = tags[key];
+      }
       ({ tags, message, data, context } = tags);
     } else if (
       message instanceof Object &&
       !(message instanceof Array) &&
-      data === undefined &&
-      context === undefined && (
+      context === undefined &&
+      data === undefined && (
         'tags' in message ||
         'context' in message ||
         'message' in message ||
-        'data' in message ||
-        'category' in message
-      )
-    ) {
+        'data' in message )) {
       category = message.category || category;
-      ({ message, data, context } = message);
+      // eslint-disable-next-line no-restricted-syntax
+      for (const key in message) if (!(key in transformArgsProperties)) {
+        if (!extra) extra = {};
+        extra[key] = message[key];
+      }
       if (message.tags) tags = this.tags(tags, message.tags);
+      ({ message, data, context } = message);
     }
     
     if (context !== undefined && context !== null) context = [context];
@@ -1828,9 +1865,10 @@ ${error}  [error ${myName}]`);
 
     const ret = {
       tags: this.tags(tags),
+      context,
       message,
       data,
-      context,
+      extra,
       category,
     };
 
@@ -1855,6 +1893,7 @@ ${stack}  [error ${myName}]`);
 
     let tags;
     ({ tags, category } = this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
+
     // transformArgs can not return the default category because Logger calls it
     category = this.category(category); // Use default category if not provided
 
@@ -1884,6 +1923,7 @@ ${stack}  [error ${myName}]`);
         tags[level] = true;
       }
 
+      // tags is returned by Loggers.tags() which doesn't involve parent classes so Object.keys() is acceptable
       tagNames = Object.keys(tags);
 
       if (!level) {
@@ -2131,16 +2171,17 @@ ${stack}  [error ${myName}]`);
    * @ignore
    * Creates a log entry
    * @param {object} info A value returned by isLevelEnabled()
+   * @param {Array} context
    * @param {*} message
    * @param {*} data
-   * @param {Array} context
+   * @param {object} [extra]
    * @param {Number} depth When falsy, create the 'root' log entry. When truthy, create a secondary entry that is in
    * the same group as the root log entry.
    * 1. When the level is in this.props.logStackLevels, the stack is added when falsy
    * 2. The logStack and noLogStack meta tags are applied when falsy
    * @returns {object} A log entry
    */
-  logEntry(info, message, data, context, depth) {
+  logEntry(info, context, message, data, extra, depth) {
     const entry = new LogEntry();
     const { level, tags } = info;
 
@@ -2205,6 +2246,21 @@ ${stack}  [error ${myName}]`);
       }
     }
 
+    if (extra) {
+      const event = { category: entry.category, context, level, tags, type: 'data' };
+      // eslint-disable-next-line no-restricted-syntax, guard-for-in
+      for (const key in extra) {
+        try {
+          event.arg = extra[key];
+          this.emit('redact', event);
+          extra[key] = event.arg;
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Redact data event handler failed', error);
+        }
+      }
+    }
+
     // Combine message and data to state
     const items = [];
 
@@ -2219,10 +2275,10 @@ ${stack}  [error ${myName}]`);
     }
 
     if (data !== undefined && typeof data !== 'function') items.push(Loggers.toObject(data, 'data'));
+    if (extra !== undefined) items.push(extra);
 
     items.forEach((item) => {
       if (item instanceof Object) {
-        // Object.keys is not used in order to get inherited properties
         // eslint-disable-next-line no-restricted-syntax
         for (const key in item) {
           // message and stack are handled later
@@ -2343,20 +2399,21 @@ ${stack}  [error ${myName}]`);
    * @ignore
    * Sends log entries to a Winston logger
    * @param {object} info A value returned by isLevelEnabled()
+   * @param {*} [context]
    * @param {*} [message]
    * @param {*} [data]
-   * @param {*} [context]
+   * @param {object} [extra]
    * @param {Set<Error>} [errors] Errors already logged, to avoid recursion. Not using WeakSet because .size is needed
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
    */
-  send(info, message, data, context, errors = new Set(), depth = 0, groupId = undefined) {
+  send(info, context, message, data, extra, errors = new Set(), depth = 0, groupId = undefined) {
     // eslint wants groupId=
     const { category, tags, logger, level } = info;
 
     if (context instanceof Array) context = this.mergeContext(level, tags, category, ...context);
 
-    const entry = this.logEntry(info, message, data, context, depth);
+    const entry = this.logEntry(info, context, message, data, extra, depth);
 
     // ==========================================================================================================
     // Process the provided data. Call send() recursively when there are properties that contain Error instances.
@@ -2478,12 +2535,10 @@ ${stack}  [error ${myName}]`);
     }
 
     // Log child errors
-    if (dataData) this.send(info, dataData, undefined, context, errors, depth, groupId || entry.id);
+    if (dataData) this.send(info, context, dataData, undefined, errors, depth, groupId || entry.id);
 
-    dataMessages.forEach((dataMessage) => {
-      this.send(info, dataMessage, data, context, errors, depth, groupId || entry.id);
-    }
-    );
+    dataMessages.forEach((dataMessage) => 
+      this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id));
   }
 
   /**
@@ -2505,13 +2560,7 @@ ${stack}  [error ${myName}]`);
     } else if (tags instanceof Object &&
       message === undefined &&
       data === undefined &&
-      context === undefined && (
-        'tags' in tags ||
-        'context' in tags ||
-        'message' in tags ||
-        'data' in tags ||
-        'category' in tags
-    )) {
+      context === undefined) {
       logArgs = target.transformArgs(tags);
     } else {
       // tags is really message, and so on
@@ -2545,18 +2594,11 @@ ${stack}  [error ${myName}]`);
     // transformArgs can not return the default category because Logger calls it
     args2.category = this.category(args2.category); // Use default category if not provided
 
-    const { tags, message, data, context, category } = args2;
+    const { tags, context, message, data, extra, category } = args2;
 
     // Add 'error' tag if an error was provided in message or data
-    if (
-      !('error' in tags) && // can turn it off with false
-      (message instanceof Error ||
-        (message instanceof Object && message.error instanceof Error) ||
-        data instanceof Error ||
-        (data instanceof Object && data.error instanceof Error))
-    ) {
-      tags[addErrorSymbol] = true;
-    }
+    if (!('error' in tags) && // can turn it off with false
+      Loggers.hasError(message, data, extra)) tags[addErrorSymbol] = true;
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
@@ -2571,7 +2613,7 @@ ${util.inspect({
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
       const info = this.isLevelEnabled(args2);
-      if (info) this.send(info, message, data, context);
+      if (info) this.send(info, context, message, data, extra);
     }
   }
 }
@@ -2580,7 +2622,7 @@ ${new Error('Stopped').stack}  [error ${myName}]`);
  * Default meta properties. Values are either null or a string containing the meta property
  * name. For example, given the tuple a: 'b', property a is copied to meta.b.
  */
-Loggers.defaultMetaProperties = { correlationId: null, };
+Loggers.defaultMetaProperties = { correlationId: undefined, };
 
 /**
  * Where log files are written
