@@ -27,6 +27,7 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 
 // Local includes
+const { monitorEventLoopDelay } = require('perf_hooks');
 const Stack = require('./Stack');
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
@@ -1814,6 +1815,7 @@ ${error}  [error ${myName}]`);
       message === undefined &&
       data === undefined && (
         'tags' in tags ||
+        'category' in tags ||
         'context' in tags ||
         'message' in tags ||
         'data' in tags )) {
@@ -1830,6 +1832,7 @@ ${error}  [error ${myName}]`);
       context === undefined &&
       data === undefined && (
         'tags' in message ||
+        'category' in message ||
         'context' in message ||
         'message' in message ||
         'data' in message )) {
@@ -2247,7 +2250,7 @@ ${stack}  [error ${myName}]`);
     }
 
     if (extra) {
-      const event = { category: entry.category, context, level, tags, type: 'data' };
+      const event = { category: entry.category, context, level, tags, type: 'extra' };
       // eslint-disable-next-line no-restricted-syntax, guard-for-in
       for (const key in extra) {
         try {
@@ -2535,7 +2538,7 @@ ${stack}  [error ${myName}]`);
     }
 
     // Log child errors
-    if (dataData) this.send(info, context, dataData, undefined, errors, depth, groupId || entry.id);
+    if (dataData) this.send(info, context, undefined, dataData, undefined, errors, depth, groupId || entry.id);
 
     dataMessages.forEach((dataMessage) => 
       this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id));
@@ -2560,7 +2563,12 @@ ${stack}  [error ${myName}]`);
     } else if (tags instanceof Object &&
       message === undefined &&
       data === undefined &&
-      context === undefined) {
+      context === undefined && (
+        'tags' in tags ||
+        'category' in tags ||
+        'context' in tags ||
+        'message' in tags ||
+        'data' in tags )) {
       logArgs = target.transformArgs(tags);
     } else {
       // tags is really message, and so on
@@ -2595,7 +2603,7 @@ ${stack}  [error ${myName}]`);
     args2.category = this.category(args2.category); // Use default category if not provided
 
     const { tags, context, message, data, extra, category } = args2;
-
+    
     // Add 'error' tag if an error was provided in message or data
     if (!('error' in tags) && // can turn it off with false
       Loggers.hasError(message, data, extra)) tags[addErrorSymbol] = true;
@@ -2609,6 +2617,7 @@ ${util.inspect({
   context,
   message,
   data,
+  extra,
 })}  [error ${myName}]
 ${new Error('Stopped').stack}  [error ${myName}]`);
     } else {
@@ -2687,12 +2696,30 @@ class Logger {
       loggers = parent;
     }
 
-    ({ tags, context, category } = parent.transformArgs(tags, undefined, undefined, context, category));
+    let extra;
+    let message;
+    let data; 
+
+    ({ tags, context, data, message, extra, category } = parent.transformArgs(
+      tags, undefined, undefined, context, category));
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
 
-    if (context instanceof Array) context = loggers.mergeContext(undefined, tags, category, ...context);
+    if (!extra) extra = {};
+
+    extra = {
+      data,
+      message,
+      ...extra
+    };
+
+    let more;
+
+    if (context instanceof Array) more = [extra, ...context];
+    else more = [extra, context];
+
+    context = loggers.mergeContext(undefined, tags, category, ...more);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2708,24 +2735,22 @@ class Logger {
     const { loggers } = this.props;
     const args2 = loggers.transformArgs(...args);
 
-    const { message, data } = args2;
-    let { tags } = args2;
-
     // Mix in my tags and context
+    args2.tags = this.tags(args2.tags);
+    args2.category = this.category(args2.category);
 
-    tags = this.tags(tags);
-    const category = this.category(args2.category);
-
-    let { context } = args2;
     const { context: myContext } = this.props;
 
     // myContext is either an object or falsy
     if (myContext) {
+      const { context } = args2;
       if (context) context.unshift(myContext);
-      else context = [myContext];
+      else {
+        args2.context = [myContext];
+      }
     }
 
-    return Object.assign(new LogArgs(), { tags, message, data, context, category });
+    return args2;
   }
 
   /**

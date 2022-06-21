@@ -124,7 +124,7 @@ redact events are emitted (potentially multiple times) when one log-related meth
 
 Event listeners' return values are ignored. Event listeners are sent an event object consisting of category, level, data, and tags properties. Listeners can modify the event object's data property. Alternatively, the data object can be modified, but mutate input data at your own risk!
 
-Event objects have the following properties when their 'type' property is 'message' or 'data':
+Event objects have the following properties when their 'type' property is 'message,' 'data,' or 'extra:'
 
 - arg: Contains the data to be altered (context, message, or data). It could be an array, string, or object.
 - tags

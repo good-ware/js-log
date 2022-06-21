@@ -73,6 +73,15 @@ test('ready', () => {
   expect(loggers.logger().ready).toBe(true);
 });
 
+test('context extra', () => {
+  const child = loggers.child({
+    more: 5,
+    data: 8,
+  });
+  expect(child.context().more).toBe(5);
+  expect(child.context().data).toBe(8);
+});
+
 test('null message default', () => {
   const count = unitTest.entries.length;
   loggers.log(null, null);

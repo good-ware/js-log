@@ -449,11 +449,22 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.error({ error: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    if (count + 1 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
+  }
+  console.log('******')
+  // Error as extra + message + tag
+  {
+    const count = unitTest.entries.length;
+    logger.child().error(['info'], { error: new Error('inner error'), message: { message: 'Foo', a: 8 } });
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[count];
+    if (!entry.tags.includes('info')) throw new Error();
+    if (!entry.data.a) throw new Error();
+    if (entry.message !== 'Foo') throw new Error();
   }
   // Error + message + tag
   {
@@ -503,9 +514,9 @@ async function go(showData) {
     if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
-    const { message } = entry.data;
-    if (!message.a) throw new Error();
-    if (!message.b) throw new Error();
+    const { data } = entry;
+    if (!data.a) throw new Error();
+    if (!data.b) throw new Error();
   }
   // message is an object 1
   {
@@ -514,9 +525,9 @@ async function go(showData) {
     if (count +1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
-    const { message } = entry.data;
-    if (!message.a) throw new Error();
-    if (!message.b) throw new Error();
+    const { data } = entry;
+    if (!data.a) throw new Error();
+    if (!data.b) throw new Error();
   }
   // log level method with data and tags
   {
@@ -949,6 +960,7 @@ async function go(showData) {
     const count = unitTest.entries.length;
     loggers.error({ password: 5, foo: 1 });
     if (unitTest.entries[count].data.password) throw new Error();
+    if (!unitTest.entries[count].data.foo) throw new Error();
   }
   {
     const count = unitTest.entries.length;
