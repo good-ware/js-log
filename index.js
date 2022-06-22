@@ -27,8 +27,9 @@ require('winston-daily-rotate-file'); // This looks weird but it's correct
 const { consoleFormat: WinstonConsoleFormat } = require('winston-console-format');
 
 // Local includes
-const { monitorEventLoopDelay } = require('perf_hooks');
 const Stack = require('./Stack');
+
+// Load my package.json instead of the one for this module's user
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 // Global variables

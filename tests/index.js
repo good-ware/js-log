@@ -455,7 +455,6 @@ async function go(showData) {
     if (entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
   }
-  console.log('******')
   // Error as extra + message + tag
   {
     const count = unitTest.entries.length;
