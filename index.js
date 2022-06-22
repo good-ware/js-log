@@ -2726,11 +2726,23 @@ class Logger {
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
 
-    const args = [undefined, tags, category, extra];
-    if (message instanceof Object) args.push(message);
-    else if (message) args.push({message});
-    if (data) args.push({data});
+    if (data !== undefined) {
+      // Redact object provided via data:
+      if (!extra) extra = {data};
+      else extra.data = data;
+    }
+
+    if (message !== undefined && !(message instanceof Object)) {
+      // Redact object provided via message:
+      if (!extra) extra = {message};
+      else extra.message = message;
+      message = undefined;
+    }
+
+    const args = [undefined, tags, category, extra, message];
+
     if (context) args.push(...context);
+
     context = loggers.mergeContext(...args);
 
     this.props = { loggers, parent, tags, context, category };
