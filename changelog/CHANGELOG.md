@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.0.0 2022-06-21
+
+Pass 'extra' to redact event
+
 ## 8.0.0 2022-06-20
 
 ### Breaking changes

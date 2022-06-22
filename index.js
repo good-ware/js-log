@@ -455,8 +455,7 @@ class Loggers extends EventEmitter {
 
     if (!context) return undefined;
 
-    const event = { tags, category, arg: context, type: 'context' };
-    if (level) event.level = level;
+    const event = { level, tags, category, arg: context, type: 'context' };
 
     try {
       this.emit('redact', event);
@@ -500,15 +499,33 @@ class Loggers extends EventEmitter {
    * @ignore
    * Combines multiple contexts into one context object
    * @param {string} [level]
-   * @param {string} [tags]
-   * @param {*} [tags]
-   * @param {string} [category]
-   * @param {Array} [args]
+   * @param {object} tags
+   * @param {string} category
+   * @param {object} [extra]
+   * @param {Array} args
    * @returns {object}
    */
-  mergeContext(level, tags, category, ...args) {
-    tags = this.tags(tags);
-    category = this.category(category);
+  mergeContext(level, tags, category, extra, ...args) {
+    // tags = this.tags(tags);
+    // category = this.category(category);
+
+    if (extra) {
+      const event = { category, level, tags };
+      // eslint-disable-next-line no-restricted-syntax, guard-for-in
+      for (const key in extra) {
+        try {
+          event.type = key;
+          event.arg = extra[key];
+          this.emit('redact', event);
+          extra[key] = event.arg;
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Redact data event handler failed', error);
+        }
+      }
+
+      args.unshift(extra);
+    }
 
     let prevCopied;
     let mergedContext = args.reduce((prev, arg) => {
@@ -1795,7 +1812,8 @@ ${error}  [error ${myName}]`);
    * @param {*} [data]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {LogArgs}
+   * @returns {LogArgs} 
+   *   {Array} context
    */
   transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
@@ -1847,7 +1865,7 @@ ${error}  [error ${myName}]`);
       ({ message, data, context } = message);
     }
     
-    if (context !== undefined && context !== null) context = [context];
+    if (context !== undefined) context = [context];
 
     if (message === undefined && data instanceof Error) {
       message = data;
@@ -2223,7 +2241,7 @@ ${stack}  [error ${myName}]`);
     {
       const { category } = info;
       const cat = this.logger(category);
-      if (cat !== this) context = cat.mergeContext(level, tags, category, context);
+      if (cat !== this) context = cat.mergeContext(level, tags, category, undefined, context);
     }
 
     // ==========================================
@@ -2251,10 +2269,11 @@ ${stack}  [error ${myName}]`);
     }
 
     if (extra) {
-      const event = { category: entry.category, context, level, tags, type: 'extra' };
+      const event = { category: entry.category, context, level, tags };
       // eslint-disable-next-line no-restricted-syntax, guard-for-in
       for (const key in extra) {
         try {
+          event.type = key;
           event.arg = extra[key];
           this.emit('redact', event);
           extra[key] = event.arg;
@@ -2415,7 +2434,7 @@ ${stack}  [error ${myName}]`);
     // eslint wants groupId=
     const { category, tags, logger, level } = info;
 
-    if (context instanceof Array) context = this.mergeContext(level, tags, category, ...context);
+    if (context instanceof Array) context = this.mergeContext(level, tags, category, undefined, ...context);
 
     const entry = this.logEntry(info, context, message, data, extra, depth);
 
@@ -2701,26 +2720,18 @@ class Logger {
     let message;
     let data; 
 
-    ({ tags, context, data, message, extra, category } = parent.transformArgs(
-      tags, undefined, undefined, context, category));
+    ({ tags, message, data, extra, context, category } = parent.transformArgs(
+      tags, context, undefined, undefined, category));
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
 
-    if (!extra) extra = {};
-
-    extra = {
-      data,
-      message,
-      ...extra
-    };
-
-    let more;
-
-    if (context instanceof Array) more = [extra, ...context];
-    else more = [extra, context];
-
-    context = loggers.mergeContext(undefined, tags, category, ...more);
+    const args = [undefined, tags, category, extra];
+    if (message instanceof Object) args.push(message);
+    else if (message) args.push({message});
+    if (data) args.push({data});
+    if (context) args.push(...context);
+    context = loggers.mergeContext(...args);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2866,10 +2877,10 @@ class Logger {
    * @private
    * @ignore
    */
-  mergeContext(level, tags, category, ...args) {
+  mergeContext(level, tags, category, extra, ...args) {
     const { loggers, context } = this.props;
     if (context) args.unshift(context);
-    return loggers.mergeContext(level, this.tags(tags), this.category(category), ...args);
+    return loggers.mergeContext(level, this.tags(tags), this.category(category), extra, ...args);
   }
 
   /**

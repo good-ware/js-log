@@ -78,6 +78,7 @@ test('context extra', () => {
     more: 5,
     data: 8,
   });
+  console.log(child.context())
   expect(child.context().more).toBe(5);
   expect(child.context().data).toBe(8);
 });
@@ -132,7 +133,7 @@ test('null context', () => {
   loggers.info({context: null});
   expect(unitTest.entries.length).toBe(count+1);
   const item = unitTest.entries[count];
-  expect(item.context).toBe();
+  expect(item.context.context).toBe(null);
 });
 
 test('array context', () => {
@@ -176,4 +177,18 @@ test('message is object with message and others and data object overlaps message
     // 'message' gets promoted out of data but _message remains
     expect(item.data._message).toBe();
   }
+});
+
+test('event with context extra', ()=> {
+  let calls = 0;
+
+  f = (event) => {
+    if (event.type === 'context') calls += 1;
+  };
+  loggers.on('redact', f);
+  const child = loggers.child('tag', {a: 5, context: {b: 6}});
+  loggers.off('redact', f);
+  expect(calls).toBe(2);
+  expect(child.context().a).toBe(5);
+  expect(child.context().b).toBe(6);
 });
