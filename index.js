@@ -520,30 +520,9 @@ class Loggers extends EventEmitter {
    * @returns {object}
    */
   mergeContext(level, tags, category, ...args) {
-    // tags = this.tags(tags);
-    // category = this.category(category);
-
-    if (false) {
-      const event = { category, level, tags };
-      // eslint-disable-next-line no-restricted-syntax, guard-for-in
-      for (const key in extra) {
-        try {
-          event.type = key;
-          event.arg = extra[key];
-          this.emit('redact', event);
-          extra[key] = event.arg;
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Redact data event handler failed', error);
-        }
-      }
-
-      args.unshift(extra);
-    }
-
     let prevCopied;
     let mergedContext = args.reduce((prev, arg) => {
-      // toContext performs redaction
+      // toContext performs redaction and emits 'redact' events
       arg = this.toContext(level, tags, category, arg);
 
       if (!arg) return prev;

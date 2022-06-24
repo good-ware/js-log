@@ -144,7 +144,6 @@ async function go(showData) {
 
   // ==============
   // logger() begin
-
   // eslint-disable-next-line no-self-compare
   if (loggers.logger('dog') !== loggers.logger('dog')) throw new Error(); // test caching
 
@@ -154,13 +153,12 @@ async function go(showData) {
     loggers.logger('dog').silly('a');
     if (count !== unitTest.entries.length) throw new Error();
   }
-
   // Check disabling the warn tag
   if (loggers.isLevelEnabled({ tags: { silly: true, warn: false }, category: 'dog' })) throw new Error();
 
   // Cache 'dog' child logger
   // 'dog' will log at silly because warn is added
-  loggers.logger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
+  loggers.setLogger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
 
   if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
 

@@ -1,5 +1,15 @@
 # @goodware/log Release History
 
+## 8.0.3 2022-06-23
+
+### Breaking Changes
+
+logger(x,y) replaced with setLogger(x,y)
+
+### Other Changes
+
+redact events are emitted for child objects
+
 ## 8.0.1 - 8.0.2 2022-06-22
 
 Pass 'extra' objects to redact event

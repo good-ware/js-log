@@ -179,7 +179,7 @@ test('message is object with message and others and data object overlaps message
   }
 });
 
-test('event with context extra', ()=> {
+test('redact event with context extra', ()=> {
   let calls = 0;
 
   f = (event) => {
@@ -188,7 +188,7 @@ test('event with context extra', ()=> {
   loggers.on('redact', f);
   const child = loggers.child('tag', {a: 5, context: {b: 6}});
   loggers.off('redact', f);
-  expect(calls).toBe(2);
+  expect(calls).toBe(4);
   expect(child.context().a).toBe(5);
   expect(child.context().b).toBe(6);
 });
