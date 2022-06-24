@@ -2,7 +2,7 @@
 // Developer Notes
 //
 // 1. typeof(null) === 'object'. Use instanceof Object instead.
-// 2. This code uses 'in' instead of Object.keys because protoptype fields
+// 2. This code uses 'in' instead of Object.keys() because protoptype fields
 //    are useful to log
 // =============================================================================
 /* eslint-disable no-promise-executor-return */
@@ -859,11 +859,12 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   /**
    * Checks a category value
    * @param {string} [category]
+   * @param {string} [backupCategory]
    * @returns {string} Returns the provided category if it is a truthy string; otherwise, returns the default category.
    * Logs a warning when the value is truthy and its type is not a string.
    * @throws When this.options.unitTest is true, throws an exception if the category is not a string
    */
-  category(category) {
+  category(category, backupCategory) {
     if (category) {
       const type = typeof category;
       if (type === 'string') return category;
@@ -881,7 +882,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
       if (this.options.unitTest) throw error;
     }
 
-    return this.options.defaultCategory;
+    return backupCategory || this.options.defaultCategory;
   }
 
   /**
@@ -2884,8 +2885,7 @@ class Logger {
   /**
    */
   category(category) {
-    if (category) return this.props.loggers.category(category);
-    return this.props.category;
+    return this.props.loggers.category(category, this.props.category);
   }
 
   /**

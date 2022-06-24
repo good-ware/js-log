@@ -1,32 +1,33 @@
 # @goodware/log Release History
 
+## 8.0.4 2022-06-24
+
+- Use child logger's category if category value provided is invalid (e.g., is an object)
+- Update docs
+
 ## 8.0.3 2022-06-23
 
-### Breaking Changes
+- redact events are emitted for child objects
 
-logger(x,y) replaced with setLogger(x,y)
+## 8.0.1 - 8.0.3 2022-06-22
 
-### Other Changes
-
-redact events are emitted for child objects
-
-## 8.0.1 - 8.0.2 2022-06-22
-
-Pass 'extra' objects to redact event
+- Logger() constructor allows 'extra' to be passed in tags or context
 
 ## 8.0.0 2022-06-20
 
 ### Breaking changes
 
+- logger(x,y) replaced with setLogger(x,y)
 - Add 'context'
-  - All forms of log functions accept a context
+  - All forms of log functions accept a context parameter before category
   - Child loggers use context instead of data
 - 'data' event renamed to 'redact'
 - data() method removed from Loggers and Logger classes
+- Ignore 'undefined' input parameters (as before) but treat null as a value. For example, if null is provided as data, it is logged as `{data: {data: null}}`. It adds an extra 'data' property in order accommodate other data to be logged - say, specified in `message.`
 
-### Enhancements
+### Changes
 
-Context, message, and data objects are sent to 'redact' event separately
+- Context, message, and data objects are sent to 'redact' event separately
 
 ## 7.0.1 2022-05-10
 

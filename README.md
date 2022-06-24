@@ -60,19 +60,30 @@ Any number of Loggers instances can exist at any given time. This is useful if, 
 
 ### Logging
 
-Log messages via log(), default(), and methods that are named after logging levels (aka `level`()), such as info(). The list of available logging levels and the console color for each can be provided via options.
-
-Log entries are created from four components (all optional): 'tags', 'message', 'data', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and data() merge two objects into a single object. data() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
-
-Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
+Log messages via log(), default(), and methods that are named after logging levels (aka `level()`), such as `info()`. The list of available logging levels and the console color for each can be provided via options.
 
 The concept of tags was borrowed from the HAPI project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.
 
-`level`() (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+Log entries are created from five components (all optional): `tags`, `message`, `data`, `context`, and `category.` This information can be passed as traditional ordered parameters or by passing a single object for named parameters. When named parameters are used, extra provided properties are logged as data; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
 
-The values for 'message' and 'data' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'data' is an object that appears in the log entry's 'data' property.
+Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
 
-log(), default(), and `level`() optionally accept an Error object as the first parameter, followed by message, data, and category. 'error' is automatically added to the tags; however, 'level' for `level`() methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
+`log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+
+`level()` methods optionally accept an array of tags as the first parameter. If an object is provided as the first parameter, it is treated either as name parameters or as a message to log.
+
+The values for 'message,' 'data,' and 'context' can be of any type except 'function.'
+
+Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message whereas `context` and `data` are objects that appear in the corresponding properties in log entries.
+
+`log()`, `default()`, and `level()` optionally accept an Error object as the first parameter, followed by message, data, context, and category. 'error' is automatically added to the tags; however, 'level' for `level()` methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
+
+### Loggers and Loggers Methods
+
+- `tags()` merges multiple objects into a single object
+- `category()` returns the default category (specified via options) if the provided value is blank
+- `logger(category)` returns a logger associated with a category. Log entries have a `category` property.
+- `context()` Returns the context associated with a child loggers combined with the context of its parent
 
 ### Winston Loggers
 
@@ -84,10 +95,6 @@ logger() and child() return objects with their own tags, context, data, and cate
 
 Child loggers and Loggers instances have the following methods:
 
-- tags(a, b) Combines a and b such that b's tags override a's tags. The result is combined with (and overrides) the child logger's tags.
-- context() Returns the context associated with a child loggers, combined with the context of its parent
-- category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
-
 Context can be built up by chaining calls to logger() and/or child().
 
 ```js
@@ -96,10 +103,10 @@ loggers.logger('dog').child('dogTag').child(null, { userId: 101 }).logger('anoth
 
 ### Caching Loggers
 
-A logger can be associated with a category by providing an object as the second parameter to logger(). This changes the value that is returned by logger() when the same category is provided. For example:
+A logger can be associated with a category via `setLogger(name, logger)`. This changes the value that is returned by `logger()` when the same category is provided. For example:
 
 ```js
-loggers.logger('dog', loggers.child('dogTag'));
+loggers.setLogger('dog', loggers.child('dogTag'));
 ```
 
 ### Redaction
@@ -124,19 +131,22 @@ redact events are emitted (potentially multiple times) when one log-related meth
 
 Event listeners' return values are ignored. Event listeners are sent an event object consisting of category, level, data, and tags properties. Listeners can modify the event object's data property. Alternatively, the data object can be modified, but mutate input data at your own risk!
 
-Event objects have the following properties when their 'type' property is 'message,' 'data,' or 'extra:'
+Event objects have the following properties when their 'type' property value is 'message,' or 'data:'
 
 - arg: Contains the data to be altered (context, message, or data). It could be an array, string, or object.
+- property: Contains the object property name where 'arg' is located
 - tags
 - category
 - context
 - level
 
-They have the following properties when 'type' is context:
+Event objects have the following properties when their 'type' property value is 'context:'
 
 - arg: Contains the data to be altered (context). It could be an array, string, or object.
+- property: Contains the object property name where 'arg' is located
 - tags
 - category
+- level: This is undefined except when the logging level is known, which is only when a context value is provided to log() or to a log level method.
 
 The 'arg' property can be modified to avoid mutating input data. For example, the following removes the response attribute from Error objects:
 
