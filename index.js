@@ -455,7 +455,7 @@ class Loggers extends EventEmitter {
 
     if (!context) return undefined;
 
-    const event = { level, tags, category, arg: context, type: 'context' };
+    const event = { level, tags, category, arg: context, type: 'context', property: 'context' };
 
     try {
       this.emit('redact', event);
@@ -463,6 +463,21 @@ class Loggers extends EventEmitter {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Redact context event handler failed', error);
+    }
+
+    if (context instanceof Object && !(context instanceof Array)) {
+      // eslint-disable-next-line no-restricted-syntax, guard-for-in
+      for (const key in context) {
+        event.property = key;
+        event.arg = context[key];
+        try {
+          this.emit('redact', event);
+          context[key] = event.arg;
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Redact context event handler failed', error);
+        }
+      }
     }
 
     // Redact context
@@ -501,15 +516,14 @@ class Loggers extends EventEmitter {
    * @param {string} [level]
    * @param {object} tags
    * @param {string} category
-   * @param {object} [extra]
    * @param {Array} args
    * @returns {object}
    */
-  mergeContext(level, tags, category, extra, ...args) {
+  mergeContext(level, tags, category, ...args) {
     // tags = this.tags(tags);
     // category = this.category(category);
 
-    if (extra) {
+    if (false) {
       const event = { category, level, tags };
       // eslint-disable-next-line no-restricted-syntax, guard-for-in
       for (const key in extra) {
@@ -1706,35 +1720,15 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * Associates a logger with a category
+   * Returns a logger associated with a category
    * @param {string} [category]
-   * @param {Loggers|object} [logger]
    * @returns {Loggers|object}
    */
-  setLogger(category, logger) {
-    return this.logger(category, logger);
-  }
-
-  /**
-   * Returns a logger associated with a category. Optionally associates a logger with a category.
-   * @param {string} [category]
-   * @param {Loggers|object} [logger]
-   * @returns {Loggers|object}
-   */
-  logger(category, logger) {
+  logger(category) {
     category = this.category(category);
     const { loggers } = this.props;
-    if (logger) {
-      // Ensure the logger's category is the same as the category argument
-      if (category !== logger.category()) {
-        // eslint-disable-next-line no-use-before-define
-        logger = new Logger(logger, undefined, undefined, category);
-      }
-      loggers[category] = logger;
-      return logger;
-    }
 
-    logger = loggers[category];
+    let logger = loggers[category];
     if (logger) return logger;
 
     if (category === this.options.defaultCategory) {
@@ -1746,6 +1740,22 @@ ${error}  [error ${myName}]`);
 
     loggers[category] = logger;
     return logger;
+  }
+
+  /**
+   * Associates a logger with a category
+   * @param {string} [category]
+   * @param {Loggers|object} [logger]
+   */
+  setLogger(category, logger) {
+    category = this.category(category);
+    const { loggers } = this.props;
+    // Ensure the logger's category is the same as the category argument
+    if (category !== logger.category()) {
+      // eslint-disable-next-line no-use-before-define
+      logger = new Logger(logger, undefined, undefined, category);
+    }
+    loggers[category] = logger;
   }
 
   /**
@@ -2241,13 +2251,14 @@ ${stack}  [error ${myName}]`);
     {
       const { category } = info;
       const cat = this.logger(category);
-      if (cat !== this) context = cat.mergeContext(level, tags, category, undefined, context);
+      if (cat !== this) context = cat.mergeContext(level, tags, category, context);
     }
 
     // ==========================================
     // Send message and/or data to event handlers
     if (message !== undefined && message != null) {
-      const event = { category: entry.category, context, arg: message, level, tags, type: 'message' };
+      const event = { category: entry.category, context, arg: message, level, tags, type: 'message',
+        property: 'message' };
       try {
         this.emit('redact', event);
         ({ arg: message } = event);
@@ -2255,16 +2266,45 @@ ${stack}  [error ${myName}]`);
         // eslint-disable-next-line no-console
         console.error('Redact message event handler failed', error);
       }
+
+      if (message instanceof Object && !(message instanceof Array)) {
+        // eslint-disable-next-line no-restricted-syntax, guard-for-in
+        for (const key in message) {
+        event.property = key;
+        event.arg = message[key];
+        try {
+          this.emit('redact', event);
+          message[key] = event.arg;
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Redact context event handler failed', error);
+        }}
+      }
     }
 
     if (data !== undefined && data !== null) {
-      const event = { category: entry.category, context, arg: data, level, tags, type: 'data' };
+      const event = { category: entry.category, context, arg: data, level, tags, type: 'data', property: 'data' };
       try {
         this.emit('redact', event);
         ({ arg: data } = event);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Redact data event handler failed', error);
+      }
+
+      if (data instanceof Object && !(data instanceof Array)) {
+        // eslint-disable-next-line no-restricted-syntax, guard-for-in
+        for (const key in data) {
+          event.property = key;
+          event.arg = data[key];
+          try {
+            this.emit('redact', event);
+            data[key] = event.arg;
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Redact context event handler failed', error);
+          }
+        }
       }
     }
 
@@ -2434,7 +2474,7 @@ ${stack}  [error ${myName}]`);
     // eslint wants groupId=
     const { category, tags, logger, level } = info;
 
-    if (context instanceof Array) context = this.mergeContext(level, tags, category, undefined, ...context);
+    if (context instanceof Array) context = this.mergeContext(level, tags, category, ...context);
 
     const entry = this.logEntry(info, context, message, data, extra, depth);
 
@@ -2726,20 +2766,10 @@ class Logger {
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
 
-    if (data !== undefined) {
-      // Redact object provided via data:
-      if (!extra) extra = {data};
-      else extra.data = data;
-    }
+    if (data !== undefined) data = {data};
+    if (message !== undefined && !(message instanceof Object)) message = {message}
 
-    if (message !== undefined && !(message instanceof Object)) {
-      // Redact object provided via message:
-      if (!extra) extra = {message};
-      else extra.message = message;
-      message = undefined;
-    }
-
-    const args = [undefined, tags, category, extra, message];
+    const args = [undefined, tags, category, message, data, extra];
 
     if (context) args.push(...context);
 
@@ -2785,12 +2815,6 @@ class Logger {
 
   /**
    */
-  get ready() {
-    return this.props.loggers.ready;
-  }
-
-  /**
-   */
   get loggers() {
     return this.props.loggers;
   }
@@ -2803,16 +2827,16 @@ class Logger {
 
   /**
    */
-  setLogger(category, logger) {
-    return this.logger(category, logger);
+  logger(category) {
+    category = this.category(category);
+    return new Logger(this, undefined, undefined, category);
   }
 
   /**
    */
-  logger(category, logger) {
+  setLogger(category, logger) {
     category = this.category(category);
-    if (logger) return this.props.loggers.logger(category, logger);
-    return new Logger(this, undefined, undefined, category);
+    return this.props.loggers.logger(category, logger);
   }
 
   /**
