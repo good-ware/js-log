@@ -1005,8 +1005,20 @@ async function go(showData) {
 
   // ==========
   // TaskLogger
+  // TODO: check begin and end messages are logged
   try {
-    TaskLogger.execute(
+    await TaskLogger.execute(
+      loggers,
+      () => 1,
+      'begin..',
+      'end'
+    );
+  } catch (error) {
+    //
+  }
+
+  try {
+    await TaskLogger.execute(
       loggers,
       () => {
         throw new Error('x');

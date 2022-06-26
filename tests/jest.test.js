@@ -73,6 +73,33 @@ test('ready', () => {
   expect(loggers.logger().ready).toBe(true);
 });
 
+test('tags via setLogger are used 1', ()=>{
+  loggers.setLogger('test', loggers.child('test'));
+  const x = loggers.isLevelEnabled('info', 'test');
+  expect(x).toBeTruthy();
+  expect(x.tags.test).toBe(true);
+});
+
+test('tags via setLogger are used 2', ()=>{
+  loggers.setLogger('test', loggers.child('test'));
+  const x = loggers.isLevelEnabled('info', 'test');
+  expect(x).toBeTruthy();
+  expect(x.tags.doesnotexist).toBeFalsy();
+});
+
+test('context via setLogger is mixed in', ()=>{
+  loggers.setLogger('test', loggers.child({context: {a: 0, b: 1}}));
+  const count = unitTest.entries.length;
+  loggers.info({
+    context: {a: 1, z:5},
+    category: 'test',
+  });
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(1);
+  expect(item.context.b).toBe(1);
+});
+
 test('context extra', () => {
   const child = loggers.child({
     more: 5,

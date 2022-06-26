@@ -1910,11 +1910,11 @@ ${stack}  [error ${myName}]`);
     category = this.category(category); // Use default category if not provided
 
     // Mix in category logger's tags
-    // Because child loggers can be assigned to to this.logger(category)
-    // (search for Mix in)
+    // Because child loggers can be assigned via this.setLogger(category) after child loggers are created
+    // (#1 - search for Mix in)
     {
       const cat = this.logger(category);
-      if (cat !== this) tags = cat.tags(tags); // TODO testme
+      if (cat !== this) tags = cat.tags(tags);
     }
 
     this.processCategoryTags(category);
@@ -2183,7 +2183,7 @@ ${stack}  [error ${myName}]`);
    * @ignore
    * Creates a log entry
    * @param {object} info A value returned by isLevelEnabled()
-   * @param {Array} context
+   * @param {object} context
    * @param {*} message
    * @param {*} data
    * @param {object} [extra]
@@ -2227,11 +2227,11 @@ ${stack}  [error ${myName}]`);
 
     // Mix in category logger's context (isLevelEnabled does this for tags)
     // Because child loggers can be assigned to to this.logger(category)
-    // (search for Mix in)
+    // (#2 - search for Mix in)
     {
       const { category } = info;
-      const cat = this.logger(category);
-      if (cat !== this) context = cat.mergeContext(level, tags, category, context);
+      const logger = this.logger(category);
+      if (logger !== this) context = logger.mergeContext(level, tags, category, context);
     }
 
     // ==========================================
@@ -2892,10 +2892,10 @@ class Logger {
    * @private
    * @ignore
    */
-  mergeContext(level, tags, category, extra, ...args) {
+  mergeContext(level, tags, category, ...args) {
     const { loggers, context } = this.props;
     if (context) args.unshift(context);
-    return loggers.mergeContext(level, this.tags(tags), this.category(category), extra, ...args);
+    return loggers.mergeContext(level, this.tags(tags), this.category(category), ...args);
   }
 
   /**

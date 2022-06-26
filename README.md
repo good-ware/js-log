@@ -252,12 +252,13 @@ Levels are associated with natural numbers. Per Winston's convention, a lower va
 
 Levels and their colors can be specified via the second argument provided to the constructor using the same object that is provided when creating a Winston logger.
 
-By default, Loggers uses Winston's default levels (aka [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of two levels:
+By default, Loggers uses Winston's default levels (aka [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of three levels:
 
 1. 'fail' is more severe than 'error' and has the color red
 2. 'more' is between 'info' and 'verbose' and has the color cyan
 3. 'db' is between 'verbose' and 'http' and has the color yellow
-4. Therefore, from highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
+
+From highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
 
 A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 

@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.0.5 2022-06-26
+
+- Bug fix: Context in child logger overwrote context provided as a parameter
+
 ## 8.0.4 2022-06-24
 
 - Use child logger's category if category value provided is invalid (e.g., is an object)
