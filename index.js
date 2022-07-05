@@ -570,7 +570,7 @@ class Loggers extends EventEmitter {
     const consoleObject = Joi.object({
       level: onOffDefaultLevelEnum,
       colors: Joi.boolean().description('If true, outputs text with ANSI colors to the console').default(true),
-      data: Joi.boolean().description('If true, sends data, error objects, stack traces, etc. to the console'),
+      data: Joi.boolean().description('If true, sends context, data, error objects, stack traces, etc. to the console'),
       childErrors: Joi.boolean().default(true).description('If true, logs child error objects'),
     });
 

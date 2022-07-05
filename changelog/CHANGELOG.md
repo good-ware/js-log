@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.0.6 2022-07-04
+
+Update documentation
+
 ## 8.0.5 2022-06-26
 
 - Bug fix: Context in child logger overwrote context provided as a parameter
