@@ -1,8 +1,9 @@
 # @goodware/log Release History
 
-## 8.0.6 2022-07-04
+## 8.0.6 - 8.0.7 2022-07-04
 
-Update documentation
+- Update documentation
+- `Stack.pop(x)` returns undefined when Stack.length === x instead of throwing exception
 
 ## 8.0.5 2022-06-26
 

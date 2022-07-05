@@ -38,13 +38,17 @@ class Stack {
    * Removes items from the top of the stack
    * @param {number} [toLength] If negative, remove the item at the top of the stack only. Otherwise, remove items from
    * the top of the stack until its length is equal to the specified value.
-   * @returns {*} The last item removed from the stack
+   * @returns {*|undefined} The last item removed from the stack
    */
   pop(toLength = -1) {
     const { stack } = this;
-    if (!stack.length) throw new Error('out of range');
-    if (toLength < 0) return stack.pop();
-    if (toLength >= stack.length) throw new Error('out of range');
+    const { length } = stack;
+    if (toLength < 0) {
+      if (!length) throw new Error('stack is empty');
+      return stack.pop();
+    }
+    if (toLength === length) return undefined;
+    if (toLength > length) throw new RangeError();
     return stack.splice(toLength)[0];
   }
 
@@ -57,7 +61,7 @@ class Stack {
   top(offset = 0) {
     const { stack } = this;
     const { length } = stack;
-    if (offset < 0 || offset >= length) throw new Error('out of range');
+    if (offset < 0 || offset >= length) throw new RangeError();
     return stack[length - offset - 1];
   }
 
@@ -70,7 +74,7 @@ class Stack {
   bottom(offset = 0) {
     const { stack } = this;
     const { length } = stack;
-    if (offset < 0 || offset >= length) throw new Error('out of range');
+    if (offset < 0 || offset >= length) throw new RangeError();
     return stack[offset];
   }
 }
