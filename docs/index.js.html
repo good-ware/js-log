@@ -86,9 +86,8 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 const nonenumerableKeys = ['message', 'stack'];
 
 /**
- * @ignore
- * @private
  * Property names in object passed to transformArgs
+ * @ignore
  */
 const transformArgsProperties = {
   tags: undefined,
@@ -99,17 +98,15 @@ const transformArgsProperties = {
 };
 
 /**
- * @ignore
- * @private
  * Removes internal functions from the stack trace. This only works for code that uses this module. It
  * doesn't work for unit tests.
+ * @ignore
  */
 const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
 
 /**
- * @private
- * @ignore
  * Used for tag filtering
+ * @ignore
  */
 const transportObj = {};
 transportNames.forEach((transport) => {
@@ -117,9 +114,8 @@ transportNames.forEach((transport) => {
 });
 
 /**
- * @private
- * @ignore
  * Category names for internal loggers
+ * @ignore
  */
 const reservedCategories = {
   unhandled: '@goodware/unhandled',
@@ -128,23 +124,20 @@ const reservedCategories = {
 };
 
 /**
- * @private
- * @ignore
  * Internal class for identifying the return value of transformArgs()
+ * @ignore
  */
 class LogArgs {}
 
 /**
- * @private
- * @ignore
  * Internal class for identifying log entries that are created by Loggers::logEntry
+ * @ignore
  */
 class LogEntry {}
 
 /**
- * @private
- * @ignore
  * Internal class for identifying objects returned by context
+ * @ignore
  */
 class Context {}
 
@@ -195,6 +188,7 @@ class Loggers extends EventEmitter {
    * 5. Move Logger to another module - see
    *    https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
    */
+
   /**
    * @constructor
    * @param {object} options
@@ -227,10 +221,9 @@ class Loggers extends EventEmitter {
     // Copy environment variables to options (begin)
 
     /**
-     * @private
-     * @ignore
      * Sets options.console.{key} if a CONSOLE_{KEY} environment variable exists
      * @param {string} key 'data' or 'colors'
+     * @ignore
      */
     const envToConsoleKey = (key) => {
       const envKey = `CONSOLE_${key.toUpperCase()}`;
@@ -266,8 +259,8 @@ class Loggers extends EventEmitter {
     }
 
     /**
-     * @type {object}
      * Maps level names to integers where lower values have higher severity
+     * @type {object}
      */
     this.winstonLevels = levels.levels;
 
@@ -346,7 +339,7 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
+   * 
    * @ignore
    * @param {WeakSet} processed
    * @param {object} obj
@@ -369,11 +362,10 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Determines any of the arguments is an object with an Error instance
    * @param {Array} args
    * @returns {boolean}
+   * @ignore
    */
   static hasError(...args) {
     return args.some((arg) => {
@@ -386,12 +378,11 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Determines whether an object has any properties. Faster than Object.keys(object).length.
    * See https://jsperf.com/testing-for-any-keys-in-js
    * @param {object} object An object to test
    * @returns {boolean} true if object has properties (including inherited)
+   * @ignore
    */
   static hasProperty(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
@@ -404,12 +395,11 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Converts a number to a string with leading zeroes
    * @param {Number} num The number to convert
    * @param {Number} size The minimum number of digits
    * @returns {string} num converted to a string with leading zeroes if necessary
+   * @ignore
    */
   static pad(num, size = 2) {
     let s = num.toString();
@@ -418,10 +408,9 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Returns local time in ISO8601 format with the local timezone offset
    * @returns {string}
+   * @ignore
    */
   static now() {
     const now = new Date();
@@ -461,13 +450,12 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Converts a value to an object
    * @param {*} [data]
    * @param {string} [key] message, data, or context, defaults to context. The key name to use when data is not an
    *   object.
    * @returns {object|undefined}
+   * @ignore
    */
   static toObject(data, key = 'context') {
     if (data === undefined) return data;
@@ -482,13 +470,12 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * @param {string} [level]
    * @param {object} tags
    * @param {string} category
    * @param {*} context
    * @returns {object|undefined}
+   * @ignore
    */
   toContext(level, tags, category, context) {
     if (context instanceof Context) return context;
@@ -551,14 +538,13 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Combines multiple contexts into one context object
    * @param {string} [level]
    * @param {object} tags
    * @param {string} category
    * @param {Array} args
    * @returns {object}
+   * @ignore
    */
   mergeContext(level, tags, category, ...args) {
     let prevCopied;
@@ -596,10 +582,9 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Adds methods named after levels, such as error()
    * @param target The object to modify
+   * @ignore
    */
   addLevelMethods(target) {
     // eslint-disable-next-line no-return-assign
@@ -607,11 +592,10 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * @private
-   * @ignore
    * Processes options
    * @param {object} options
    * @returns {object} options with defaults added
+   * @ignore
    */
   validateOptions(options) {
     if (!options) options = {};
@@ -866,11 +850,10 @@ Enable the tag for log entries with severity levels equal to or greater than the
   }
 
   /**
-   * @private
-   * @ignore
    * Creates a directory for log files
    * @param {string[]} directories
    * @returns {string} A directory path
+   * @ignore
    */
   static createLogDirectory({ directories }) {
     if (!directories) return undefined;
@@ -927,11 +910,10 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Processes tag switches for one category specified in this.options
    * @param {string} category
    * @returns {boolean} true only if tag switches are defined for the category
+   * @ignore
    */
   processCategoryTags(category) {
     if (category in this.props.hasCategoryTags) return this.props.hasCategoryTags[category];
@@ -968,12 +950,11 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Determines whether a log entry can be sent to a transport
    * @param {string} transportName
    * @param {object} info Log entry
    * @returns {object} Either returns logEntry unaltered or a falsy value
+   * @ignore
    */
   checkTags(transportName, info) {
     if (info.transports &amp;&amp; !info.transports.includes(transportName)) return false;
@@ -982,11 +963,10 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Returns default meta for log entries
    * @param {string} category
    * @returns {object}
+   * @ignore
    */
   static defaultMeta(category) {
     // Do not add more fields here. category is needed by the custom formatter for logging uncaught exceptions.
@@ -996,24 +976,22 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Combines a custom Winston formatter with format.ms()
    * @returns {object} A Winston formatter
+   * @ignore
    */
   formatter() {
     return format.combine(winston.format((info) => this.format(info))(), format.ms());
   }
 
   /**
-   * @private
-   * @ignore
    * Winston customer formatter
    *  1. Enforces log() is called to support uncaught exception logging
    *  2. Manages this.unitTest object for unit test validation
    *  3. Adds 'ms' to log entries
    * @param {object} info The log entry to format
    * @returns {object} info or false
+   * @ignore
    */
   format(info) {
     if (info instanceof LogEntry) {
@@ -1049,11 +1027,10 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Console formatter for 'no data'
    * @param {object} info A log entry
    * @returns {string}
+   * @ignore
    */
   static printf(info) {
     const { id, level, ms, message, category, tags } = info;
@@ -1078,13 +1055,12 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Creates a console transport
    * @param {string} level
    * @param {boolean} handleExceptions
    * @param {object} settings
    * @returns {object} A new console transport
+   * @ignore
    */
   createConsoleTransport(level, handleExceptions, settings) {
     if (!settings) settings = this.options.console;
@@ -1132,9 +1108,8 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Sets this.props.cloudWatch*
+   * @ignore
    */
   initCloudWatch() {
     if (this.props.cloudWatchTransports) return;
@@ -1150,10 +1125,9 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Creates Winston logger for CloudWatch errors that logs to the console and possibly to a file
    * @returns {object} logger
+   * @ignore
    */
   createCloudWatchErrorLoggers() {
     const transports = [];
@@ -1222,10 +1196,9 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Handles errors from the CloudWatch transport
    * @param {object} error
+   * @ignore
    */
   cloudWatchError(error) {
     const { code } = error;
@@ -1241,12 +1214,11 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Flushes a CloudWatch transport. See https://github.com/lazywithclass/winston-cloudwatch/issues/128.
    * @param {object} transport
    * @param {Number} timeout
    * @returns {Promise}
+   * @ignore
    */
   flushCloudWatchTransport(transport, timeout) {
     // TODO: Fix this when WinstonCloudWatch makes flush timeout an option
@@ -1313,11 +1285,10 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Closes all loggers
    * @returns {Promise}
    * @throws {None}
+   * @ignore
    */
   async close() {
     if (this.unitTest &amp;&amp; !this.unitTest.flush) {
@@ -1451,12 +1422,11 @@ ${error}  [error ${myName}]`)
   }
 
   /**
-   * @private
-   * @ignore
    * Creates a Winston logger for a category
    * @param {string} category
    * @param {object} defaults
    * @returns {object} Winston logger
+   * @ignore
    */
   createWinstonLoggers(category) {
     if (this.props.stopped) throw new Error('Stopped');
@@ -1730,11 +1700,10 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Accessor for the options provided for a category
    * @param {string} [category]
    * @returns {object} An object or undefined
+   * @ignore
    */
   categoryOptions(category) {
     return this.options.categories[this.category(category)];
@@ -1812,22 +1781,23 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @returns {Loggers}
+   * @type {Loggers}
    */
   get loggers() {
     return this;
   }
 
   /**
-   * @returns {Loggers}
+   * @type {Loggers}
    */
   get parent() {
     return this;
   }
 
   /**
-   * Indicates whether this object and its child loggers are ready to log messages
-   * @returns {boolean} Returns false if messages can not be logged because the logger is stopping or has been stopped
+   * Indicates whether this object and its child loggers are ready to log messages. false when messages can not be
+   * logged because the logger is stopping or has been stopped.
+   * @type {boolean}
    */
   get ready() {
     const { props } = this;
@@ -1835,8 +1805,6 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
    * @param {*} [tags]
    * @param {*} [message]
@@ -1844,7 +1812,7 @@ ${error}  [error ${myName}]`);
    * @param {*} [context]
    * @param {string} [category]
    * @returns {LogArgs} 
-   *   {Array} context
+   * @ignore
    */
   transformArgs(tags, message, data, context, category) {
     if (tags instanceof LogArgs) return tags;
@@ -2163,11 +2131,10 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Converts an object to a string
    * @param {*} value null not allowed
    * @returns {string|boolean} A string or false
+   * @ignore
    */
   objectToString(value) {
     if (value instanceof Array) {
@@ -2191,14 +2158,13 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Does nothing if the provided key is redacted. Helper function to combine 'message' and 'data'.
    * Handles overlapping keys in both. Sets state.currentData to state.data or state.dataData and then sets
    * state.currentData[key] to value.
    * @param {object} state An object with keys data, dataData, and currentData
    * @param {string} key
    * @param {*} value Value to store in the property named 'key'
+   * @ignore
    */
   copyData(state, key, value) {
     // Check redaction (nonrecursive)
@@ -2220,8 +2186,6 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Creates a log entry
    * @param {object} info A value returned by isLevelEnabled()
    * @param {object} context
@@ -2233,6 +2197,7 @@ ${stack}  [error ${myName}]`);
    * 1. When the level is in this.props.logStackLevels, the stack is added when falsy
    * 2. The logStack and noLogStack meta tags are applied when falsy
    * @returns {object} A log entry
+   * @ignore
    */
   logEntry(info, context, message, data, extra, depth) {
     const entry = new LogEntry();
@@ -2479,8 +2444,6 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Sends log entries to a Winston logger
    * @param {object} info A value returned by isLevelEnabled()
    * @param {*} [context]
@@ -2490,6 +2453,7 @@ ${stack}  [error ${myName}]`);
    * @param {Set&lt;Error>} [errors] Errors already logged, to avoid recursion. Not using WeakSet because .size is needed
    * @param {Number} [depth] Recursion depth (defaults to 0)
    * @param {String} [groupId]
+   * @ignore
    */
   send(info, context, message, data, extra, errors = new Set(), depth = 0, groupId = undefined) {
     // eslint wants groupId=
@@ -2626,8 +2590,6 @@ ${stack}  [error ${myName}]`);
   }
 
   /**
-   * @private
-   * @ignore
    * Called by methods that are named after levels
    * @param {Loggers|logger} target 
    * @param {string} level
@@ -2635,6 +2597,7 @@ ${stack}  [error ${myName}]`);
    * @param {*} [data]
    * @param {*} [context]
    * @param {string} [category]
+   * @ignore
    */
   static logLevel(target, level, tags, message, data, context, category) {
     let logArgs;
@@ -2758,14 +2721,14 @@ class Logger {
    * Private Properties
    *  {object} props Has keys: tags, context, category, loggers, parent
    */
+
   /**
-   * @private
-   * @ignore
    * @constructor
    * @param {Loggers|object} parent
    * @param {*} [tags]
    * @param {*} [context]
    * @param {string} [category]
+   * @ignore
    */
   constructor(parent, tags, context, category) {
     let loggers;
@@ -2803,7 +2766,6 @@ class Logger {
   }
 
   /**
-   * @private
    * @ignore
    */
   transformArgs(...args) {
@@ -2930,7 +2892,6 @@ class Logger {
   }
 
   /**
-   * @private
    * @ignore
    */
   mergeContext(level, tags, category, ...args) {
@@ -2948,7 +2909,6 @@ class Logger {
   }
 
   /**
-   * @param {Array} [args]
    */
   log(...args) {
     this.props.loggers.log(this.transformArgs(...args));
@@ -2968,7 +2928,7 @@ module.exports = Loggers;
 <br class="clear">
 
 <footer>
-    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Sun Jun 26 2022 12:34:23 GMT-0700 (Pacific Daylight Time) using the Minami theme.
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> on Mon Jul 04 2022 19:49:59 GMT-0700 (Pacific Daylight Time) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>

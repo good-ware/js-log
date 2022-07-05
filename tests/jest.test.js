@@ -100,12 +100,30 @@ test('context via setLogger is mixed in', ()=>{
   expect(item.context.b).toBe(1);
 });
 
+test('child null obj', ()=>{
+  const count = unitTest.entries.length;
+  loggers.child(null, {
+    context: {a: 1},
+  }).info('hello');
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(1);
+});
+
+test('child null obj2', ()=>{
+  const count = unitTest.entries.length;
+  loggers.child(null, {a: 5}).info('hello', {b: 2});
+  expect(unitTest.entries.length).toBe(count+1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(5);
+  expect(item.data.b).toBe(2);
+});
+
 test('context extra', () => {
   const child = loggers.child({
     more: 5,
     data: 8,
   });
-  console.log(child.context())
   expect(child.context().more).toBe(5);
   expect(child.context().data).toBe(8);
 });

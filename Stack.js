@@ -10,15 +10,16 @@ class Stack {
   }
 
   /**
-   * Removes all items
+   * Removes all items. This is the same as `pop(0)`.
    */
   clear() {
     this.stack = [];
   }
 
   /**
+   * @property {number}
    * Returns the number of items in the stack
-   * @returns {number}
+   * @type {number}
    */
   get length() {
     return this.stack.length;
@@ -35,16 +36,16 @@ class Stack {
 
   /**
    * Removes items from the top of the stack
-   * @param {number} [to] If negative, remove the item at the top of the stack only. Otherwise, remove items from the
-   * top of the stack until its length is equal to the specified value.
+   * @param {number} [toLength] If negative, remove the item at the top of the stack only. Otherwise, remove items from
+   * the top of the stack until its length is equal to the specified value.
    * @returns {*} The last item removed from the stack
    */
-  pop(to = -1) {
+  pop(toLength = -1) {
     const { stack } = this;
     if (!stack.length) throw new Error('out of range');
-    if (to < 0) return stack.pop();
-    if (to >= stack.length) throw new Error('out of range');
-    return stack.splice(to)[0];
+    if (toLength < 0) return stack.pop();
+    if (toLength >= stack.length) throw new Error('out of range');
+    return stack.splice(toLength)[0];
   }
 
   /**
