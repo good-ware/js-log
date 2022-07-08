@@ -28,7 +28,7 @@ This package extends Winston3 with additional features such as tag-based filteri
 2. Log entries can be filtered by tags on a per-transport basis
 3. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
 4. Safely logs large objects and arrays - even those with circular references
-4.1. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
+   4.1. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
 5. Promotes object properties to a configurable subset of 'meta' properties
 6. On-demand flushing to CloudWatch Logs
 7. Does not interfere with other code that uses Winston
@@ -177,7 +177,7 @@ Event objects have the following properties:
 - tags
 - level
 - message
-- data 
+- data
 - context
 - category
 

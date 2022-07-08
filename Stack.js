@@ -36,19 +36,20 @@ class Stack {
 
   /**
    * Removes items from the top of the stack
-   * @param {number} [toLength] If negative, remove the item at the top of the stack only. Otherwise, remove items from
+   * @param {number} [toLength] If undefined, remove the item at the top of the stack only. Otherwise, remove items from
    * the top of the stack until its length is equal to the specified value.
    * @returns {*|undefined} The last item removed from the stack
    */
-  pop(toLength = -1) {
+  pop(toLength) {
     const { stack } = this;
     const { length } = stack;
-    if (toLength < 0) {
+    if (toLength === undefined) {
       if (!length) throw new Error('stack is empty');
       return stack.pop();
     }
-    if (toLength === length) return undefined;
     if (toLength > length) throw new RangeError();
+    if (toLength < 0) throw new RangeError();
+    if (toLength === length) return undefined;
     return stack.splice(toLength)[0];
   }
 

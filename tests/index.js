@@ -158,7 +158,7 @@ async function go(showData) {
 
   // Cache 'dog' child logger
   // 'dog' will log at silly because warn is added
-  loggers.setLogger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: {b: {d: 5}} }));
+  loggers.setLogger('dog', loggers.child(['warn', 'goofy'], { dog: 'woof', a: { b: { d: 5 } } }));
 
   if (!loggers.isLevelEnabled({ tags: 'silly', category: 'dog' })) throw new Error();
 
@@ -169,9 +169,9 @@ async function go(showData) {
     const count = unitTest.entries.length;
     loggers.logger('dog').silly('a'); // logLevel is specified via silly()
     if (count !== unitTest.entries.length) throw new Error();
-    loggers.logger('dog').log('a', null, {a: 5}); // Use the tags for dog's logger
+    loggers.logger('dog').log('a', null, { a: 5 }); // Use the tags for dog's logger
     // Nothing was logged to thie console?
-    if (count+1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.context.dog !== 'woof') throw new Error();
   }
@@ -180,7 +180,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     loggers.child(null, null, 'foo').debug('debug');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
   }
 
   // logger() end
@@ -202,20 +202,20 @@ async function go(showData) {
     loggers.error(null, new Error('abc'));
     if (count + 2 !== unitTest.entries.length) throw new Error();
     if (groupIds + 1 !== Object.keys(unitTest.groupIds).length) throw new Error();
-    if (!unitTest.entries[count+1].groupId) throw new Error();
+    if (!unitTest.entries[count + 1].groupId) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     loggers.error(null, { a: 5, error: new Error('err') });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[count+1].groupId) throw new Error();
+    if (!unitTest.entries[count + 1].groupId) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     const error = new Error('x');
     loggers.info(null, { error });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[count+1].groupId) throw new Error();
+    if (!unitTest.entries[count + 1].groupId) throw new Error();
   }
 
   // An error is provided and the message is blank; data data is provided
@@ -224,14 +224,14 @@ async function go(showData) {
     const error = new Error('x');
     loggers.info(undefined, { error, x: 5 });
     if (count + 2 !== unitTest.entries.length) throw new Error();
-    if (!unitTest.entries[count+1].groupId) throw new Error();
+    if (!unitTest.entries[count + 1].groupId) throw new Error();
   }
 
   // Specify the level
   {
     const count = unitTest.entries.length;
     logger.log('warn', new Error());
-    if (count+1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'warn') throw new Error();
   }
@@ -239,13 +239,13 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log(new Error());
-    if (count+1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
 
   // =============
-  // Console begin 
+  // Console begin
 
   // No output (specify category)
   {
@@ -257,7 +257,7 @@ async function go(showData) {
   {
     const count = unitTest.console.entries.length;
     loggers.silly('msg', { a: 1 });
-    if (count+1 !== unitTest.console.entries.length) throw new Error();
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.id) throw new Error();
   }
@@ -319,7 +319,7 @@ async function go(showData) {
   {
     const count = unitTest.console.entries.length;
     loggers.info('msg', { a: 1 }, null, 'briefConsole');
-    if (count +1 !== unitTest.console.entries.length) throw new Error();
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') >= 0) throw new Error();
   }
@@ -327,7 +327,7 @@ async function go(showData) {
   {
     const count = unitTest.console.entries.length;
     loggers.info('msg', { a: 1 }, null, 'dataConsole');
-    if (count +1 !== unitTest.console.entries.length) throw new Error();
+    if (count + 1 !== unitTest.console.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (entry[Symbol.for('message')].indexOf('data:') < 0) throw new Error();
   }
@@ -339,7 +339,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log({ message: new Error('err') });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
@@ -347,8 +347,8 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log({ data: { error: new Error('err') } });
-    if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[count+1];
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[count + 1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
   }
@@ -356,8 +356,8 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log({ message: { error: new Error('err') } });
-    if (count +2 !== unitTest.entries.length) throw new Error();
-    const entry = unitTest.entries[count+1];
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    const entry = unitTest.entries[count + 1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
   }
@@ -365,8 +365,8 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log({ message: { message: 's', error: new Error('err') } });
-    if (count +2 !== unitTest.entries.length) throw new Error();
-    let entry = unitTest.entries[count+1];
+    if (count + 2 !== unitTest.entries.length) throw new Error();
+    let entry = unitTest.entries[count + 1];
     if (entry.level !== 'error') throw new Error();
     if (entry.message !== 'Error: err') throw new Error();
     entry = unitTest.entries[count];
@@ -377,7 +377,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log({ error: new Error('err') });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
@@ -385,7 +385,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log(new Error('err'));
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
   }
@@ -393,7 +393,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log(new Error('err'), 'message');
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'error') throw new Error();
     if (!entry.message === 'message') throw new Error();
@@ -401,7 +401,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.info(new Error('err'), 'message');
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     let entry = unitTest.entries[count];
     if (entry.level !== 'info') throw new Error();
     if (entry.message !== 'message') throw new Error();
@@ -415,7 +415,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.child().info(new Error('err'), 'message');
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.level !== 'info') throw new Error();
     if (!entry.message === 'message') throw new Error();
@@ -425,7 +425,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.info(['extra'], 'A message', null, null, 'dragon');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (entry.category !== 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
@@ -433,7 +433,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.info({ tags: ['extra'], category: 'dragon' });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (!entry.category === 'dragon') throw new Error();
     if (!entry.tags.includes('extra')) throw new Error();
@@ -478,7 +478,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.log(null, { data: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (!entry.data.a) throw new Error();
     if (entry.message !== 'Foo') throw new Error();
@@ -487,7 +487,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.child().log({ data: new Error('inner error'), message: { message: 'Foo', a: 5 } });
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (!showData && entry.message !== 'Foo') throw new Error();
     if (!entry.data.a) throw new Error();
@@ -497,7 +497,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     loggers.child({ tags: 'error', context: 'doo' }).info('Yabba dabba');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.entries[count];
     if (!entry.tags.includes('error')) throw new Error();
     const obj = unitTest.file.entries[unitTest.file.entries.length - 1];
@@ -509,7 +509,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.info(['c'], { message: { a: 1, b: 2 } });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     const { data } = entry;
@@ -520,7 +520,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.child().info(['c'], { message: { a: 1, b: 2 } });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('c')) throw new Error();
     const { data } = entry;
@@ -531,7 +531,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.error({ tags: ['d'], context: { a: 1, b: 2 }, data: { d: 5 } });
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.tags.includes('d')) throw new Error();
     if (!entry.context.a) throw new Error();
@@ -542,7 +542,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     loggers.logger('a').child(null, { b: 5 }).child(null, { a: 1 }).logger('b').info('hi');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.console.entries[unitTest.console.entries.length - 1];
     if (!entry.context.a) throw new Error();
     if (!entry.context.b) throw new Error();
@@ -551,7 +551,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     loggers.child('error').log(loggers.tags({ logLevel: 'warn' }, { logLevel: 'debug' }), 'Yabba dabba');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
     const { level } = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (level !== 'debug') throw new Error();
   }
@@ -559,7 +559,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.error('some error', new Error('5'));
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry1 = unitTest.file.entries[unitTest.file.entries.length - 2];
     if (entry1.message !== 'some error') throw new Error();
     const entry = unitTest.file.entries[count + 1];
@@ -569,7 +569,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     logger.error('', new Error('5'));
-    if (count +2 !== unitTest.entries.length) throw new Error();
+    if (count + 2 !== unitTest.entries.length) throw new Error();
     const entry = unitTest.file.entries[unitTest.file.entries.length - 1];
     if (entry.message !== 'Error: 5') throw new Error(JSON.stringify(entry));
   }
@@ -578,12 +578,12 @@ async function go(showData) {
     const count = unitTest.entries.length;
     const log = loggers.child(null, { operationId: 5 });
     log.default(['purge', 'begin'], 'Purging files', { directory: 5 });
-    if (count+1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
   }
   {
     const count = unitTest.entries.length;
     logger.debug('debug message', null, null, 'foo');
-    if (count +1 !== unitTest.entries.length) throw new Error();
+    if (count + 1 !== unitTest.entries.length) throw new Error();
   }
 
   // =========================================================
@@ -639,7 +639,7 @@ async function go(showData) {
   {
     const count = unitTest.entries.length;
     loggers.log('error', '', { foo: new Error('data') });
-    if (!unitTest.entries[count+1].message) throw new Error();
+    if (!unitTest.entries[count + 1].message) throw new Error();
   }
 
   {
@@ -664,7 +664,7 @@ async function go(showData) {
     let item = unitTest.entries[count];
     if (!item.stack) throw new Error();
     loggers.log({ info: true, logStack: false }, 'hello');
-    item = unitTest.entries[count+1];
+    item = unitTest.entries[count + 1];
     if (item.stack) throw new Error();
   }
   {
@@ -721,7 +721,6 @@ async function go(showData) {
     logger.error(err, err);
     logger.error({ message: 'another shared error', error: err }, err);
   }
-
 
   // TODO if hasCloudwatch then check cloudwatch entries exist
 
@@ -867,7 +866,7 @@ async function go(showData) {
     logger.error(err);
     if (count + 2 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[count].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[count+1].message !== 'Error: error 2') throw new Error();
+    if (unitTest.entries[count + 1].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 2
@@ -880,8 +879,8 @@ async function go(showData) {
     logger.error('hey', err);
     if (count + 3 !== unitTest.entries.length) throw new Error();
     if (!unitTest.entries[count].message.startsWith('hey')) throw new Error();
-    if (!unitTest.entries[count+1].message.startsWith('Error: error 1')) throw new Error();
-    if (unitTest.entries[count+2].message !== 'Error: error 2') throw new Error();
+    if (!unitTest.entries[count + 1].message.startsWith('Error: error 1')) throw new Error();
+    if (unitTest.entries[count + 2].message !== 'Error: error 2') throw new Error();
   }
 
   // circular test 3
@@ -1007,12 +1006,7 @@ async function go(showData) {
   // TaskLogger
   // TODO: check begin and end messages are logged
   try {
-    await TaskLogger.execute(
-      loggers,
-      () => 1,
-      'begin..',
-      'end'
-    );
+    await TaskLogger.execute(loggers, () => 1, 'begin..', 'end');
   } catch (error) {
     //
   }

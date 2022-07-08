@@ -137,7 +137,7 @@ class Loggers extends EventEmitter {
    *  1. tags, message, and data provided to public methods should never be modified
    *  2. The output of Object.keys and Object.entries should be cached for static objects
    *  3. 'in' is used with caller-supplied objects instead of Object.keys() or Object.entries() in order to work with
-   *     parent classes since keys() and entries() returns 'own' properties only 
+   *     parent classes since keys() and entries() returns 'own' properties only
    *
    * @todo
    * 1. When console data is requested but colors are disabled, output data without colors using a new formatter
@@ -298,7 +298,7 @@ class Loggers extends EventEmitter {
   }
 
   /**
-   * 
+   *
    * @ignore
    * @param {WeakSet} processed
    * @param {object} obj
@@ -312,7 +312,7 @@ class Loggers extends EventEmitter {
       let value = object[key];
       if (value instanceof Object && !(value instanceof Array) && !processed.has(value)) {
         if ('stack' in value || 'message' in value) {
-          value = {...value, stack: value.stack, message: value.message};
+          value = { ...value, stack: value.stack, message: value.message };
           object[key] = value;
         }
         Loggers.deepCopy(processed, value);
@@ -345,7 +345,7 @@ class Loggers extends EventEmitter {
    */
   static hasProperty(object) {
     // See https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
-    if (!(object instanceof Object) || (object instanceof Array)) return false;
+    if (!(object instanceof Object) || object instanceof Array) return false;
     // message and stack are invisible; any others?
     // eslint-disable-next-line no-restricted-syntax, guard-for-in, no-unreachable-loop
     for (const prop in object) return true;
@@ -468,8 +468,7 @@ class Loggers extends EventEmitter {
     }
 
     // Redact context
-    const result = ('message' in context || 'stack' in context) ? 
-     {message: context.message, stack: context.stack} : {};
+    const result = 'message' in context || 'stack' in context ? { message: context.message, stack: context.stack } : {};
     const { redact } = this.props;
     let hasObject;
 
@@ -484,11 +483,11 @@ class Loggers extends EventEmitter {
 
     // Recursively reveal objects that have message and stack
     if (hasObject) Loggers.deepCopy(new WeakSet(), result);
-    return Loggers.hasProperty(result) ? result:undefined;
+    return Loggers.hasProperty(result) ? result : undefined;
   }
 
   /**
-   * Accessor for context 
+   * Accessor for context
    * @returns {object}
    */
   // eslint-disable-next-line class-methods-use-this
@@ -534,10 +533,7 @@ class Loggers extends EventEmitter {
       if (recursiveRedact.length) deepCleaner(mergedContext, recursiveRedact);
     }
 
-    return Object.assign(
-      new Context(),
-      mergedContext
-    );
+    return Object.assign(new Context(), mergedContext);
   }
 
   /**
@@ -547,7 +543,7 @@ class Loggers extends EventEmitter {
    */
   addLevelMethods(target) {
     // eslint-disable-next-line no-return-assign
-    this.props.levels.forEach((level) => target[level] = (...args) => Loggers.logLevel(target, level, ...args));
+    this.props.levels.forEach((level) => (target[level] = (...args) => Loggers.logLevel(target, level, ...args)));
   }
 
   /**
@@ -1770,7 +1766,7 @@ ${error}  [error ${myName}]`);
    * @param {*} [data]
    * @param {*} [context]
    * @param {string} [category]
-   * @returns {LogArgs} 
+   * @returns {LogArgs}
    * @ignore
    */
   transformArgs(tags, message, data, context, category) {
@@ -1790,39 +1786,35 @@ ${error}  [error ${myName}]`);
       !(tags instanceof Array) &&
       context === undefined &&
       message === undefined &&
-      data === undefined && (
-        'tags' in tags ||
-        'category' in tags ||
-        'context' in tags ||
-        'message' in tags ||
-        'data' in tags )) {
+      data === undefined &&
+      ('tags' in tags || 'category' in tags || 'context' in tags || 'message' in tags || 'data' in tags)
+    ) {
       category = tags.category || category;
       // eslint-disable-next-line no-restricted-syntax
-      for (const key in tags) if (!(key in transformArgsProperties)) {
-        if (!extra) extra = {};
-        extra[key] = tags[key];
-      }
+      for (const key in tags)
+        if (!(key in transformArgsProperties)) {
+          if (!extra) extra = {};
+          extra[key] = tags[key];
+        }
       ({ tags, message, data, context } = tags);
     } else if (
       message instanceof Object &&
       !(message instanceof Array) &&
       context === undefined &&
-      data === undefined && (
-        'tags' in message ||
-        'category' in message ||
-        'context' in message ||
-        'message' in message ||
-        'data' in message )) {
+      data === undefined &&
+      ('tags' in message || 'category' in message || 'context' in message || 'message' in message || 'data' in message)
+    ) {
       category = message.category || category;
       // eslint-disable-next-line no-restricted-syntax
-      for (const key in message) if (!(key in transformArgsProperties)) {
-        if (!extra) extra = {};
-        extra[key] = message[key];
-      }
+      for (const key in message)
+        if (!(key in transformArgsProperties)) {
+          if (!extra) extra = {};
+          extra[key] = message[key];
+        }
       if (message.tags) tags = this.tags(tags, message.tags);
       ({ message, data, context } = message);
     }
-    
+
     if (context !== undefined) context = [context];
 
     if (message === undefined && data instanceof Error) {
@@ -1836,7 +1828,7 @@ ${error}  [error ${myName}]`);
       if (data instanceof Object && !(data instanceof Array) && !Loggers.hasProperty(data)) data = undefined;
 
       // Swap message and data
-      if ((message instanceof Object) && (data !== null) && (data !== undefined) && !(data instanceof Object)) {
+      if (message instanceof Object && data !== null && data !== undefined && !(data instanceof Object)) {
         const data2 = data;
         data = message;
         message = data2;
@@ -2202,8 +2194,15 @@ ${stack}  [error ${myName}]`);
     // ==========================================
     // Send message and/or data to event handlers
     if (message !== undefined && message != null) {
-      const event = { category: entry.category, context, arg: message, level, tags, type: 'message',
-        property: 'message' };
+      const event = {
+        category: entry.category,
+        context,
+        arg: message,
+        level,
+        tags,
+        type: 'message',
+        property: 'message',
+      };
       try {
         this.emit('redact', event);
         ({ arg: message } = event);
@@ -2215,15 +2214,16 @@ ${stack}  [error ${myName}]`);
       if (message instanceof Object && !(message instanceof Array)) {
         // eslint-disable-next-line no-restricted-syntax, guard-for-in
         for (const key in message) {
-        event.property = key;
-        event.arg = message[key];
-        try {
-          this.emit('redact', event);
-          message[key] = event.arg;
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Redact context event handler failed', error);
-        }}
+          event.property = key;
+          event.arg = message[key];
+          try {
+            this.emit('redact', event);
+            message[key] = event.arg;
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Redact context event handler failed', error);
+          }
+        }
       }
     }
 
@@ -2333,7 +2333,7 @@ ${stack}  [error ${myName}]`);
       });
 
       // Stop the data console transport from logging context like "context: Context {...}"
-      if (!foundKey) context = {...context};
+      if (!foundKey) context = { ...context };
 
       if (Loggers.hasProperty(context)) entry.context = context;
     }
@@ -2370,7 +2370,7 @@ ${stack}  [error ${myName}]`);
     if (state.dataData) entry.dataData = state.dataData;
 
     // Add stack trace?
-    let addStack = !depth && (info.level in this.props.logStackLevels);
+    let addStack = !depth && info.level in this.props.logStackLevels;
 
     // Turn tags into an array and put the level in the front without modifying the object in entry.tags
     if (tags) {
@@ -2544,13 +2544,14 @@ ${stack}  [error ${myName}]`);
     // Log child errors
     if (dataData) this.send(info, context, undefined, dataData, undefined, errors, depth, groupId || entry.id);
 
-    dataMessages.forEach((dataMessage) => 
-      this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id));
+    dataMessages.forEach((dataMessage) =>
+      this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id)
+    );
   }
 
   /**
    * Called by methods that are named after levels
-   * @param {Loggers|logger} target 
+   * @param {Loggers|logger} target
    * @param {string} level
    * @param {*} [message]
    * @param {*} [data]
@@ -2563,15 +2564,13 @@ ${stack}  [error ${myName}]`);
 
     if (tags instanceof Array) {
       logArgs = target.transformArgs(tags, message, data, context, category);
-    } else if (tags instanceof Object &&
+    } else if (
+      tags instanceof Object &&
       message === undefined &&
       data === undefined &&
-      context === undefined && (
-        'tags' in tags ||
-        'category' in tags ||
-        'context' in tags ||
-        'message' in tags ||
-        'data' in tags )) {
+      context === undefined &&
+      ('tags' in tags || 'category' in tags || 'context' in tags || 'message' in tags || 'data' in tags)
+    ) {
       logArgs = target.transformArgs(tags);
     } else {
       // tags is really message, and so on
@@ -2606,10 +2605,13 @@ ${stack}  [error ${myName}]`);
     args2.category = this.category(args2.category); // Use default category if not provided
 
     const { tags, context, message, data, extra, category } = args2;
-    
+
     // Add 'error' tag if an error was provided in message or data
-    if (!('error' in tags) && // can turn it off with false
-      Loggers.hasError(message, data, extra)) tags[addErrorSymbol] = true;
+    if (
+      !('error' in tags) && // can turn it off with false
+      Loggers.hasError(message, data, extra)
+    )
+      tags[addErrorSymbol] = true;
 
     if (this.props.stopped) {
       // eslint-disable-next-line no-console
@@ -2634,7 +2636,7 @@ ${new Error('Stopped').stack}  [error ${myName}]`);
  * Default meta properties. Values are either null or a string containing the meta property
  * name. For example, given the tuple a: 'b', property a is copied to meta.b.
  */
-Loggers.defaultMetaProperties = { correlationId: undefined, };
+Loggers.defaultMetaProperties = { correlationId: undefined };
 
 /**
  * Where log files are written
@@ -2642,7 +2644,7 @@ Loggers.defaultMetaProperties = { correlationId: undefined, };
 Loggers.defaultFileDirectories = ['logs', '/tmp/logs', '.'];
 
 /**
- * 
+ *
  * These follow npm levels wich are defined at
  * https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
  * than 'error' and 'more' which is between 'info' and 'verbose.' A different set of levels can be provided to the
@@ -2701,16 +2703,21 @@ class Logger {
 
     let extra;
     let message;
-    let data; 
+    let data;
 
     ({ tags, message, data, extra, context, category } = parent.transformArgs(
-      tags, context, undefined, undefined, category));
+      tags,
+      context,
+      undefined,
+      undefined,
+      category
+    ));
 
     // transformArgs can not return the default category because Logger calls it
     category = loggers.category(category); // Use default category if not provided
 
-    if (data !== undefined) data = {data};
-    if (message !== undefined && !(message instanceof Object)) message = {message}
+    if (data !== undefined) data = { data };
+    if (message !== undefined && !(message instanceof Object)) message = { message };
 
     const args = [undefined, tags, category, message, data, extra];
 
@@ -2827,7 +2834,8 @@ class Logger {
    */
   isLevelEnabled(tagsOrNamedParameters, category) {
     return this.props.loggers.isLevelEnabled(
-      this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category));
+      this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category)
+    );
   }
 
   /**
@@ -2860,7 +2868,7 @@ class Logger {
   }
 
   /**
-   * Accessor for context 
+   * Accessor for context
    * @returns {object}
    */
   context() {

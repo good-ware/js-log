@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.0.8 2022-07-07
+
+Stack.pop() doesn't accept negative numbers.
+
 ## 8.0.6 - 8.0.7 2022-07-04
 
 - Update documentation
