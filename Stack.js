@@ -10,15 +10,16 @@ class Stack {
   }
 
   /**
-   * Removes all items
+   * Removes all items. This is the same as `pop(0)`.
    */
   clear() {
     this.stack = [];
   }
 
   /**
+   * @property {number}
    * Returns the number of items in the stack
-   * @returns {number}
+   * @type {number}
    */
   get length() {
     return this.stack.length;
@@ -35,16 +36,21 @@ class Stack {
 
   /**
    * Removes items from the top of the stack
-   * @param {number} [to] If negative, remove the item at the top of the stack only. Otherwise, remove items from the
-   * top of the stack until its length is equal to the specified value.
-   * @returns {*} The last item removed from the stack
+   * @param {number} [toLength] If undefined, remove the item at the top of the stack only. Otherwise, remove items from
+   * the top of the stack until its length is equal to the specified value.
+   * @returns {*|undefined} The last item removed from the stack
    */
-  pop(to = -1) {
+  pop(toLength) {
     const { stack } = this;
-    if (!stack.length) throw new Error('out of range');
-    if (to < 0) return stack.pop();
-    if (to >= stack.length) throw new Error('out of range');
-    return stack.splice(to)[0];
+    const { length } = stack;
+    if (toLength === undefined) {
+      if (!length) throw new Error('stack is empty');
+      return stack.pop();
+    }
+    if (toLength > length) throw new RangeError();
+    if (toLength < 0) throw new RangeError();
+    if (toLength === length) return undefined;
+    return stack.splice(toLength)[0];
   }
 
   /**
@@ -56,7 +62,7 @@ class Stack {
   top(offset = 0) {
     const { stack } = this;
     const { length } = stack;
-    if (offset < 0 || offset >= length) throw new Error('out of range');
+    if (offset < 0 || offset >= length) throw new RangeError();
     return stack[length - offset - 1];
   }
 
@@ -69,7 +75,7 @@ class Stack {
   bottom(offset = 0) {
     const { stack } = this;
     const { length } = stack;
-    if (offset < 0 || offset >= length) throw new Error('out of range');
+    if (offset < 0 || offset >= length) throw new RangeError();
     return stack[offset];
   }
 }

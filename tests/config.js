@@ -1,26 +1,26 @@
 const deepmerge = require('deepmerge');
 const dotenv = require('dotenv');
 
-const pack = require('../package.json');
+const { env } = process;
+
 // Read .env files into process.env
-const env = process.env.NODE_ENV || 'dev';
+const { nodeEnv = 'test' } = env;
+
 dotenv.config({ path: '.env' });
-dotenv.config({ path: `.env-${env}` });
+dotenv.config({ path: `.env-${nodeEnv}` });
 
 // Default configuration
 let config = {
-  env,
-  version: pack.version,
-  service: pack.name,
+  env: nodeEnv,
+  version: env.npm_package_version,
+  service: env.npm_package_name,
   logging: {
+    cloudWatch: {
+      logGroup: `/${nodeEnv}/goodware/log`,
+    },
     console: {
       level: 'silly',
       data: true,
-    },
-    cloudWatch: {
-      // To test CloudWatch Logs, set AWS_REGION environment variable
-      // region: 'us-west-2',
-      logGroup: `/${env}/goodware/log2`,
     },
     categories: {
       briefConsole: {
@@ -57,25 +57,29 @@ let config = {
 const configs = {};
 
 // Unit testing
-configs.dev = {
+configs.test = {
   logging: {
     categories: {
       default: {
         file: 'silly',
         errorFile: 'on',
-        cloudWatch: 'info',
       },
       dog: {
         file: 'warn',
         console: 'warn',
-        cloudWatch: 'warn',
       },
     },
   },
 };
 
-if (env in configs) {
-  config = deepmerge(config, configs[env], { arrayMerge: (destination, source) => [...destination, ...source] });
+// To test CloudWatch Logs, set AWS_REGION environment variable
+if (env.AWS_REGION) {
+  configs.test.logging.categories.default.cloudWatch = 'info';
+  configs.test.logging.categories.dog.cloudWatch = 'warn';
+}
+
+if (nodeEnv in configs) {
+  config = deepmerge(config, configs[nodeEnv], { arrayMerge: (destination, source) => [...destination, ...source] });
 }
 
 module.exports = config;

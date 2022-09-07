@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "7.0.0",
+  "version": "8.0.8",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "author": "devguy@devguy.com",
   "engines": {
@@ -12,8 +12,9 @@
     "playground": "node tests/playground.js",
     "format": "prettier . --write",
     "pub2": "npm publish --access=public",
-    "prepub": "npm test && npm run format && npm run lint && npm run docs",
-    "test": "node tests"
+    "prepub": "npm test && npm run jest && npm run format && npm run lint && npm run docs",
+    "test": "node tests",
+    "jest": "jest"
   },
   "main": "index.js",
   "repository": {
@@ -53,6 +54,7 @@
     "eslint-config-airbnb-base": "*",
     "eslint-config-prettier": "*",
     "eslint-plugin-import": "*",
+    "jest": "^28.1.0",
     "jsdoc": "*",
     "minami": "*",
     "prettier": "*",

@@ -10,7 +10,7 @@
 
 ## Requirements
 
-If you plan to write to AWS CloudWatch Logs, NodeJS 10 (LTS/dubnium) or higher is required. Otherwise, any LTS version is sufficent.
+If you plan to write to AWS CloudWatch Logs, NodeJS 12 or higher is required (however, despite the warnings from AWS SDK 2.0, NodeJS 8 seems to work fine). Otherwise, any LTS version is sufficent.
 
 ## Installation
 
@@ -24,14 +24,19 @@ This package extends Winston3 with additional features such as tag-based filteri
 
 ## Features
 
-1. HAPI-style tags: Log entries can be filtered by tags on a per-transport basis
-2. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
-3. Safely logs large objects and arrays - even those with circular references 3.1. Embedded Error objects are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
-4. Promotes object properties to a configurable subset of 'meta' properties
-5. Reliable flushing
-6. Does not interfere with other code that uses Winston
-7. This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
-8. Transformation of logged data via the log event
+1. In addition to a message (an object or scalar) a log entry may consist of tags (an array of strings), context (an object or scalar), and data (an object or scalar). message, and data may also be arrays.
+2. Log entries can be filtered by tags on a per-transport basis
+3. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
+4. Safely logs large objects and arrays - even those with circular references
+   4.1. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
+5. Promotes object properties to a configurable subset of 'meta' properties
+6. On-demand flushing to CloudWatch Logs
+7. Does not interfere with other code that uses Winston
+8. Transformation/redaction of logged objects via events
+
+## Performance
+
+This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
 
 ## Transports Supported
 
@@ -55,19 +60,30 @@ Any number of Loggers instances can exist at any given time. This is useful if, 
 
 ### Logging
 
-Log messages via log(), default(), and methods that are named after logging levels (aka `level`()), such as info(). The list of available logging levels and the console color for each can be provided via options.
-
-Log entries are created from four components (all optional): 'tags', 'message', 'data', and 'category.' This information can be passed as traditional ordered parameters or by passing a single object for named parameters. tags() and data() merge two objects into a single object. data() returns the default category (specified via options) if the provided value is blank. When named parameters are used, extra provided properties are logged as part of the message; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
-
-Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
+Log messages via log(), default(), and methods that are named after logging levels (aka `level()`), such as `info()`. The list of available logging levels and the console color for each can be provided via options.
 
 The concept of tags was borrowed from the HAPI project. Tags are a superset of logging levels. Log entries have only one level; however, tags are logged as an array in order to facilitate searches. For example, when the tags are (info, web) the log entry is logged at the 'info' level. When tags contain multiple level names, predecence rules apply (see logLevel below; otherwise, the tag in the smallest array index wins.
 
-`level`() (e.g. info()), optionally accept an array of tags as the first parameter. `log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+Log entries are created from five components (all optional): `tags`, `message`, `data`, `context`, and `category.` This information can be passed as traditional ordered parameters or by passing a single object for named parameters. When named parameters are used, extra provided properties are logged as data; for example, the following object can be logged: { tags: 'disk', message: 'A message', error: new Error('An error') }.
 
-The values for 'message' and 'data' can have any type. Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message and 'data' is an object that appears in the log entry's 'data' property.
+Winston's splat formatter is not enabled. However, any type of data can be logged, such as strings, objects, arrays, and Errors (including their stack traces and related errors).
 
-log(), default(), and `level`() optionally accept an Error object as the first parameter, followed by message, data, and category. 'error' is automatically added to the tags; however, 'level' for `level`() methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
+`log()`'s `tag` parameter can be a string, array, or an object whose properties are tag names and their values are evaluated for truthiness that indicates whether the tag is enabled. When named parameters are used, the 'tags' argument can be an object, array, or string.
+
+`level()` methods optionally accept an array of tags as the first parameter. If an object is provided as the first parameter, it is treated either as name parameters or as a message to log.
+
+The values for 'message,' 'data,' and 'context' can be of any type except 'function.'
+
+Error objects are treated specially: their stacks and dependency graphs are also logged. In most cases, 'message' is a string that is used as the log entry's message whereas `context` and `data` are objects that appear in the corresponding properties in log entries.
+
+`log()`, `default()`, and `level()` optionally accept an Error object as the first parameter, followed by message, data, context, and category. 'error' is automatically added to the tags; however, 'level' for `level()` methods takes precedence. For example, `info(new Error('An error'))` is logged at the info level.
+
+### Loggers and Loggers Methods
+
+- `tags()` merges multiple objects into a single object
+- `category()` returns the default category (specified via options) if the provided value is blank
+- `logger(category)` returns a logger associated with a category. Log entries have a `category` property.
+- `context()` Returns the context associated with a child loggers combined with the context of its parent
 
 ### Winston Loggers
 
@@ -75,13 +91,9 @@ One Winston logger is created for each unique category name. winstonLogger() ret
 
 ### Child Loggers (flyweight)
 
-logger() and child() return objects with their own tags, data, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
+logger() and child() return objects with their own tags, context, data, and category values. These objects have the same interface as the Loggers class. Child loggers are not real Winston Logger instances and are therefore lightweight.
 
 Child loggers and Loggers instances have the following methods:
-
-- tags(a, b) Combines a and b such that b's tags override a's tags. The result is combined with (and overrides) the child logger's tags.
-- data(a, b) Combines a and b such that b's properties override a's properties. The result is combined with (and overrides) the properties in the child logger's data.
-- category(a) Returns a if it is truthy; otherwise, it either returns the child logger's category or the default category (specified via options) if it is blank.
 
 Context can be built up by chaining calls to logger() and/or child().
 
@@ -91,10 +103,10 @@ loggers.logger('dog').child('dogTag').child(null, { userId: 101 }).logger('anoth
 
 ### Caching Loggers
 
-A logger can be associated with a category by providing an object as the second parameter to logger(). This changes the value that is returned by logger() when the same category is provided. For example:
+A logger can be associated with a category via `setLogger(name, logger)`. This changes the value that is returned by `logger()` when the same category is provided. For example:
 
 ```js
-loggers.logger('dog', loggers.child('dogTag'));
+loggers.setLogger('dog', loggers.child('dogTag'));
 ```
 
 ### Redaction
@@ -111,25 +123,43 @@ redact: {
 
 ### Events
 
-Event listeners must be added to a Loggers instance. The standard `on()`, `once()`, etc. methods are supported.
+The Loggers class inherits from EventEmitter.
 
-#### data Event
+#### redact Event
 
-'data' events are emitted (potentially multiple times) when one log-related method is called. The data event is intended for redacting properties from data objects. These events are emitted once for each object to be logged, including traversed Error objects.
+redact events are emitted (potentially multiple times) when one log-related method is called. This event is intended for redacting properties from message, data, and context objects. These events are emitted once for each object to be logged, including nested Error objects.
 
 Event listeners' return values are ignored. Event listeners are sent an event object consisting of category, level, data, and tags properties. Listeners can modify the event object's data property. Alternatively, the data object can be modified, but mutate input data at your own risk!
 
-The following example removes the response attribute from Error objects:
+Event objects have the following properties when their 'type' property value is 'message,' or 'data:'
+
+- arg: Contains the data to be altered (context, message, or data). It could be an array, string, or object.
+- property: Contains the object property name where 'arg' is located
+- tags
+- category
+- context
+- level
+
+Event objects have the following properties when their 'type' property value is 'context:'
+
+- arg: Contains the data to be altered (context). It could be an array, string, or object.
+- property: Contains the object property name where 'arg' is located
+- tags
+- category
+- level: This is undefined except when the logging level is known, which is only when a context value is provided to log() or to a log level method.
+
+The 'arg' property can be modified to avoid mutating input data. For example, the following removes the response attribute from Error objects:
 
 ```js
-loggers.on('data', (item) => {
-  const { data } = item;
+loggers.on('redact', (item) => {
+  const { arg } = item;
   // only process Errors with response properties
-  if (!(data instanceof Error) || !data.response) return;
-  // modify item's data property instead of modifying the error object
-  const copy = { ...data };
+  if (!(arg instanceof Error) || !arg.response) return;
+  // modify item's arg property instead of modifying the error object
+  // Make a shallow copy and remove the response property
+  const copy = { ...arg };
   delete copy.response;
-  item.data = copy;
+  item.arg = copy;
 });
 
 const error = new Error('An http error occurred');
@@ -142,7 +172,14 @@ loggers.log(error);
 
 'log' events are emitted prior to calling Winston's log() method. Due to error object traversal, multiple log events can be emitted when one log-related method is called. Because of transport tag filtering, the entry might not be logged.
 
-Event listeners are sent a log entry object consisting of consisting of id, groupId, category, level, tags, message, and data properties. Listeners can modify event objects.
+Event objects have the following properties:
+
+- tags
+- level
+- message
+- data
+- context
+- category
 
 ### Stopping and Flushing
 
@@ -203,7 +240,11 @@ The top-level keys of a log entry. Meta properties contain scalar values except 
 
 ### data
 
-The keys remaining in 'both' after meta properties are removed (see 'both' below)
+The properties remaining in 'both' after meta properties are removed (see 'both' below)
+
+### context
+
+An object provided optionally to log() methods and to the Logger constructor. Context objects are merged. For example, if a child logger (Logger) is created with: `{a: 1, b: 5}` and `{b: 2, c: 3}` is passed as a context argument to `log()`, `{a: 1, b: 2, c: 3}` is logged.
 
 ### level (severity)
 
@@ -211,12 +252,13 @@ Levels are associated with natural numbers. Per Winston's convention, a lower va
 
 Levels and their colors can be specified via the second argument provided to the constructor using the same object that is provided when creating a Winston logger.
 
-By default, Loggers uses Winston's default levels (aka [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of two levels:
+By default, Loggers uses Winston's default levels (aka [npm log levels](https://github.com/winstonjs/winston#user-content-logging-levels) with the addition of three levels:
 
 1. 'fail' is more severe than 'error' and has the color red
 2. 'more' is between 'info' and 'verbose' and has the color cyan
 3. 'db' is between 'verbose' and 'http' and has the color yellow
-4. Therefore, from highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
+
+From highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
 
 A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 

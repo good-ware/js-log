@@ -1,5 +1,51 @@
 # @goodware/log Release History
 
+## 8.0.8 2022-07-07
+
+Stack.pop() doesn't accept negative numbers.
+
+## 8.0.6 - 8.0.7 2022-07-04
+
+- Update documentation
+- `Stack.pop(x)` returns undefined when Stack.length === x instead of throwing exception
+
+## 8.0.5 2022-06-26
+
+- Bug fix: Context in child logger overwrote context provided as a parameter
+
+## 8.0.4 2022-06-24
+
+- Use child logger's category if category value provided is invalid (e.g., is an object)
+- Update docs
+
+## 8.0.3 2022-06-23
+
+- redact events are emitted for child objects
+
+## 8.0.1 - 8.0.3 2022-06-22
+
+- Logger() constructor allows 'extra' to be passed in tags or context
+
+## 8.0.0 2022-06-20
+
+### Breaking changes
+
+- logger(x,y) replaced with setLogger(x,y)
+- Add 'context'
+  - All forms of log functions accept a context parameter before category
+  - Child loggers use context instead of data
+- 'data' event renamed to 'redact'
+- data() method removed from Loggers and Logger classes
+- Ignore 'undefined' input parameters (as before) but treat null as a value. For example, if null is provided as data, it is logged as `{data: {data: null}}`. It adds an extra 'data' property in order accommodate other data to be logged - say, specified in `message.`
+
+### Changes
+
+- Context, message, and data objects are sent to 'redact' event separately
+
+## 7.0.1 2022-05-10
+
+Do not log error twice
+
 ## 7.0.0 2022-05-03
 
 Rename metaKeys option to metaProperties
