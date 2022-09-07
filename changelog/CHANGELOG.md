@@ -4,11 +4,11 @@
 
 ### Bug Fixes
 
-- #
+- #64 - isLevelEnabled('http') returns false when isLevelEnabled('verbose') returns true
 
 ### Features
 
-- #
+- #63 - Add new level: notice
 
 ## 8.0.8 2022-07-07
 
