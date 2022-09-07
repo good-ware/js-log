@@ -2646,23 +2646,29 @@ Loggers.defaultFileDirectories = ['logs', '/tmp/logs', '.'];
 /**
  *
  * These follow npm levels wich are defined at
- * https://github.com/winstonjs/winston#user-content-logging-levels with the addition of 'fail' which is more severe
- * than 'error' and 'more' which is between 'info' and 'verbose.' A different set of levels can be provided to the
- * Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via
- * the defaults) assumes the following levels exist: error, warn, debug.
+ * https://github.com/winstonjs/winston#user-content-logging-levels with the addition of:
+ *
+ * - 'fail' : more severe than 'error'
+ * - 'db' : more severe than 'http'
+ * - 'more' : after 'info' ('more' noisy than 'info' but less noisy than 'verbose')
+ *
+ * Custom levels can be provided to the Loggers class's constructor; however, the Loggers class
+ * assumes there is an 'error' level and the options model (via * the defaults) assumes the
+ * following levels exist: error, warn, debug.
  */
 Loggers.defaultLevels = {
   levels: {
-    fail: 10,
-    error: 20,
-    warn: 30,
-    info: 40,
-    more: 50,
-    verbose: 60,
-    db: 70,
-    http: 80,
-    debug: 90,
-    silly: 100,
+    fail: 1,
+    error: 2,
+    warn: 3,
+    notice: 4,
+    info: 5,
+    more: 6,
+    db: 7,
+    http: 8,
+    verbose: 9,
+    debug: 10,
+    silly: 11,
   },
   colors: {
     fail: 'red',

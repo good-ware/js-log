@@ -258,7 +258,7 @@ By default, Loggers uses Winston's default levels (aka [npm log levels](https://
 2. 'more' is between 'info' and 'verbose' and has the color cyan
 3. 'db' is between 'verbose' and 'http' and has the color yellow
 
-From highest to lowest severity, the levels are: fail, error, warn, info, more, verbose, db, http, debug, silly.
+From highest to lowest severity, the levels are: fail, error, warn, notice, info, more, db, http, verbose, debug, silly.
 
 A custom set of levels can be provided to the Loggers class's constructor; however, the Loggers class assumes there is an 'error' level and the options model (via the defaults) assumes the following levels exist: error, warn, debug.
 

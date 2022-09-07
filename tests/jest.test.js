@@ -239,3 +239,7 @@ test('redact event with context extra', () => {
   expect(child.context().a).toBe(5);
   expect(child.context().b).toBe(6);
 });
+
+test('verbose includes http', () => {
+  expect(loggers.logger('verbose').isLevelEnabled('http')).toBeTruthy();
+});

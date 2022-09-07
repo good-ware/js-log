@@ -1,5 +1,15 @@
 # @goodware/log Release History
 
+## 8.1.0 2022-09-07
+
+### Bug Fixes
+
+- #
+
+### Features
+
+- #
+
 ## 8.0.8 2022-07-07
 
 Stack.pop() doesn't accept negative numbers.

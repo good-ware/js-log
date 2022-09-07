@@ -42,6 +42,9 @@ let config = {
           data: true,
         },
       },
+      verbose: {
+        console: 'verbose',
+      },
     },
     redact: {
       passwordx: undefined,
