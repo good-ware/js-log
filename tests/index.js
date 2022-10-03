@@ -113,7 +113,8 @@ async function go(showData) {
   if (loggers.categoryOptions('bar')) throw new Error('categoryOptions failed');
   if (!loggers.categoryOptions('default')) throw new Error('categoryOptions failed');
 
-  // category must be a string or falsy - output warning
+  // Expected error: category must be a string or falsy - output warning
+  // "Invalid datatype provided for category (object)"
   // eslint-disable-next-line no-lone-blocks
   {
     loggers.options.unitTest = false;
@@ -1053,7 +1054,16 @@ async function go(showData) {
   });
 
   if (!loggers.ready) throw new Error('ready failed');
-  await loggers.stop();
+  try {
+    await loggers.stop();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('loggers.stop() threw an exception');
+    // eslint-disable-next-line no-console
+    console.error(error);
+    throw error;
+  }
+
   if (loggers.ready) throw new Error('ready failed');
   if (!onRan) throw new Error();
 
@@ -1081,13 +1091,9 @@ async function go(showData) {
  */
 async function test() {
   let error;
-
   try {
     await go(true);
     await go(false);
-
-    // eslint-disable-next-line no-console
-    console.log('\x1b[32m\x1b[40m\u2713\x1b Pass\x1b[0m');
   } catch (err) {
     error = err;
   }
@@ -1096,7 +1102,7 @@ async function test() {
     try {
       await loggers.stop();
     } catch (err) {
-      error = err;
+      if (!error) error = err;
     }
     loggers = undefined;
   }
@@ -1104,7 +1110,14 @@ async function test() {
   // Uncomment if the process is hanging to investigate
   // why();
 
-  if (error) throw error;
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.log('\x1b[31m\x1b[40m\u2716\x1b FFail\x1b[0m');
+    throw error;
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('\x1b[32m\x1b[40m\u2713\x1b PPass\x1b[0m');
 }
 
 test().catch((error) => {

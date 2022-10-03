@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.1.1 2022-10-03
+
+- #65 - Suppress CloudWatch error "ThrottlingException: Rate exceeded"
+
 ## 8.1.0 2022-09-07
 
 ### Bug Fixes

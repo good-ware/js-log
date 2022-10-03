@@ -44,6 +44,11 @@ const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
 
 const nonenumerableKeys = ['message', 'stack'];
 
+// TODO: Submit feature request. See cwTransportShortCircuit
+// InvalidParameterException is thrown when the formatter provided to winston-cloudwatch returns false
+const ignoreCloudWatchErrors = ['ThrottlingException', 'DataAlreadyAcceptedException',
+  'InvalidParameterException', ];
+
 /**
  * Property names in object passed to transformArgs
  * @ignore
@@ -845,8 +850,9 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
    */
   category(category, backupCategory) {
     if (category) {
-      const type = typeof category;
+      let type = typeof category;
       if (type === 'string') return category;
+      if (type === 'object' && category instanceof Array) type = 'Array';
 
       // =================================================
       // Value with invalid datatype provided for category
@@ -1096,6 +1102,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     // File
     const settings = options.categories[category] || {};
     const fileOptions = { ...this.options.errorFile };
+
     let level = settings.errorFile;
     if (level instanceof Object) {
       Object.assign(fileOptions, level);
@@ -1155,17 +1162,24 @@ ${error}  [error ${myName}]`);
    * @param {object} error
    * @ignore
    */
-  cloudWatchError(error) {
-    const { code } = error;
-    if (code === 'ThrottlingException' || code === 'DataAlreadyAcceptedException') return;
+  onCloudWatchError(error) {
+    const { code, __type: type } = error;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const err of [code, type]) {
+      if (ignoreCloudWatchErrors.includes(err)) {
+        // eslint-disable-next-line no-console
+        if (err === 'ThrottlingException') console.log('Ignored throttling exception')
+        return;
+      }
+    }
 
-    // TODO: Submit feature request. See cwTransportShortCircuit
-    // InvalidParameterException is thrown when the formatter provided to
-    // winston-cloudwatch returns false
-    // eslint-disable-next-line no-underscore-dangle
-    if (error.__type === 'InvalidParameterException') return;
+    if (error.message && error.message.indexOf('ThrottlingException: Rate exceeded') > -1) {
+      // eslint-disable-next-line no-console
+      console.log(`Ignored: ${error.message}`);
+      return;
+    }
 
-    this.log(error, undefined, undefined, undefined, reservedCategories.cloudWatch);
+    this.log('error', error, undefined, undefined, reservedCategories.cloudWatch);
   }
 
   /**
@@ -1187,7 +1201,7 @@ ${error}  [error ${myName}]`);
     return new Promise((resolve) => {
       transport.kthxbye((error) => {
         // error = new Error('testing this'); // For testing
-        if (error) this.cloudWatchError(error);
+        if (error) this.onCloudWatchError(error);
         resolve();
       });
     });
@@ -1280,7 +1294,7 @@ ${error}  [error ${myName}]`)
 
       if (this.unitTest) {
         const count = this.unitTest.entries.length;
-        this.cloudWatchError(new Error('Expected error: Testing CloudWatch error while stopping'));
+        this.onCloudWatchError(new Error('Expected error: Testing CloudWatch error while stopping'));
         if (count === this.unitTest.entries.length) throw new Error('CloudWatch error handler failed');
       }
     }
@@ -1585,7 +1599,7 @@ ${error}  [error ${myName}]`);
                 logGroupName,
                 awsOptions,
                 level,
-                errorHandler: (error) => this.cloudWatchError(error),
+                errorHandler: (error) => this.onCloudWatchError(error),
                 uploadRate,
                 handleExceptions: category === reservedCategories.unhandled,
               });
