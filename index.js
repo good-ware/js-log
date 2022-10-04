@@ -1163,22 +1163,8 @@ ${error}  [error ${myName}]`);
    * @ignore
    */
   onCloudWatchError(error) {
-    const { code, __type: type } = error;
-    // eslint-disable-next-line no-restricted-syntax
-    for (const err of [code, type]) {
-      if (ignoreCloudWatchErrors.includes(err)) {
-        // eslint-disable-next-line no-console
-        if (err === 'ThrottlingException') console.log('Ignored throttling exception')
-        return;
-      }
-    }
-
-    if (error.message && error.message.indexOf('ThrottlingException: Rate exceeded') > -1) {
-      // eslint-disable-next-line no-console
-      console.log(`Ignored: ${error.message}`);
-      return;
-    }
-
+    // eslint-disable-next-line no-underscore-dangle
+    if (ignoreCloudWatchErrors.includes(error.__type)) return;
     this.log('error', error, undefined, undefined, reservedCategories.cloudWatch);
   }
 
