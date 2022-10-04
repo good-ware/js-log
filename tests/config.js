@@ -77,7 +77,7 @@ configs.test = {
 
 // To test CloudWatch Logs, set the AWS_REGION environment variable
 if (env.AWS_REGION) {
-  configs.test.logging.categories.default.cloudWatch = 'silly';
+  configs.test.logging.categories.default.cloudWatch = 'info';
   configs.test.logging.categories.dog.cloudWatch = 'warn';
 }
 

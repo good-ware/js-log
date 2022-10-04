@@ -1165,7 +1165,7 @@ ${error}  [error ${myName}]`);
   onCloudWatchError(error) {
     // eslint-disable-next-line no-underscore-dangle
     if (ignoreCloudWatchErrors.includes(error.__type)) return;
-    this.log('error', error, undefined, undefined, reservedCategories.cloudWatch);
+    this.logger(reservedCategories.cloudWatch).error(error);
   }
 
   /**
@@ -1246,11 +1246,6 @@ ${error}  [error ${myName}]`);
    * @ignore
    */
   async close() {
-    if (this.unitTest && !this.unitTest.flush) {
-      // This unhandled Promise rejection is handled after this method finishes by the default handler
-      Promise.reject(new Error('Expected error: Rejected promise while stopping'));
-    }
-
     await this.flushCloudWatchTransports();
 
     // Close loggers in the background except the CloudWatch error logger

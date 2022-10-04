@@ -65,6 +65,11 @@ function init(colors) {
  */
 beforeAll(() => init(true));
 
+afterAll(() => {
+  if (!loggers) return;
+  return loggers.stop();
+});
+
 // =====
 // Tests
 
