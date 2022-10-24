@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "8.1.1",
+  "version": "8.1.2",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "author": "devguy@devguy.com",
   "engines": {
@@ -44,7 +44,7 @@
     "json-prune": "^1.1.0",
     "ulidx": "0.3.0",
     "winston": "^3.0.0",
-    "winston-cloudwatch": "^6.0.0",
+    "winston-cloudwatch": "^6.1.1",
     "winston-console-format": "^1.0.0",
     "winston-daily-rotate-file": "^4.7.0"
   },
