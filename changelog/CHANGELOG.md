@@ -1,6 +1,6 @@
 # @goodware/log Release History
 
-## 8.1.2 2022-10-23
+## 8.1.2 - 8.1.3 2022-10-23
 
 - #66 - Better stack stripping
 

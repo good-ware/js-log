@@ -66,7 +66,7 @@ const transformArgsProperties = {
  * doesn't work for unit tests.
  * @ignore
  */
-const stripStack = /\n {4}at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)/g;
+const stripStack = /\s+at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)\n/g;
 
 /**
  * Used for tag filtering
