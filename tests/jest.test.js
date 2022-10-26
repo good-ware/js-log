@@ -248,3 +248,11 @@ test('redact event with context extra', () => {
 test('verbose includes http', () => {
   expect(loggers.logger('verbose').isLevelEnabled('http')).toBeTruthy();
 });
+
+test('pass truthy and falsy values to setLogger', () => {
+  let logger = loggers.child();
+  logger = loggers.setLogger('cached', logger);
+  expect(loggers.logger('cached')).toBe(logger);
+  loggers.setLogger('cached');
+  expect(loggers.logger('cached') === logger).toBeFalsy();
+});

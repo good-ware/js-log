@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.1.4 2022-10-26
+
+Fix falsy value passed as a logger to setLogger()
+
 ## 8.1.2 - 8.1.3 2022-10-23
 
 - #66 - Better stack stripping

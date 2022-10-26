@@ -1685,17 +1685,25 @@ ${error}  [error ${myName}]`);
   /**
    * Associates a logger with a category
    * @param {string} [category]
-   * @param {Loggers|object} [logger]
+   * @param {Loggers|object} [logger]. If falsy, the category will not be associated with a logger.
+   * @returns {Logger|undefined} The stored logger
    */
   setLogger(category, logger) {
     category = this.category(category);
     const { loggers } = this.props;
+
+    if (!logger) {
+      delete loggers[category];
+      return undefined;
+    }
+
     // Ensure the logger's category is the same as the category argument
     if (category !== logger.category()) {
       // eslint-disable-next-line no-use-before-define
       logger = new Logger(logger, undefined, undefined, category);
     }
     loggers[category] = logger;
+    return logger;
   }
 
   /**
