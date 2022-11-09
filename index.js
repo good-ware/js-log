@@ -523,7 +523,6 @@ class Loggers extends EventEmitter {
         prev = { ...prev };
         prevCopied = true;
       }
-
       return Object.assign(prev, arg);
     }, undefined);
 
@@ -1708,14 +1707,11 @@ ${error}  [error ${myName}]`);
 
   /**
    * Creates a child logger
-   * @param {*} [tags]
-   * @param {*} [context]
-   * @param {string} [category]
    * @returns {object}
    */
-  child(tags, context, category) {
+  child(...args) {
     // eslint-disable-next-line no-use-before-define
-    return new Logger(this, tags, context, category);
+    return new Logger(this, ...args);
   }
 
   /**
@@ -1763,7 +1759,7 @@ ${error}  [error ${myName}]`);
   }
 
   /**
-   * Tranforms arugments sent to log methods, child(), and isLoggerEnabled()
+   * Transforms arguments sent to log methods, child(), and isLoggerEnabled()
    * @param {*} [tags]
    * @param {*} [message]
    * @param {*} [data]
@@ -2716,9 +2712,9 @@ class Logger {
 
     ({ tags, message, data, extra, context, category } = parent.transformArgs(
       tags,
+      undefined,
+      undefined,
       context,
-      undefined,
-      undefined,
       category
     ));
 
@@ -2728,11 +2724,10 @@ class Logger {
     if (data !== undefined) data = { data };
     if (message !== undefined && !(message instanceof Object)) message = { message };
 
-    const args = [undefined, tags, category, message, data, extra];
+    const args = [undefined, tags, category, message, data];
 
     if (context) args.push(...context);
-
-    context = loggers.mergeContext(...args);
+    context = loggers.mergeContext(...args, extra);
 
     this.props = { loggers, parent, tags, context, category };
 
@@ -2799,8 +2794,8 @@ class Logger {
 
   /**
    */
-  child(tags, context, category) {
-    return new Logger(this, tags, context, category);
+  child(...args) {
+    return new Logger(this, ...args);
   }
 
   /**
@@ -2886,7 +2881,7 @@ class Logger {
 
   /**
    */
-  log(...args) {
+  log( ...args) {
     this.props.loggers.log(this.transformArgs(...args));
   }
 }

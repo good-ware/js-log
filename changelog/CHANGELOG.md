@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.1.5 2022-11-09
+
+Fix passing context overrides to child()
+
 ## 8.1.4 2022-10-26
 
 Fix falsy value passed as a logger to setLogger()

@@ -105,6 +105,14 @@ test('context via setLogger is mixed in', () => {
   expect(item.context.b).toBe(1);
 });
 
+test('child context overwrite', () => {
+  const child1 = loggers.child(null, {a: 1});
+  expect(child1.context().a).toBe(1);
+  const child2 = child1.child(null, {a:2, b: 2});
+  expect(child2.context().b).toBe(2);
+  expect(child2.context().a).toBe(2);
+});
+
 test('child null obj', () => {
   const count = unitTest.entries.length;
   loggers
