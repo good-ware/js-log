@@ -108,7 +108,7 @@ test('context via setLogger is mixed in', () => {
 test('child context overwrite', () => {
   const child1 = loggers.child(null, {a: 1});
   expect(child1.context().a).toBe(1);
-  const child2 = child1.child(null, {a:2, b: 2});
+  const child2 = child1.cild(null, {a:2, b: 2});
   expect(child2.context().b).toBe(2);
   expect(child2.context().a).toBe(2);
 });
@@ -263,4 +263,16 @@ test('pass truthy and falsy values to setLogger', () => {
   expect(loggers.logger('cached')).toBe(logger);
   loggers.setLogger('cached');
   expect(loggers.logger('cached') === logger).toBeFalsy();
+});
+
+test('stack', () => {
+  const s1 = loggers.stack();
+  const s2 = loggers.child().stack();
+  expect(s1).toStrictEqual(s2);
+  s1.push(5);
+  s2.push(6);
+  expect(s2.top()).toBe(6);
+  expect(s1.top()).toBe(6);
+  s2.pop();
+  expect(s1.top()).toBe(5);
 });

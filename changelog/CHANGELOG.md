@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 8.1.6 2022-11-09
+
+Fix Logger.stack()
+
 ## 8.1.5 2022-11-09
 
 Fix passing context overrides to child()

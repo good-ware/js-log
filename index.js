@@ -1721,16 +1721,15 @@ ${error}  [error ${myName}]`);
    */
   stack(name) {
     let { stacks } = this.props;
-    if (!stacks) {
-      stacks = {};
-      this.props.stacks = stacks;
-    }
+
+    // eslint-disable-next-line no-multi-assign
+    if (!stacks) stacks = this.props.stacks = {};
 
     let stack = stacks[name];
-    if (stack) return stack;
 
-    stack = new Stack();
-    stacks[name] = stack;
+    // eslint-disable-next-line no-multi-assign
+    if (!stack) stack = stacks[name] = new Stack();
+
     return stack;
   }
 
@@ -2800,7 +2799,7 @@ class Logger {
 
   /**
    */
-  stack(name = 'default') {
+  stack(name) {
     return this.props.loggers.stack(name);
   }
 
