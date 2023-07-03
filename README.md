@@ -24,19 +24,19 @@ This package extends Winston3 with additional features such as tag-based filteri
 
 ## Features
 
-1. In addition to a message (an object or scalar) a log entry may consist of tags (an array of strings), context (an object or scalar), and data (an object or scalar). message, and data may also be arrays.
+1. In addition to a message (an object or scalar), a log entry may consist of tags (an array of strings), context (an object or scalar), and data (an object or scalar). message, and data may also be arrays.
 2. Log entries can be filtered by tags on a per-transport basis
-3. Redaction of specific object keys. Redaction can be enabled and disabled via tags.
+3. Redaction of specific object keys which can be enabled and disabled via tags
 4. Safely logs large objects and arrays - even those with circular references
-   4.1. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
-5. Promotes object properties to a configurable subset of 'meta' properties
-6. On-demand flushing to CloudWatch Logs
-7. Does not interfere with other code that uses Winston
-8. Transformation/redaction of logged objects via events
+5. Embedded Error objects passed via 'message' and 'data' are logged separately (e.g., in the 'cause' and 'error' properties), grouping multiple log entries via a unique identifier
+6. Promotes object properties to a configurable subset of 'meta' properties
+7. On-demand flushing to CloudWatch Logs
+8. Does not interfere with other code that uses Winston
+9. Transformation/redaction of logged objects via events
 
 ## Performance
 
-This code is as efficient as possible; however, users are encouraged to call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged
+Call isLevelEnabled() (and even memoize it) to avoid creating expensive messages that won't be logged, especially in loops.
 
 ## Transports Supported
 
