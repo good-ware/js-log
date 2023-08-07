@@ -650,7 +650,7 @@ async function go(showData) {
     loggers.log(
       'error',
       { message: 'outer error', error: new Error('inner error'), stack: 'x' },
-      { requestId: 1, extra: 2 }
+      { requestId: 1, extra: 2 },
     );
     let item = unitTest.entries[count];
     if (item.data.extra !== 2) throw new Error();
@@ -1021,7 +1021,7 @@ async function go(showData) {
         throw new Error('x');
       },
       'begin',
-      'end'
+      'end',
     );
   } catch (error) {
     //

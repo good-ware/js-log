@@ -9,17 +9,18 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
-const ansiRegex = require('ansi-regex');
-const deepCleaner = require('deep-cleaner');
 const EventEmitter = require('events');
 const fs = require('fs');
+const path = require('path');
+const util = require('util');
+
+const ansiRegex = require('ansi-regex'); // version 6 requires ESM so version 5 is used
+const deepCleaner = require('deep-cleaner');
 const hostId = require('hostid');
 const humanizeDuration = require('humanize-duration');
 const Joi = require('joi');
-const path = require('path');
 const prune = require('json-prune');
 const { ulid } = require('ulidx');
-const util = require('util');
 
 // Winston3
 const winston = require('winston');
@@ -32,7 +33,7 @@ const Stack = require('./Stack');
 // Load my package.json instead of the one for this module's user
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
-// Global variables
+// Module variables
 let ansiRegexEngine;
 let WinstonCloudWatch;
 let noCloudWatch;
@@ -383,7 +384,7 @@ class Loggers extends EventEmitter {
     const tzo = now.getTimezoneOffset();
 
     return `${now.getFullYear()}-${Loggers.pad(now.getMonth() + 1)}-${Loggers.pad(now.getDate())}T${Loggers.pad(
-      now.getHours()
+      now.getHours(),
     )}:${Loggers.pad(now.getMinutes())}:${Loggers.pad(now.getSeconds())}.${Loggers.pad(now.getMilliseconds(), 3)}${
       !tzo ? 'Z' : `${(tzo > 0 ? '-' : '+') + Loggers.pad(Math.abs(tzo) / 60)}:${Loggers.pad(tzo % 60)}`
     }`;
@@ -611,7 +612,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
         .min(1)
         .default(90000)
         .description(
-          `The maximum number of milliseconds to wait when sending the current batch of log entries to CloudWatch`
+          `The maximum number of milliseconds to wait when sending the current batch of log entries to CloudWatch`,
         ),
     });
 
@@ -647,7 +648,7 @@ age of files to keep in days, followed by the chracter 'd'.`),
           Joi.string(),
           Joi.object({
             recursive: Joi.boolean().default(true),
-          }).default({})
+          }).default({}),
         )
         .default({}),
 
@@ -658,14 +659,14 @@ age of files to keep in days, followed by the chracter 'd'.`),
           .min(1)
           .default(5)
           .description(
-            'Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.'
+            'Errors reference other errors, creating a graph. This is the maximum error graph depth to traverse.',
           ),
         max: Joi.number()
           .integer()
           .min(1)
           .default(20)
           .description(
-            'Errors reference other errors. This is the maximum number of errors to log when logging one message.'
+            'Errors reference other errors. This is the maximum number of errors to log when logging one message.',
           ),
       }).default({}),
 
@@ -721,14 +722,14 @@ Enable the tag for log entries with severity levels equal to or greater than the
                   console: onOffDefaultLevelEnum,
                   errorFile: onOffDefaultLevelEnum,
                   cloudWatch: onOffDefaultLevelEnum,
-                })
-              )
+                }),
+              ),
             ),
             file: Joi.alternatives(fileObject, onOffDefaultLevelEnum),
             errorFile: Joi.alternatives(fileObject, onOffDefaultLevelEnum),
             console: Joi.alternatives(consoleObject, onOffDefaultLevelEnum),
             cloudWatch: Joi.alternatives(cloudWatchObject, onOffDefaultLevelEnum),
-          })
+          }),
         )
         .default({}),
 
@@ -805,7 +806,7 @@ Enable the tag for log entries with severity levels equal to or greater than the
         `Ready: ${service} ${stage} v${version} ${commitSha} [${myName} v${myVersion}]`,
         undefined,
         undefined,
-        reservedCategories.log
+        reservedCategories.log,
       );
     }
   }
@@ -1012,7 +1013,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     const t2 = tags.slice(1);
     t2.unshift(category);
     return `${colorBegin}${ms} ${colorEnd}${message}${colorBegin}${spaces}[${tags[0]} ${t2.join(
-      ' '
+      ' ',
     )} ${id}]${colorEnd}`;
   }
 
@@ -1139,7 +1140,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
               format: format.json(),
               level,
               handleExceptions: false,
-            })
+            }),
           );
         } catch (error) {
           // eslint-disable-next-line no-console
@@ -1262,9 +1263,9 @@ ${error}  [error ${myName}]`);
         }).catch((error) =>
           // eslint-disable-next-line no-console
           console.error(`Failed closing '${category}'  [error ${myName}]
-${error}  [error ${myName}]`)
+${error}  [error ${myName}]`),
         );
-      })
+      }),
     );
 
     // Close the CloudWatch error logger last
@@ -1437,7 +1438,7 @@ ${error}  [error ${myName}]`)
                   format: format.combine(checkTags, format.json()),
                   level,
                   handleExceptions: category === reservedCategories.unhandled,
-                })
+                }),
               );
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1487,7 +1488,7 @@ ${error}  [error ${myName}]`);
                   format: format.combine(checkTags, format.json()),
                   level,
                   handleExceptions: category === reservedCategories.unhandled,
-                })
+                }),
               );
             } catch (error) {
               // eslint-disable-next-line no-console
@@ -1570,7 +1571,7 @@ ${error}  [error ${myName}]`);
                 // eslint-disable-next-line no-console
                 console.log(
                   // eslint-disable-next-line max-len
-                  `Writing to AWS CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`
+                  `Writing to AWS CloudWatch Logs stream: ${logGroupName}${this.props.cloudWatchStream}  [info ${myName}]`,
                 );
               }
 
@@ -1618,7 +1619,7 @@ ${error}  [error ${myName}]`);
 
         if (level !== 'off') {
           transports.push(
-            this.createConsoleTransport(level, category === reservedCategories.unhandled, consoleOptions)
+            this.createConsoleTransport(level, category === reservedCategories.unhandled, consoleOptions),
           );
         }
       }
@@ -2545,7 +2546,7 @@ ${stack}  [error ${myName}]`);
     if (dataData) this.send(info, context, undefined, dataData, undefined, errors, depth, groupId || entry.id);
 
     dataMessages.forEach((dataMessage) =>
-      this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id)
+      this.send(info, context, dataMessage, data, undefined, errors, depth, groupId || entry.id),
     );
   }
 
@@ -2675,7 +2676,6 @@ Loggers.defaultLevels = {
   colors: {
     fail: 'red',
     more: 'cyan',
-    notice: 'italic magenta',
     db: 'yellow',
   },
 };
@@ -2719,7 +2719,7 @@ class Logger {
       undefined,
       undefined,
       context,
-      category
+      category,
     ));
 
     // transformArgs can not return the default category because Logger calls it
@@ -2842,7 +2842,7 @@ class Logger {
    */
   isLevelEnabled(tagsOrNamedParameters, category) {
     return this.props.loggers.isLevelEnabled(
-      this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category)
+      this.transformArgs(tagsOrNamedParameters, undefined, undefined, undefined, category),
     );
   }
 
