@@ -106,9 +106,9 @@ test('context via setLogger is mixed in', () => {
 });
 
 test('child context overwrite', () => {
-  const child1 = loggers.child(null, {a: 1});
+  const child1 = loggers.child(null, { a: 1 });
   expect(child1.context().a).toBe(1);
-  const child2 = child1.cild(null, {a:2, b: 2});
+  const child2 = child1.child(null, { a: 2, b: 2 });
   expect(child2.context().b).toBe(2);
   expect(child2.context().a).toBe(2);
 });
@@ -116,12 +116,13 @@ test('child context overwrite', () => {
 test('child null obj', () => {
   const count = unitTest.entries.length;
   loggers
-    .child(null, {
+    .child({
       context: { a: 1 },
     })
     .info('hello');
   expect(unitTest.entries.length).toBe(count + 1);
   const item = unitTest.entries[count];
+  console.log(JSON.stringify(item, null, 2));
   expect(item.context.a).toBe(1);
 });
 
@@ -246,7 +247,7 @@ test('redact event with context extra', () => {
     if (event.type === 'context') calls += 1;
   };
   loggers.on('redact', f);
-  const child = loggers.child('tag', { a: 5, context: { b: 6 } });
+  const child = loggers.child({ a: 5, context: { b: 6 } });
   loggers.off('redact', f);
   expect(calls).toBe(4);
   expect(child.context().a).toBe(5);

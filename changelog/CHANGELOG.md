@@ -1,5 +1,18 @@
 # @goodware/log Release History
 
+## 9.0.0 2023-08-07
+
+### Breaking Changes
+
+- Require NodeJS 14+ because ulidx needs nullish coalescing and frankly it's time
+
+### Other
+
+- Bump dependencencies
+- Major bump: ulidx. Complains that it wants Node 16+. 14 works fine.
+- #68: Remove winston and logform from stack traces
+- #69: 'notice' console color is magenta and the font style is italic
+
 ## 8.1.6 2022-11-09
 
 Fix Logger.stack()

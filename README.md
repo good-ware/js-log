@@ -10,7 +10,7 @@
 
 ## Requirements
 
-If you plan to write to AWS CloudWatch Logs, NodeJS 12 or higher is required (however, despite the warnings from AWS SDK 2.0, NodeJS 8 seems to work fine). Otherwise, any LTS version is sufficent.
+Node 14+. ulidx complains that Node 16+ is required but 14 works fine.
 
 ## Installation
 

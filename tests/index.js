@@ -72,6 +72,8 @@ async function go(showData) {
   // Ready for testing
   //
 
+  loggers.notice('Tests starting');
+
   // loggers.tags()
   {
     const tags = loggers.tags('message');
@@ -1041,7 +1043,7 @@ async function go(showData) {
     if (stack.pop(0) !== loggers) throw new Error();
     if (stack.length) throw new Error();
   }
-  
+
   // ===========================
   // Stop/start/flush the logger
 
