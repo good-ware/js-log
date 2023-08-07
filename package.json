@@ -1,6 +1,6 @@
 {
   "name": "@goodware/log",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "description": "Batteries-included Winston3-based loggger with console, file, and AWS CloudWatch Logs transports",
   "author": "devguy@devguy.com",
   "engines": {
@@ -55,11 +55,12 @@
     "eslint-config-airbnb-base": "*",
     "eslint-config-prettier": "*",
     "eslint-plugin-import": "*",
-    "jest": "^28.1.0",
+    "jest": "^28.0.0",
     "jsdoc": "*",
     "minami": "*",
     "prettier": "*",
     "request-promise": "*",
+    "taffydb": "^2.7.3",
     "why-is-node-running": "*"
   }
 }

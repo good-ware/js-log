@@ -23,7 +23,7 @@ class MySqlLogger {
       () => connection.query(sql, params),
       { sql, params, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
-      `SQL:${summary}`
+      `SQL:${summary}`,
     );
   }
 
@@ -49,7 +49,7 @@ class MySqlLogger {
       logger.child('mysql'),
       { sql, params, message: `SQL Begin:${summary}` },
       `SQL End:${summary}`,
-      `SQL:${summary}`
+      `SQL:${summary}`,
     );
     Object.assign(logObj, { sql, params, summary });
     return { emitter, logger: logObj };

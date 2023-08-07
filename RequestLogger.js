@@ -37,7 +37,7 @@ class RequestLogger {
       begin,
       `End: ${summary}`,
       summary,
-      errorHandler
+      errorHandler,
     );
   }
 }
