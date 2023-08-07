@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 9.0.1 2023-08-07
+
+Revert change for notice to use italic font. Use magenta only.
+
 ## 9.0.0 2023-08-07
 
 ### Breaking Changes

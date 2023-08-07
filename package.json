@@ -37,16 +37,16 @@
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
     "ansi-regex": "^5.0.0",
-    "deep-cleaner": "^1.2.0",
-    "hostid": "^1.1.0",
-    "humanize-duration": "^3.27.0",
-    "joi": "^17.4.0",
-    "json-prune": "^1.1.0",
+    "deep-cleaner": "^1.0.0",
+    "hostid": "^1.0.0",
+    "humanize-duration": "^3.0.0",
+    "joi": "^17.0.0",
+    "json-prune": "^1.0.0",
     "ulidx": "^2.0.0",
     "winston": "^3.0.0",
     "winston-cloudwatch": "^6.1.1",
     "winston-console-format": "^1.0.0",
-    "winston-daily-rotate-file": "^4.7.0"
+    "winston-daily-rotate-file": "^4.0.0"
   },
   "devDependencies": {
     "deepmerge": "*",

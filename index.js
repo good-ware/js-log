@@ -2675,7 +2675,7 @@ Loggers.defaultLevels = {
   colors: {
     fail: 'red',
     more: 'cyan',
-    notice: 'italic magenta',
+    notice: 'magenta',
     db: 'yellow',
   },
 };
