@@ -9,7 +9,7 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-param-reassign */
 /* eslint-disable-next-line max-classes-per-file */
-const ansiRegex = require('ansi-regex')(); // version 6 requires Node 12, so 5 is used
+const ansiRegex = require('ansi-regex');
 const deepCleaner = require('deep-cleaner');
 const EventEmitter = require('events');
 const fs = require('fs');
@@ -33,6 +33,7 @@ const Stack = require('./Stack');
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
 // Global variables
+let ansiRegexEngine;
 let WinstonCloudWatch;
 let noCloudWatch;
 
@@ -46,8 +47,7 @@ const nonenumerableKeys = ['message', 'stack'];
 
 // TODO: Submit feature request. See cwTransportShortCircuit
 // InvalidParameterException is thrown when the formatter provided to winston-cloudwatch returns false
-const ignoreCloudWatchErrors = ['ThrottlingException', 'DataAlreadyAcceptedException',
-  'InvalidParameterException', ];
+const ignoreCloudWatchErrors = ['ThrottlingException', 'DataAlreadyAcceptedException', 'InvalidParameterException'];
 
 /**
  * Property names in object passed to transformArgs
@@ -66,7 +66,7 @@ const transformArgsProperties = {
  * doesn't work for unit tests.
  * @ignore
  */
-const stripStack = /\s+at [^(]+\(.*[/|\\]@goodware[/|\\]log[/|\\][^)]+\)\n/g;
+const stripStack = /\s+at [^(]+\(.*[/|\\]node_modules[/|\\](?:(?:@goodware[/|\\]log)|winston|logform)[/|\\][^)]+\)\n?/g;
 
 /**
  * Used for tag filtering
@@ -162,6 +162,8 @@ class Loggers extends EventEmitter {
    */
   constructor(options, levels = Loggers.defaultLevels) {
     super();
+
+    if (!ansiRegexEngine) ansiRegexEngine = ansiRegex();
 
     const props = {
       stopped: true,
@@ -998,7 +1000,7 @@ ${directories.join(`  [error ${myName}]\n`)}  [error ${myName}]`);
     let colorEnd;
     {
       // Extract color codes from the level
-      const codes = level.match(ansiRegex);
+      const codes = level.match(ansiRegexEngine);
       if (codes) {
         [colorBegin, colorEnd] = codes;
       } else {
@@ -2653,6 +2655,8 @@ Loggers.defaultFileDirectories = ['logs', '/tmp/logs', '.'];
  * Custom levels can be provided to the Loggers class's constructor; however, the Loggers class
  * assumes there is an 'error' level and the options model (via * the defaults) assumes the
  * following levels exist: error, warn, debug.
+ *
+ * See also https://github.com/winstonjs/winston#using-custom-logging-levels
  */
 Loggers.defaultLevels = {
   levels: {
@@ -2671,6 +2675,7 @@ Loggers.defaultLevels = {
   colors: {
     fail: 'red',
     more: 'cyan',
+    notice: 'italic magenta',
     db: 'yellow',
   },
 };
@@ -2880,7 +2885,7 @@ class Logger {
 
   /**
    */
-  log( ...args) {
+  log(...args) {
     this.props.loggers.log(this.transformArgs(...args));
   }
 }
