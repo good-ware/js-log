@@ -266,6 +266,34 @@ test('pass truthy and falsy values to setLogger', () => {
   expect(loggers.logger('cached') === logger).toBeFalsy();
 });
 
+test('child 1', () => {
+  const logger = loggers.child({ context: { a: 5 } });
+  const count = unitTest.entries.length;
+  logger.info('This is a message');
+  expect(unitTest.entries.length).toBe(count + 1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(5);
+});
+
+test('child with null tags', () => {
+  const logger = loggers.child(null, { category: 'what', context: { a: 5 } });
+  const count = unitTest.entries.length;
+  logger.info('This is a message');
+  expect(unitTest.entries.length).toBe(count + 1);
+  const item = unitTest.entries[count];
+  expect(item.category).toBe('what');
+  expect(item.context.a).toBe(5);
+});
+
+test('child with null tags', () => {
+  const logger = loggers.child(null, { a: 5 });
+  const count = unitTest.entries.length;
+  logger.info('This is a message');
+  expect(unitTest.entries.length).toBe(count + 1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(5);
+});
+
 test('stack', () => {
   const s1 = loggers.stack();
   const s2 = loggers.child().stack();

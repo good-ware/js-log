@@ -1,10 +1,3 @@
-// =============================================================================
-// Developer Notes
-//
-// 1. typeof(null) === 'object'. Use instanceof Object instead.
-// 2. This code uses 'in' instead of Object.keys() because protoptype fields
-//    are useful to log
-// =============================================================================
 /* eslint-disable no-promise-executor-return */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-param-reassign */
@@ -33,20 +26,22 @@ const Stack = require('./Stack');
 // Load my package.json instead of the one for this module's user
 const { name: myName, version: myVersion } = require('./package.json'); // Discard the rest
 
-// Module variables
-let ansiRegexEngine;
-let WinstonCloudWatch;
-let noCloudWatch;
+// =================================================================================================
+// Developer Notes
+// =================================================================================================
+// 1. typeof(null) === 'object'. Use instanceof Object instead.
+// 2. This code uses 'in' instead of Object.keys() because protoptype fields
+//    are useful to log
+//
+// TODO
+// 1. Find eslint-disable-next-line no-restricted-syntax and replace with forEach
 
 const addErrorSymbol = Symbol.for('error');
-
 const { format } = winston;
-
 const transportNames = ['file', 'errorFile', 'cloudWatch', 'console'];
-
 const nonenumerableKeys = ['message', 'stack'];
 
-// TODO: Submit feature request. See cwTransportShortCircuit
+// TODO Submit feature request. See cwTransportShortCircuit
 // InvalidParameterException is thrown when the formatter provided to winston-cloudwatch returns false
 const ignoreCloudWatchErrors = ['ThrottlingException', 'DataAlreadyAcceptedException', 'InvalidParameterException'];
 
@@ -87,6 +82,12 @@ const reservedCategories = {
   cloudWatch: '@goodware/cloudwatch',
   log: '@goodware/log', // When the API is misused
 };
+
+// ================
+// Module variables
+let ansiRegexEngine;
+let WinstonCloudWatch;
+let noCloudWatch;
 
 /**
  * Internal class for identifying the return value of transformArgs()
@@ -1178,7 +1179,7 @@ ${error}  [error ${myName}]`);
    * @ignore
    */
   flushCloudWatchTransport(transport, timeout) {
-    // TODO: Fix this when WinstonCloudWatch makes flush timeout an option
+    // TODO Fix this when WinstonCloudWatch makes flush timeout an option
     // https://github.com/lazywithclass/winston-cloudwatch/issues/129
     // This ends up taking way too long if, say, the aws-sdk is not properly configured. Submit issue to
     // winston-cloudwatch.
@@ -1558,12 +1559,12 @@ ${error}  [error ${myName}]`);
               awsOptions = { region: awsOptions.region };
 
               const checkTags = (info) => {
-                // TODO: Submit feature request. See cwTransportShortCircuit
+                // TODO Submit feature request. See cwTransportShortCircuit
                 if (!this.checkTags('cloudWatch', info)) return '';
                 return JSON.stringify(info);
               };
 
-              // TODO: add more options supported by winston-cloudwatch
+              // TODO add more options supported by winston-cloudwatch
               // See https://github.com/lazywithclass/winston-cloudwatch/blob/e705a18220bc9be0564ad27b299127c6ee56a28b/typescript/winston-cloudwatch.d.ts
 
               if (this.options.say.cloudWatch && !(logGroupName in this.props.cloudWatchLogGroups)) {
@@ -1775,8 +1776,9 @@ ${error}  [error ${myName}]`);
 
     let extra;
 
-    // First argument is an Error object?
     if (tags instanceof Error) {
+      // =====================================
+      // The first argument is an Error object
       category = context;
       context = data;
       data = message;
@@ -1799,6 +1801,22 @@ ${error}  [error ${myName}]`);
         }
       ({ tags, message, data, context } = tags);
     } else if (
+      context instanceof Object &&
+      message === undefined &&
+      data === undefined &&
+      ('tags' in context || 'category' in context || 'context' in context)
+    ) {
+      // This happens when child() is called with the second argument being an object
+      category = context.category || category;
+      // eslint-disable-next-line no-restricted-syntax
+      for (const key in context)
+        if (!(key in transformArgsProperties)) {
+          if (!extra) extra = {};
+          extra[key] = context[key];
+        }
+      if (context.tags) tags = this.tags(tags, context.tags);
+      ({ context } = context);
+    } else if (
       message instanceof Object &&
       !(message instanceof Array) &&
       context === undefined &&
@@ -1807,11 +1825,12 @@ ${error}  [error ${myName}]`);
     ) {
       category = message.category || category;
       // eslint-disable-next-line no-restricted-syntax
-      for (const key in message)
+      for (const key in message) {
         if (!(key in transformArgsProperties)) {
           if (!extra) extra = {};
           extra[key] = message[key];
         }
+      }
       if (message.tags) tags = this.tags(tags, message.tags);
       ({ message, data, context } = message);
     }
@@ -1933,8 +1952,8 @@ ${stack}  [error ${myName}]`);
 
     if (tagNames.length) {
       // Look for a blocked tag
-      // TODO: Defaults should be specified at the category level or via the category named 'default'
-      // TODO: Cache results for tags for the category that aren't yet defined in config
+      // TODO Defaults should be specified at the category level or via the category named 'default'
+      // TODO Cache results for tags for the category that aren't yet defined in config
       const categoryTags = this.props.categoryTags[category];
       const defaultTags = this.props.categoryTags.default;
       let nextLevel = level;
@@ -1963,18 +1982,18 @@ ${stack}  [error ${myName}]`);
             if (defaultTransports) {
               const { allowLevel } = defaultTransports;
               if (allowLevel) {
-                // TODO: cache this
+                // TODO cache this
                 if (this.props.levelSeverity[level] <= this.props.levelSeverity[allowLevel]) return true;
               } else if (
                 this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]
               ) {
                 // Defaults to warn (severity 1)
-                // TODO: Cache this
+                // TODO Cache this
                 return true;
               }
             } else if (this.props.levelSeverity[level] <= this.props.levelSeverity[this.options.defaultTagAllowLevel]) {
               // Defaults to warn (severity 1)
-              // TODO: Cache this
+              // TODO Cache this
               return true;
             }
           }
@@ -1996,7 +2015,7 @@ ${stack}  [error ${myName}]`);
             if (lvl) {
               if (lvl === 'default') lvl = this.options.defaultLevel;
               if (this.props.levelSeverity[lvl] < this.props.levelSeverity[nextLevel]) {
-                // TODO: Exit early if isLevelEnabled(lvl) is false
+                // TODO Exit early if isLevelEnabled(lvl) is false
                 nextLevel = lvl;
               }
             }

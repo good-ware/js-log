@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 9.0.3 2023-08-10
+
+Fix #72 - Treat context as an object `logger.child(null, context)` when context is an object
+
 ## 9.0.1 - 9.0.2 2023-08-07
 
 - Revert change for notice logging level to use italic font. Use magenta only.
