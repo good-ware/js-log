@@ -113,26 +113,32 @@ test('child context overwrite', () => {
   expect(child2.context().a).toBe(2);
 });
 
-test('child null obj', () => {
-  const count = unitTest.entries.length;
-  loggers
-    .child({
-      context: { a: 1 },
-    })
-    .info('hello');
-  expect(unitTest.entries.length).toBe(count + 1);
-  const item = unitTest.entries[count];
-  console.log(JSON.stringify(item, null, 2));
-  expect(item.context.a).toBe(1);
-});
-
-test('child null obj2', () => {
+test('child null tags with context', () => {
   const count = unitTest.entries.length;
   loggers.child(null, { a: 5 }).info('hello', { b: 2 });
   expect(unitTest.entries.length).toBe(count + 1);
   const item = unitTest.entries[count];
   expect(item.context.a).toBe(5);
   expect(item.data.b).toBe(2);
+});
+
+test('child with obj', () => {
+  const logger = loggers.child({ context: { a: 5 } });
+  const count = unitTest.entries.length;
+  logger.info('This is a message');
+  expect(unitTest.entries.length).toBe(count + 1);
+  const item = unitTest.entries[count];
+  expect(item.context.a).toBe(5);
+});
+
+test('child null tags with object', () => {
+  const logger = loggers.child(null, { category: 'what', context: { a: 5 } });
+  const count = unitTest.entries.length;
+  logger.info('This is a message');
+  expect(unitTest.entries.length).toBe(count + 1);
+  const item = unitTest.entries[count];
+  expect(item.category).toBe('what');
+  expect(item.context.a).toBe(5);
 });
 
 test('context extra', () => {
@@ -264,34 +270,6 @@ test('pass truthy and falsy values to setLogger', () => {
   expect(loggers.logger('cached')).toBe(logger);
   loggers.setLogger('cached');
   expect(loggers.logger('cached') === logger).toBeFalsy();
-});
-
-test('child 1', () => {
-  const logger = loggers.child({ context: { a: 5 } });
-  const count = unitTest.entries.length;
-  logger.info('This is a message');
-  expect(unitTest.entries.length).toBe(count + 1);
-  const item = unitTest.entries[count];
-  expect(item.context.a).toBe(5);
-});
-
-test('child with null tags', () => {
-  const logger = loggers.child(null, { category: 'what', context: { a: 5 } });
-  const count = unitTest.entries.length;
-  logger.info('This is a message');
-  expect(unitTest.entries.length).toBe(count + 1);
-  const item = unitTest.entries[count];
-  expect(item.category).toBe('what');
-  expect(item.context.a).toBe(5);
-});
-
-test('child with null tags', () => {
-  const logger = loggers.child(null, { a: 5 });
-  const count = unitTest.entries.length;
-  logger.info('This is a message');
-  expect(unitTest.entries.length).toBe(count + 1);
-  const item = unitTest.entries[count];
-  expect(item.context.a).toBe(5);
 });
 
 test('stack', () => {
