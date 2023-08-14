@@ -10,7 +10,9 @@
 
 ## Requirements
 
-Node 14+. ulidx complains that Node 16+ is required but 14 works fine.
+As of version 9, NodeJS version 14+ is required. Versions 8 and earlier work with NodeJS 8 and later. When the CloudWatch Logs transport is used, NodeJS support depends upon that of @aws-sdk.
+
+ulidx complains that Node 16+ is required but 14 works fine.
 
 ## Installation
 

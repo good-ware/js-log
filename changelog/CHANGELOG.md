@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 9.0.4 2023-08-14
+
+Fix #74 - Stack redaction doesn't work with package managers that use symlinks
+
 ## 9.0.3 2023-08-10
 
 Fix #72 - Treat context as an object `logger.child(null, context)` when context is an object
