@@ -1,5 +1,9 @@
 # @goodware/log Release History
 
+## 9.0.5 2023-08-30
+
+- #69: 'notice' console color is magenta
+
 ## 9.0.4 2023-08-14
 
 Fix #74 - Stack redaction doesn't work with package managers that use symlinks
